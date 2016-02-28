@@ -122,6 +122,21 @@ namespace OxyPlot.Series
         public bool Interpolate { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to use discrete rectangles when rendering (ignored if Interpolate is set to true). The default value is <c>false</c>.
+        /// </summary>
+        public bool RenderDiscreteRectangles { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to treat the x dimension as logarithmic. The default value is <c>false</c>.
+        /// </summary>
+        public bool LogX { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to treat the y dimension as logarithmic. The default value is <c>false</c>.
+        /// </summary>
+        public bool LogY { get; set; }
+
+        /// <summary>
         /// Gets the minimum value of the dataset.
         /// </summary>
         public double MinValue { get; private set; }
@@ -170,6 +185,58 @@ namespace OxyPlot.Series
         {
             this.image = null;
         }
+        
+        /// <summary>
+        /// Gets the clipping rectangle, transposed if the X acis is vertically orientated
+        /// </summary>
+        protected new OxyRect GetClippingRect()
+        {
+            double minX = Math.Min(this.XAxis.ScreenMin.X, this.XAxis.ScreenMax.X);
+            double minY = Math.Min(this.YAxis.ScreenMin.Y, this.YAxis.ScreenMax.Y);
+            double maxX = Math.Max(this.XAxis.ScreenMin.X, this.XAxis.ScreenMax.X);
+            double maxY = Math.Max(this.YAxis.ScreenMin.Y, this.YAxis.ScreenMax.Y);
+
+            if (XAxis.IsVertical())
+                return new OxyRect(minY, minX, maxY - minY, maxX - minX);
+            else
+                return new OxyRect(minX, minY, maxX - minX, maxY - minY);
+        }
+
+        /// <summary>
+        /// Transposes the ScreenPoint if the X axis is vertically orientated
+        /// </summary>
+        private ScreenPoint Orientate(ScreenPoint point)
+        {
+            if (XAxis.IsVertical())
+            {
+                point = new ScreenPoint(point.Y, point.X);
+            }
+            return point;
+        }
+
+        /// <summary>
+        /// Transforms DataSpace coords to orientated ScreenSpace coors
+        /// </summary>
+        public new ScreenPoint Transform(double x, double y)
+        {
+            return Orientate(base.Transform(x, y));
+        }
+
+        /// <summary>
+        /// Transforms DataSpace coords to orientated ScreenSpace coors
+        /// </summary>
+        public new ScreenPoint Transform(DataPoint p)
+        {
+            return Orientate(base.Transform(p));
+        }
+
+        /// <summary>
+        /// Transforms orientated ScreenSpace coords to DataSpace coors
+        /// </summary>
+        public new DataPoint InverseTransform(ScreenPoint point)
+        {
+            return base.InverseTransform(Orientate(point));
+        }
 
         /// <summary>
         /// Renders the series on the specified render context.
@@ -200,29 +267,77 @@ namespace OxyPlot.Series
 
             if (this.CoordinateDefinition == HeatMapCoordinateDefinition.Center)
             {
-                left -= dx / 2;
-                right += dx / 2;
-                bottom -= dy / 2;
-                top += dy / 2;
+                if (LogX)
+                {
+                    double gx = Math.Log(this.X1 / this.X0) / (m - 1);
+                    left *= Math.Exp(gx / -2);
+                    right *= Math.Exp(gx / 2);
+                }
+                else
+                {
+                    left -= dx / 2;
+                    right += dx / 2;
+                }
+
+                if (LogY)
+                {
+                    double gy = Math.Log(this.Y1 / this.Y0) / (n - 1);
+                    bottom *= Math.Exp(gy / -2);
+                    top *= Math.Exp(gy / 2);
+                }
+                else
+                {
+                    bottom -= dy / 2;
+                    top += dy / 2;
+                }
             }
 
             var s00 = this.Transform(left, bottom);
             var s11 = this.Transform(right, top);
             var rect = new OxyRect(s00, s11);
 
+            bool needImage = Interpolate || !RenderDiscreteRectangles;
+
             var currentDataHash = this.Data.GetHashCode();
             var currentColorAxisHash = this.ColorAxis.GetElementHashCode();
-            if (this.image == null || currentDataHash != this.dataHash || currentColorAxisHash != this.colorAxisHash)
+            if ((needImage && this.image == null) || currentDataHash != this.dataHash || currentColorAxisHash != this.colorAxisHash)
             {
-                this.UpdateImage();
+                if (needImage)
+                    this.UpdateImage();
                 this.dataHash = currentDataHash;
                 this.colorAxisHash = currentColorAxisHash;
             }
 
             var clip = this.GetClippingRect();
-            if (this.image != null)
+            if (needImage)
             {
-                rc.DrawClippedImage(clip, this.image, rect.Left, rect.Top, rect.Width, rect.Height, 1, this.Interpolate);
+                if (this.image != null)
+                {
+                    rc.DrawClippedImage(clip, this.image, rect.Left, rect.Top, rect.Width, rect.Height, 1, this.Interpolate);
+                }
+            }
+            else
+            {
+                s00 = this.Orientate(s00); // disorientate
+                s11 = this.Orientate(s11); // disorientate
+
+                double sdx = (s11.X - s00.X) / m;
+                double sdy = (s11.Y - s00.Y) / n;
+
+                // draw lots of rectangles
+                for (int i = 0; i < m; i++)
+                {
+                    for (int j = 0; j < n; j++)
+                    {
+                        OxyColor rectcolor = this.ColorAxis.GetColor(this.Data[i, j]);
+
+                        var pointa = this.Orientate(new ScreenPoint(s00.X + i * sdx, s00.Y + j * sdy)); // reorientate
+                        var pointb = this.Orientate(new ScreenPoint(s00.X + (i + 1) * sdx, s00.Y + (j + 1) * sdy)); // reorientate
+                        OxyRect rectrect = new OxyRect(pointa, pointb);
+
+                        rc.DrawClippedRectangle(clip, rectrect, rectcolor, OxyColors.Undefined, 0);
+                    }
+                }
             }
 
             if (this.LabelFontSize > 0)
@@ -252,17 +367,63 @@ namespace OxyPlot.Series
                 return null;
             }
 
-            double dx = (this.X1 - this.X0) / (this.Data.GetLength(0) - 1);
-            double dy = (this.Y1 - this.Y0) / (this.Data.GetLength(1) - 1);
+            // these are screen space coords
+            double i;
+            double j;
 
-            double i = (p.X - this.X0) / dx;
-            double j = (p.Y - this.Y0) / dy;
+            if (LogX)
+            {
+                double gx = Math.Log(this.X1 / this.X0) / (this.Data.GetLength(0) - 1);
+                i = Math.Log(p.X / this.X0) / gx;
+            }
+            else
+            {
+                double dx = (this.X1 - this.X0) / (this.Data.GetLength(0) - 1);
+                i = (p.X - this.X0) / dx;
+            }
+
+            if (LogY)
+            {
+                double gy = Math.Log(this.Y1 / this.Y0) / (this.Data.GetLength(1) - 1);
+                j = Math.Log(p.Y / this.Y0) / gy;
+            }
+            else
+            {
+                double dy = (this.Y1 - this.Y0) / (this.Data.GetLength(1) - 1);
+                j = (p.Y - this.Y0) / dy;
+            }
 
             if (!interpolate)
             {
                 i = Math.Round(i);
                 j = Math.Round(j);
-                p = new DataPoint((i * dx) + this.X0, (j * dy) + this.Y0);
+
+                double px;
+                double py;
+
+                if (LogX)
+                {
+                    double gx = Math.Log(this.X1 / this.X0) / (this.Data.GetLength(0) - 1);
+                    px = this.X0 * Math.Exp((double)i * gx);
+                }
+                else
+                {
+                    double dx = (this.X1 - this.X0) / (this.Data.GetLength(0) - 1);
+                    px = (i * dx) + this.X0;
+                }
+
+                if (LogY)
+                {
+                    double gy = Math.Log(this.Y1 / this.Y0) / (this.Data.GetLength(1) - 1);
+                    py = this.Y0 * Math.Exp((double)j * gy);
+                }
+                else
+                {
+                    double dy = (this.Y1 - this.Y0) / (this.Data.GetLength(1) - 1);
+                    py = (j * dy) + this.Y0;
+                }
+
+                p = new DataPoint(px, py);
                 point = this.Transform(p);
             }
 
@@ -278,7 +439,7 @@ namespace OxyPlot.Series
                 Item = null,
                 Index = -1,
                 Text = StringHelper.Format(
-                this.ActualCulture, 
+                this.ActualCulture,
                 this.TrackerFormatString,
                 null,
                 this.Title,
@@ -303,12 +464,10 @@ namespace OxyPlot.Series
         }
 
         /// <summary>
-        /// Updates the maximum and minimum values of the series.
+        /// Updates the maximum and minimum values of the series for the x and y dimensions only.
         /// </summary>
-        protected internal override void UpdateMaxMin()
+        protected internal void UpdateMaxMinXY()
         {
-            base.UpdateMaxMin();
-
             int m = this.Data.GetLength(0);
             int n = this.Data.GetLength(1);
 
@@ -320,13 +479,42 @@ namespace OxyPlot.Series
 
             if (this.CoordinateDefinition == HeatMapCoordinateDefinition.Center)
             {
-                double dx = Math.Abs(this.X1 - this.X0) / (m - 1);
-                double dy = Math.Abs(this.Y1 - this.Y0) / (n - 1);
-                this.MinX -= dx / 2;
-                this.MaxX += dx / 2;
-                this.MinY -= dy / 2;
-                this.MaxY += dy / 2;
+                if (LogX)
+                {
+                    double gx = Math.Log(this.MaxX / this.MinX) / (m - 1);
+                    this.MinX *= Math.Exp(gx / -2);
+                    this.MaxX *= Math.Exp(gx / 2);
+                }
+                else
+                {
+                    double dx = (this.MaxX - this.MinX) / (m - 1);
+                    this.MinX -= dx / 2;
+                    this.MaxX += dx / 2;
+                }
+
+                if (LogY)
+                {
+                    double gy = Math.Log(this.MaxY / this.MinY) / (n - 1);
+                    this.MinY *= Math.Exp(gy / -2);
+                    this.MaxY *= Math.Exp(gy / 2);
+                }
+                else
+                {
+                    double dy = (this.MaxY - this.MinY) / (n - 1);
+                    this.MinY -= dy / 2;
+                    this.MaxY += dy / 2;
+                }
             }
+        }
+
+        /// <summary>
+        /// Updates the maximum and minimum values of the series.
+        /// </summary>
+        protected internal override void UpdateMaxMin()
+        {
+            base.UpdateMaxMin();
+
+            UpdateMaxMinXY();
 
             this.MinValue = this.Data.Min2D(true);
             this.MaxValue = this.Data.Max2D();
@@ -356,16 +544,26 @@ namespace OxyPlot.Series
             var clip = this.GetClippingRect();
             int m = this.Data.GetLength(0);
             int n = this.Data.GetLength(1);
-            double dx = (this.X1 - this.X0) / (m - 1);
-            double dy = (this.Y1 - this.Y0) / (n - 1);
+            //double dx = (this.X1 - this.X0) / (m - 1);
+            //double dy = (this.Y1 - this.Y0) / (n - 1);
             double fontSize = (rect.Height / n) * this.LabelFontSize;
+
+            double left = this.X0;
+            double right = this.X1;
+            double bottom = this.Y0;
+            double top = this.Y1;
+
+            var s00 = this.Orientate(this.Transform(left, bottom)); // disorientate
+            var s11 = this.Orientate(this.Transform(right, top)); // disorientate
+
+            double sdx = (s11.X - s00.X) / (m - 1);
+            double sdy = (s11.Y - s00.Y) / (n - 1);
 
             for (int i = 0; i < m; i++)
             {
                 for (int j = 0; j < n; j++)
                 {
-                    var p = new DataPoint((i * dx) + this.X0, (j * dy) + this.Y0);
-                    var point = this.Transform(p);
+                    var point = this.Orientate(new ScreenPoint(s00.X + i * sdx, s00.Y + j * sdy)); // reorientate
                     var v = GetValue(this.Data, i, j);
                     var color = this.ColorAxis.GetColor(v);
                     var hsv = color.ToHsv();
@@ -494,7 +692,7 @@ namespace OxyPlot.Series
                     return v0;
                 }
             }
-        }  
+        }
 
         /// <summary>
         /// Tests if a <see cref="DataPoint" /> is inside the heat map
@@ -503,23 +701,9 @@ namespace OxyPlot.Series
         /// <returns><c>True</c> if the point is inside the heat map.</returns>
         private bool IsPointInRange(DataPoint p)
         {
-            double left = this.X0;
-            double right = this.X1;
-            double bottom = this.Y0;
-            double top = this.Y1;
+            UpdateMaxMinXY();
 
-            if (this.CoordinateDefinition == HeatMapCoordinateDefinition.Center)
-            {
-                double dx = (this.X1 - this.X0) / (this.Data.GetLength(0) - 1);
-                double dy = (this.Y1 - this.Y0) / (this.Data.GetLength(1) - 1);
-
-                left -= dx / 2;
-                right += dx / 2;
-                bottom -= dy / 2;
-                top += dy / 2;
-            }
-
-            return p.X >= left && p.X <= right && p.Y >= bottom && p.Y <= top;
+            return p.X >= this.MinX && p.X <= this.MaxX && p.Y >= this.MinY && p.Y <= this.MaxY;
         }
 
         /// <summary>
@@ -533,16 +717,21 @@ namespace OxyPlot.Series
             // determine if the provided data should be reversed in y-direction
             var reverseY = this.YAxis.Transform(this.Y0) > this.YAxis.Transform(this.Y1);
 
+            var swapXY = this.XAxis.IsVertical();
+
             int m = this.Data.GetLength(0);
             int n = this.Data.GetLength(1);
-            var buffer = new OxyColor[m, n];
+            var buffer = swapXY ? new OxyColor[n, m] : new OxyColor[m, n];
             for (int i = 0; i < m; i++)
             {
                 var ii = reverseX ? m - 1 - i : i;
                 for (int j = 0; j < n; j++)
                 {
                     var jj = reverseY ? n - 1 - j : j;
-                    buffer[i, j] = this.ColorAxis.GetColor(this.Data[ii, jj]);
+                    if (swapXY)
+                        buffer[j, i] = this.ColorAxis.GetColor(this.Data[ii, jj]);
+                    else
+                        buffer[i, j] = this.ColorAxis.GetColor(this.Data[ii, jj]);
                 }
             }
 
