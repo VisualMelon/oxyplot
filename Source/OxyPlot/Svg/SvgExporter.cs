@@ -42,11 +42,6 @@ namespace OxyPlot
         public bool IsDocument { get; set; }
         
         /// <summary>
-        /// Gets or sets a value indicating whether to use a workaround for vertical text alignment to support renderers with limited support for the dominate-baseline attribute.
-        /// </summary>
-        public bool UseVerticalTextAlignmentWorkaround { get; set; }
-
-        /// <summary>
         /// Gets or sets the text measurer.
         /// </summary>
         public IRenderContext TextMeasurer { get; set; }
@@ -60,15 +55,14 @@ namespace OxyPlot
         /// <param name="height">The height (points).</param>
         /// <param name="isDocument">if set to <c>true</c>, the xml headers will be included (?xml and !DOCTYPE).</param>
         /// <param name="textMeasurer">The text measurer.</param>
-        /// <param name="useVerticalTextAlignmentWorkaround">Whether to use the workaround for vertical text alignment</param>
-        public static void Export(IPlotModel model, Stream stream, double width, double height, bool isDocument, IRenderContext textMeasurer = null, bool useVerticalTextAlignmentWorkaround = false)
+        public static void Export(IPlotModel model, Stream stream, double width, double height, bool isDocument, IRenderContext textMeasurer = null)
         {
             if (textMeasurer == null)
             {
                 textMeasurer = new PdfRenderContext(width, height, model.Background);
             }
 
-            using (var rc = new SvgRenderContext(stream, width, height, true, textMeasurer, model.Background, useVerticalTextAlignmentWorkaround))
+            using (var rc = new SvgRenderContext(stream, width, height, true, textMeasurer, model.Background))
             {
                 model.Update(true);
                 model.Render(rc, width, height);
@@ -86,13 +80,12 @@ namespace OxyPlot
         /// <param name="isDocument">if set to <c>true</c>, the xml headers will be included (?xml and !DOCTYPE).</param>
         /// <param name="textMeasurer">The text measurer.</param>
         /// <returns>The plot as an <c>SVG</c> string.</returns>
-        /// <param name="useVerticalTextAlignmentWorkaround">Whether to use the workaround for vertical text alignment</param>
-        public static string ExportToString(IPlotModel model, double width, double height, bool isDocument, IRenderContext textMeasurer = null, bool useVerticalTextAlignmentWorkaround = false)
+        public static string ExportToString(IPlotModel model, double width, double height, bool isDocument, IRenderContext textMeasurer = null)
         {
             string svg;
             using (var ms = new MemoryStream())
             {
-                Export(model, ms, width, height, isDocument, textMeasurer, useVerticalTextAlignmentWorkaround);
+                Export(model, ms, width, height, isDocument, textMeasurer);
                 ms.Flush();
                 ms.Position = 0;
                 var sr = new StreamReader(ms);
@@ -109,7 +102,7 @@ namespace OxyPlot
         /// <param name="stream">The target stream.</param>
         public void Export(IPlotModel model, Stream stream)
         {
-            Export(model, stream, this.Width, this.Height, this.IsDocument, this.TextMeasurer, this.UseVerticalTextAlignmentWorkaround);
+            Export(model, stream, this.Width, this.Height, this.IsDocument, this.TextMeasurer);
         }
 
         /// <summary>
@@ -119,7 +112,7 @@ namespace OxyPlot
         /// <returns>the SVG content as a string.</returns>
         public string ExportToString(IPlotModel model)
         {
-            return ExportToString(model, this.Width, this.Height, this.IsDocument, this.TextMeasurer, this.UseVerticalTextAlignmentWorkaround);
+            return ExportToString(model, this.Width, this.Height, this.IsDocument, this.TextMeasurer);
         }
     }
 }

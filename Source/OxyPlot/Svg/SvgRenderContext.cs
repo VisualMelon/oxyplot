@@ -38,8 +38,7 @@ namespace OxyPlot
         /// <param name="isDocument">Create an SVG document if set to <c>true</c>.</param>
         /// <param name="textMeasurer">The text measurer.</param>
         /// <param name="background">The background.</param>
-        /// <param name="useVerticalTextAlignmentWorkaround">Whether to use the workaround for vertical text alignment.</param>
-        public SvgRenderContext(Stream s, double width, double height, bool isDocument, IRenderContext textMeasurer, OxyColor background, bool useVerticalTextAlignmentWorkaround = false)
+        public SvgRenderContext(Stream s, double width, double height, bool isDocument, IRenderContext textMeasurer, OxyColor background)
         {
             if (textMeasurer == null)
             {
@@ -48,7 +47,6 @@ namespace OxyPlot
 
             this.w = new SvgWriter(s, width, height, isDocument);
             this.TextMeasurer = textMeasurer;
-            this.UseVerticalTextAlignmentWorkaround = useVerticalTextAlignmentWorkaround;
 
             if (background.IsVisible())
             {
@@ -64,8 +62,9 @@ namespace OxyPlot
 
         /// <summary>
         /// Gets or sets a value indicating whether to use a workaround for vertical text alignment to support renderers with limited support for the dominate-baseline attribute.
+        /// (On by default)
         /// </summary>
-        public bool UseVerticalTextAlignmentWorkaround { get; set; }
+        public static bool UseVerticalTextAlignmentWorkaround { get; set; } = true;
 
         /// <summary>
         /// Closes the svg writer.
@@ -194,7 +193,7 @@ namespace OxyPlot
             var lineHeight = textSize.Height / lines.Length;
             var lineOffset = new ScreenVector(-Math.Sin(rotate / 180.0 * Math.PI) * lineHeight, +Math.Cos(rotate / 180.0 * Math.PI) * lineHeight);
             
-            if (this.UseVerticalTextAlignmentWorkaround)
+            if (SvgRenderContext.UseVerticalTextAlignmentWorkaround)
             {
                 // offset the position, and set the valign to neutral value of `Bottom`
                 double offsetRatio = valign == VerticalAlignment.Bottom ? (1.0 - lines.Length) : valign == VerticalAlignment.Top ? 1.0 : (1.0 - (lines.Length / 2.0));
