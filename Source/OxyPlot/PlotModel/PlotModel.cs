@@ -570,12 +570,17 @@ namespace OxyPlot
         /// <summary>
         /// Gets the total width of the plot (in device units).
         /// </summary>
-        public double Width { get; private set; }
+        public double Width => PlotBounds.Width;
 
         /// <summary>
         /// Gets the total height of the plot (in device units).
         /// </summary>
-        public double Height { get; private set; }
+        public double Height => PlotBounds.Height;
+
+        /// <summary>
+        /// The bounds of the plot, including the plot, the axes, the lengends, and the titles
+        /// </summary>
+        public OxyRect PlotBounds { get; private set; }
 
         /// <summary>
         /// Gets the area including both the plot and the axes. Outside legends are rendered outside this rectangle.

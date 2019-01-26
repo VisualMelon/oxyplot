@@ -40,6 +40,17 @@ namespace OxyPlot
         /// <param name="height">The height.</param>
         protected virtual void RenderOverride(IRenderContext rc, double width, double height)
         {
+            RenderInRect(rc, new OxyRect(0, 0, width, height), true);
+        }
+
+        /// <summary>
+        /// Renders the plot with the specified rendering context within the given plot bounds.
+        /// </summary>
+        /// <param name="rc">The rendering context.</param>
+        /// <param name="plotBounds">The area wherein to render the plot.</param>
+        /// <param name="doRender">Whether or not to actually render after aligning everything.</param>
+        public virtual void RenderInRect(IRenderContext rc, OxyRect plotBounds, bool doRender = true)
+        {
             lock (this.SyncRoot)
             {
                 try
@@ -63,8 +74,7 @@ namespace OxyPlot
                         rc = this.RenderingDecorator(rc);
                     }
 
-                    this.Width = width;
-                    this.Height = height;
+                    this.PlotBounds = plotBounds;
 
                     this.ActualPlotMargins =
                         new OxyThickness(
@@ -97,6 +107,149 @@ namespace OxyPlot
                     {
                         a.ResetCurrentValues();
                     }
+
+                    if (!doRender)
+                        return; // go no further
+
+                    this.RenderBackgrounds(rc);
+                    this.RenderAnnotations(rc, AnnotationLayer.BelowAxes);
+                    this.RenderAxes(rc, AxisLayer.BelowSeries);
+                    this.RenderAnnotations(rc, AnnotationLayer.BelowSeries);
+                    this.RenderSeries(rc);
+                    this.RenderAnnotations(rc, AnnotationLayer.AboveSeries);
+                    this.RenderTitle(rc);
+                    this.RenderBox(rc);
+                    this.RenderAxes(rc, AxisLayer.AboveSeries);
+
+                    if (this.IsLegendVisible)
+                    {
+                        this.RenderLegends(rc, this.LegendArea);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    // An exception was raised during rendering. This should not happen...
+                    var errorMessage = string.Format(
+                            "An exception of type {0} was thrown when rendering the plot model.\r\n{1}",
+                            exception.GetType(),
+                            exception.GetBaseException().StackTrace);
+                    this.lastPlotException = exception;
+                    this.RenderErrorMessage(rc, string.Format("OxyPlot exception: {0}", exception.Message), errorMessage);
+                }
+                finally
+                {
+                    // Clean up unused images
+                    rc.CleanUp();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Renders the plot with the specified rendering context on and around the given plot area.
+        /// </summary>
+        /// <param name="rc">The rendering context.</param>
+        /// <param name="plotArea">The area whereon to render, excluding axes, legend, and titles.</param>
+        /// <param name="doRender">Whether or not to actually render after aligning everything.</param>
+        public virtual void RenderOnRect(IRenderContext rc, OxyRect plotArea, bool doRender = true)
+        {
+            lock (this.SyncRoot)
+            {
+                try
+                {
+                    if (this.lastPlotException != null)
+                    {
+                        // There was an exception during plot model update. 
+                        // This could happen when OxyPlot is given invalid input data. 
+                        // The client application should be responsible for handling this.
+                        // If the client application submitted invalid data, show the exception message and stack trace.
+                        var errorMessage = string.Format(
+                                "An exception of type {0} was thrown when updating the plot model.\r\n{1}",
+                                this.lastPlotException.GetType(),
+                                this.lastPlotException.GetBaseException().StackTrace);
+                        this.RenderErrorMessage(rc, string.Format("OxyPlot exception: {0}", this.lastPlotException.Message), errorMessage);
+                        return;
+                    }
+
+                    if (this.RenderingDecorator != null)
+                    {
+                        rc = this.RenderingDecorator(rc);
+                    }
+
+                    this.ActualPlotMargins =
+                        new OxyThickness(
+                            double.IsNaN(this.PlotMargins.Left) ? 0 : this.PlotMargins.Left,
+                            double.IsNaN(this.PlotMargins.Top) ? 0 : this.PlotMargins.Top,
+                            double.IsNaN(this.PlotMargins.Right) ? 0 : this.PlotMargins.Right,
+                            double.IsNaN(this.PlotMargins.Bottom) ? 0 : this.PlotMargins.Bottom);
+
+                    this.EnsureLegendProperties();
+
+                    this.PlotArea = plotArea;
+
+                    // update axes
+                    this.UpdateAxisTransforms();
+                    this.UpdateIntervals();
+
+                    // determine margins (i.e. how much space the axes consume)
+                    this.AdjustPlotMargins(rc);
+                    
+                    // from margins
+                    this.PlotAndAxisArea = plotArea.Inflate(this.ActualPlotMargins);
+
+                    // Find the available size for the legend box
+                    var availableLegendWidth = plotArea.Width;
+                    var availableLegendHeight = double.IsNaN(this.LegendMaxHeight) ?
+                        plotArea.Height : Math.Min(plotArea.Height, this.LegendMaxHeight);
+                    if (this.LegendPlacement == LegendPlacement.Inside)
+                    {
+                        availableLegendWidth -= this.LegendMargin * 2;
+                        availableLegendHeight -= this.LegendMargin * 2;
+                    }
+
+                    // Calculate the size of the legend box
+                    var legendSize = this.MeasureLegends(rc, new OxySize(Math.Max(0, availableLegendWidth), Math.Max(0, availableLegendHeight)));
+                    
+                    this.LegendArea = this.GetLegendRectangle(legendSize);
+
+                    var titleExclusionArea = OxyRect.BoundingRect(new [] { this.PlotAndAxisArea, this.LegendArea });
+
+                    // size and position titles
+                    var titleSize = this.MeasureTitles(rc);
+                    var titleHeight = titleSize.Height + this.TitlePadding;
+
+                    switch (this.TitleHorizontalAlignment)
+                    {
+                        case TitleHorizontalAlignment.CenteredWithinView:
+                            this.TitleArea = new OxyRect(
+                                PlotAndAxisArea.Left,
+                                titleExclusionArea.Top - titleHeight,
+                                PlotAndAxisArea.Width,
+                                titleSize.Height + (this.TitlePadding * 2));
+                            break;
+                        default:
+                            this.TitleArea = new OxyRect(
+                                this.PlotArea.Left,
+                                titleExclusionArea.Top - titleHeight,
+                                this.PlotArea.Width,
+                                titleSize.Height + (this.TitlePadding * 2));
+                            break;
+                    }
+
+                    if (this.PlotType == PlotType.Cartesian)
+                    {
+                        this.EnforceCartesianTransforms();
+                        this.UpdateIntervals();
+                    }
+
+                    foreach (var a in this.Axes)
+                    {
+                        a.ResetCurrentValues();
+                    }
+
+                    this.PlotBounds = OxyRect.BoundingRect(new [] { this.PlotAndAxisArea, this.LegendArea, this.TitleArea });
+
+                    if (!doRender)
+                        return; // go no further
 
                     this.RenderBackgrounds(rc);
                     this.RenderAnnotations(rc, AnnotationLayer.BelowAxes);
@@ -467,10 +620,10 @@ namespace OxyPlot
         private void UpdatePlotArea(IRenderContext rc)
         {
             var plotArea = new OxyRect(
-                this.Padding.Left,
-                this.Padding.Top,
-                Math.Max(0, this.Width - this.Padding.Left - this.Padding.Right),
-                Math.Max(0, this.Height - this.Padding.Top - this.Padding.Bottom));
+                this.PlotBounds.Left + this.Padding.Left,
+                this.PlotBounds.Top + this.Padding.Top,
+                Math.Max(0, this.PlotBounds.Width - this.Padding.Left - this.Padding.Right),
+                Math.Max(0, this.PlotBounds.Height - this.Padding.Top - this.Padding.Bottom));
 
             var titleSize = this.MeasureTitles(rc);
 
@@ -541,15 +694,15 @@ namespace OxyPlot
             {
                 case TitleHorizontalAlignment.CenteredWithinView:
                     this.TitleArea = new OxyRect(
-                        0,
-                        this.Padding.Top,
-                        this.Width,
+                        this.PlotBounds.Left,
+                        this.PlotBounds.Top + this.Padding.Top,
+                        this.PlotBounds.Width,
                         titleSize.Height + (this.TitlePadding * 2));
                     break;
                 default:
                     this.TitleArea = new OxyRect(
                         this.PlotArea.Left,
-                        this.Padding.Top,
+                        this.PlotBounds.Top + this.Padding.Top,
                         this.PlotArea.Width,
                         titleSize.Height + (this.TitlePadding * 2));
                     break;

@@ -217,7 +217,7 @@ namespace OxyPlot.Annotations
                     sx = model.PlotArea.Left + (model.PlotArea.Width * x.Value);
                     break;
                 case PlotLengthUnit.RelativeToViewport:
-                    sx = model.Width * x.Value;
+                    sx = model.PlotBounds.Left + model.PlotBounds.Width * x.Value;
                     break;
                 default:
                     sx = x.Value;
@@ -230,7 +230,7 @@ namespace OxyPlot.Annotations
                     sy = model.PlotArea.Top + (model.PlotArea.Height * y.Value);
                     break;
                 case PlotLengthUnit.RelativeToViewport:
-                    sy = model.Height * y.Value;
+                    sy = model.PlotBounds.Top + model.PlotBounds.Height * y.Value;
                     break;
                 default:
                     sy = y.Value;
@@ -262,7 +262,7 @@ namespace OxyPlot.Annotations
                     sx = model.PlotArea.Width * x.Value;
                     break;
                 case PlotLengthUnit.RelativeToViewport:
-                    sx = model.Width * x.Value;
+                    sx = model.PlotBounds.Left + model.PlotBounds.Width * x.Value;
                     break;
                 default:
                     sx = x.Value;
@@ -278,7 +278,7 @@ namespace OxyPlot.Annotations
                     sy = model.PlotArea.Height * y.Value;
                     break;
                 case PlotLengthUnit.RelativeToViewport:
-                    sy = model.Height * y.Value;
+                    sy = model.PlotBounds.Top + model.PlotBounds.Height * y.Value;
                     break;
                 default:
                     sy = y.Value;

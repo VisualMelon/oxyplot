@@ -12,6 +12,8 @@ namespace OxyPlot
     using System;
     using System.Globalization;
     using System.Text;
+    using System.Linq;
+    using System.Collections.Generic;
 
     /// <summary>
     /// Describes the width, height, and point origin of a rectangle.
@@ -168,6 +170,21 @@ namespace OxyPlot
             {
                 return new ScreenPoint(this.left + (this.width * 0.5), this.top + (this.height * 0.5));
             }
+        }
+
+        /// <summary>
+        /// Creates a rectangle which bounds all of the given rectangles.
+        /// </summary>
+        /// <param name="rects">The rectangles to bound.</param>
+        /// <returns>A rectangle.</returns>
+        public static OxyRect BoundingRect(IEnumerable<OxyRect> rects)
+        {
+            var left = rects.Min(r => r.Left);
+            var top = rects.Min(r => r.Top);
+            var width = rects.Max(r => r.Right) - left;
+            var height = rects.Max(r => r.Bottom) - top;
+
+            return new OxyRect(left, top, width, height);
         }
 
         /// <summary>
