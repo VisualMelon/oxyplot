@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>netcoreapp3.0</TargetFramework>
+        <UseWPF>true</UseWPF>
+
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <AssemblyName>ExampleBrowserCore</AssemblyName>
+        <RootNamespace>ExampleBrowser</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ApplicationDefinition Include="..\ExampleBrowser\App.xaml">
+            <Generator>MSBuild:Compile</Generator>
+        </ApplicationDefinition>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\ExampleBrowser\**\*.cs" Exclude="..\ExampleBrowser\obj\**" />
+        <None Include="..\ExampleBrowser\**\*.settings" />
+        <EmbeddedResource Include="..\ExampleBrowser\**\*.resx" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Page Include="..\ExampleBrowser\MainWindow.xaml">
+            <Generator>MSBuild:Compile</Generator>
+        </Page>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\OxyPlot.Wpf\OxyPlot.Wpf.csproj" />
+        <ProjectReference Include="..\..\..\OxyPlot\OxyPlot.csproj" />
+        <ProjectReference Include="..\..\ExampleLibrary\ExampleLibrary.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Resource Include="..\..\..\..\Icons\OxyPlot_64.png" Link="oxyplot_64.png" />
+    </ItemGroup>
+</Project>

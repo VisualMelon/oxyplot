@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>netcoreapp3.0</TargetFramework>
+        <UseWindowsForms>true</UseWindowsForms>
+
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <AssemblyName>ExampleBrowserCore</AssemblyName>
+        <RootNamespace>ExampleBrowser</RootNamespace>
+
+        <ApplicationIcon>..\..\..\..\Icons\OxyPlot.ico</ApplicationIcon>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\OxyPlot.WindowsFormsCore\OxyPlot.WindowsFormsCore.csproj" />
+        <ProjectReference Include="..\..\..\OxyPlot\OxyPlot.csproj" />
+        <ProjectReference Include="..\..\ExampleLibrary\ExampleLibrary.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\ExampleBrowser\**\*.cs" />
+        <None Include="..\ExampleBrowser\**\*.settings" />
+        <EmbeddedResource Include="..\ExampleBrowser\**\*.resx" />
+    </ItemGroup>
+
+</Project>
