@@ -91,7 +91,8 @@ namespace OxyPlot.Wpf
         public BitmapSource ExportToBitmap(IPlotModel model)
         {
             var scale = 96d / this.Resolution;
-            var canvas = new Canvas { Width = this.Width * scale, Height = this.Height * scale, Background = this.Background.ToBrush() };
+            var actualBackground = this.Background.IsUndefined() ? model.Background : this.Background;
+            var canvas = new Canvas { Width = this.Width * scale, Height = this.Height * scale, Background = actualBackground.ToBrush() };
             canvas.Measure(new Size(canvas.Width, canvas.Height));
             canvas.Arrange(new Rect(0, 0, canvas.Width, canvas.Height));
 

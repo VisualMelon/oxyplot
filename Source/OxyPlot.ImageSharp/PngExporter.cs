@@ -61,7 +61,8 @@ namespace OxyPlot.ImageSharp
         /// <param name="stream">The output stream.</param>
         public void Export(IPlotModel model, Stream stream)
         {
-            using (var rc = new PngRenderingContext(this.Width, this.Height, this.Background, this.Resolution))
+            var actualBackground = this.Background.IsUndefined() ? model.Background : this.Background;
+            using (var rc = new PngRenderingContext(this.Width, this.Height, actualBackground, this.Resolution))
             {
                 model.Update(true);
                 model.Render(rc, this.Width, this.Height);

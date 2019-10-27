@@ -66,7 +66,9 @@ namespace OxyPlot.Pdf
         /// <param name="stream">The stream.</param>
         public void Export(IPlotModel model, Stream stream)
         {
-            using (var rc = new PdfRenderContext(this.Width, this.Height, this.Background))
+            var actualBackground = this.Background.IsUndefined() ? model.Background : this.Background;
+
+            using (var rc = new PdfRenderContext(this.Width, this.Height, actualBackground))
             {
                 model.Update(true);
                 model.Render(rc, this.Width, this.Height);

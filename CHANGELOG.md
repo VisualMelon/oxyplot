@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 - OxyPlot.ImageSharp (#1188)
 
 ### Changed
+- Exporters default to the PlotModel Background (#1409)
 - Moved reporting functionality to separate projects (#1403)
 - Moved reporting functionality to oxyplot-reporting repository (#1403)
 - Moved WPF Plot component to Oxyplot.Contrib.Wpf (#1399)

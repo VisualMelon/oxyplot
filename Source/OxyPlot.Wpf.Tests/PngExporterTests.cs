@@ -68,6 +68,24 @@ namespace OxyPlot.Wpf.Tests
         }
 
         /// <summary>
+        /// Exports with yellow background to a file and verifies that the file exists.
+        /// </summary>
+        [Test]
+        public void ExportWithDifferentPlotModelBackground()
+        {
+            var plotModel = CreateTestModel1();
+            plotModel.Background = OxyColors.Orange;
+            const string FileName = "PngExporterTests_PlotModelBackgroundOrange.png";
+            var exporter = new PngExporter { Width = 400, Height = 300, Background = OxyColors.Undefined };
+            using (var stream = File.OpenWrite(FileName))
+            {
+                exporter.Export(plotModel, stream);
+            }
+
+            Assert.IsTrue(File.Exists(FileName));
+        }
+
+        /// <summary>
         /// Exports with higher resolution and verifies that the file exists.
         /// </summary>
         /// <param name="factor">The resolution factor.</param>

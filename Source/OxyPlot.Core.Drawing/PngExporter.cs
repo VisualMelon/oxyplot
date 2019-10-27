@@ -78,9 +78,11 @@ namespace OxyPlot.Core.Drawing
             var bm = new Bitmap(this.Width, this.Height);
             using (var g = Graphics.FromImage(bm))
             {
-                if (!this.Background.IsInvisible())
+                var actualBackground = this.Background.IsUndefined() ? model.Background : this.Background;
+
+                if (!actualBackground.IsInvisible())
                 {
-                    using (var brush = this.Background.ToBrush())
+                    using (var brush = actualBackground.ToBrush())
                     {
                         g.FillRectangle(brush, 0, 0, this.Width, this.Height);
                     }
