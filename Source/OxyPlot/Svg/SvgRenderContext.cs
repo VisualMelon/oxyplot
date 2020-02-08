@@ -43,7 +43,7 @@ namespace OxyPlot
         {
             if (textMeasurer == null)
             {
-                throw new ArgumentNullException("textMeasurer", "A text measuring render context must be provided.");
+                throw new ArgumentNullException(nameof(textMeasurer), "A text measuring render context must be provided.");
             }
 
             this.w = new SvgWriter(s, width, height, isDocument);

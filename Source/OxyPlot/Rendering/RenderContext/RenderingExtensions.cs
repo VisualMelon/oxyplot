@@ -936,7 +936,7 @@ namespace OxyPlot
             {
                 if (outline == null)
                 {
-                    throw new ArgumentNullException("outline", "The outline should be set when MarkerType is 'Custom'.");
+                    throw new ArgumentNullException(nameof(outline), "The outline should be set when MarkerType is 'Custom'.");
                 }
 
                 var poly = outline.Select(o => new ScreenPoint(p.X + (o.x * size), p.Y + (o.y * size))).ToList();

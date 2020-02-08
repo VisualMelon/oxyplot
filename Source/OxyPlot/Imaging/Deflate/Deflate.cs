@@ -221,7 +221,7 @@ namespace OxyPlot
                         {
                             if (runVal == -1)
                             {
-                                throw new FormatException("No code length value to copy");
+                                throw new FormatException("No code length value to copy.");
                             }
 
                             runLen = this.ReadInt(2) + 3;
@@ -248,7 +248,7 @@ namespace OxyPlot
 
             if (runLen > 0)
             {
-                throw new FormatException("Run exceeds number of codes");
+                throw new FormatException("Run exceeds number of codes.");
             }
 
             // Create code trees
@@ -285,7 +285,7 @@ namespace OxyPlot
             var nlen = this.ReadInt(16);
             if ((len ^ 0xFFFF) != nlen)
             {
-                throw new FormatException("Invalid length in uncompressed block");
+                throw new FormatException("Invalid length in uncompressed block.");
             }
 
             // Copy bytes
@@ -335,7 +335,7 @@ namespace OxyPlot
                     var len = this.DecodeRunLength(sym);
                     if (distCode == null)
                     {
-                        throw new FormatException("Length symbol encountered with empty distance code");
+                        throw new FormatException("Length symbol encountered with empty distance code.");
                     }
 
                     var distSym = this.DecodeSymbol(distCode);
@@ -462,7 +462,7 @@ namespace OxyPlot
         {
             if (numBits < 0 || numBits >= 32)
             {
-                throw new ArgumentException();
+                throw new ArgumentOutOfRangeException(nameof(numBits), "Number of bits must be non-negative and no more than 31.");
             }
 
             var result = 0;

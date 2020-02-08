@@ -62,7 +62,7 @@ namespace OxyPlot.Axes
         {
             if (step <= 0)
             {
-                throw new ArgumentException("Step cannot be zero or negative.", "step");
+                throw new ArgumentOutOfRangeException(nameof(step), "Step must be positive.");
             }
 
             if (to <= from && step > 0)

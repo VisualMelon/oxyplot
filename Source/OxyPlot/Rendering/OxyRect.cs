@@ -52,12 +52,12 @@ namespace OxyPlot
         {
             if (width < 0)
             {
-                throw new ArgumentOutOfRangeException("width", "The width should not be negative.");
+                throw new ArgumentOutOfRangeException(nameof(width), "The width should not be negative.");
             }
 
             if (height < 0)
             {
-                throw new ArgumentOutOfRangeException("height", "The height should not be negative.");
+                throw new ArgumentOutOfRangeException(nameof(height), "The height should not be negative.");
             }
 
             this.left = left;

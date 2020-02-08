@@ -28,7 +28,7 @@ namespace OxyPlot
         {
             if (points == null)
             {
-                throw new ArgumentNullException("points");
+                throw new ArgumentNullException(nameof(points));
             }
 
             double minimumDistance = double.MaxValue;

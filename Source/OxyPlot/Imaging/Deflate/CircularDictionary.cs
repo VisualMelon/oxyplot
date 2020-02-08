@@ -79,9 +79,14 @@ namespace OxyPlot
         /// <param name="w">The writer.</param>
         public void Copy(int dist, int len, BinaryWriter w)
         {
-            if (len < 0 || dist < 1 || dist > this.data.Length)
+            if (len < 0)
             {
-                throw new Exception();
+                throw new ArgumentOutOfRangeException(nameof(len), "Length must be non-negative.");
+            }
+
+            if (dist < 1 || dist > this.data.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(dist), "Distance must be positive and no greater than the length of the data.");
             }
 
             if (this.mask != 0)

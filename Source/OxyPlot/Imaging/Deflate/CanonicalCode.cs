@@ -52,7 +52,7 @@ namespace OxyPlot
         {
             if (codeLengths == null)
             {
-                throw new Exception("Argument is null");
+                throw new ArgumentNullException(nameof(codeLengths), "Code lengths must not be null.");
             }
 
             this.codeLengths = new int[codeLengths.Length];
@@ -62,7 +62,7 @@ namespace OxyPlot
             {
                 if (x < 0)
                 {
-                    throw new Exception("Illegal code length");
+                    throw new ArgumentOutOfRangeException(nameof(codeLengths), "All code lengths must be non-negative.");
                 }
             }
         }
@@ -97,7 +97,7 @@ namespace OxyPlot
         {
             if (symbol < 0 || symbol >= this.codeLengths.Length)
             {
-                throw new Exception("Symbol out of range");
+                throw new ArgumentOutOfRangeException(nameof(symbol), "Symbol must be non-negative and less than the number of code lengths.");
             }
 
             return this.codeLengths[symbol];

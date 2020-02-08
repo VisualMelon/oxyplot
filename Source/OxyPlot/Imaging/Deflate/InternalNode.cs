@@ -25,12 +25,12 @@ namespace OxyPlot
         {
             if (leftChild == null)
             {
-                throw new ArgumentException("Argument is null", "leftChild");
+                throw new ArgumentNullException(nameof(leftChild), "Left child must be non-null.");
             }
 
             if (rightChild == null)
             {
-                throw new ArgumentException("Argument is null", "rightChild");
+                throw new ArgumentException(nameof(RightChild), "Right child must be non-null.");
             }
 
             this.LeftChild = leftChild;

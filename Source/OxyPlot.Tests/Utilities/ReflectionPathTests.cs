@@ -107,7 +107,7 @@ namespace OxyPlot.Tests
             var rp = new ReflectionPath("Point.Z");
             object result;
             Assert.IsFalse(rp.TryGetValue(item, out result));
-            Assert.Throws<InvalidOperationException>(() => rp.GetValue(item));
+            Assert.Throws<ArgumentException>(() => rp.GetValue(item));
         }
 
         /// <summary>

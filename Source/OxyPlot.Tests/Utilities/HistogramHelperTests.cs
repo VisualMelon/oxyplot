@@ -21,20 +21,20 @@ namespace OxyPlot.Tests
         public void CreateUniformBins_InvalidParameters()
         {
             // explicitly disallow extreme values for start and end
-            Assert.Throws(typeof(ArgumentException), () => HistogramHelpers.CreateUniformBins(double.NaN, 0.0, 5));
-            Assert.Throws(typeof(ArgumentException), () => HistogramHelpers.CreateUniformBins(double.NegativeInfinity, 0.0, 5));
-            Assert.Throws(typeof(ArgumentException), () => HistogramHelpers.CreateUniformBins(double.PositiveInfinity, 0.0, 5));
-            Assert.Throws(typeof(ArgumentException), () => HistogramHelpers.CreateUniformBins(0.0, double.NaN, 5));
-            Assert.Throws(typeof(ArgumentException), () => HistogramHelpers.CreateUniformBins(0.0, double.NegativeInfinity, 5));
-            Assert.Throws(typeof(ArgumentException), () => HistogramHelpers.CreateUniformBins(0.0, double.PositiveInfinity, 5));
+            Assert.Throws(typeof(ArgumentOutOfRangeException), () => HistogramHelpers.CreateUniformBins(double.NaN, 0.0, 5));
+            Assert.Throws(typeof(ArgumentOutOfRangeException), () => HistogramHelpers.CreateUniformBins(double.NegativeInfinity, 0.0, 5));
+            Assert.Throws(typeof(ArgumentOutOfRangeException), () => HistogramHelpers.CreateUniformBins(double.PositiveInfinity, 0.0, 5));
+            Assert.Throws(typeof(ArgumentOutOfRangeException), () => HistogramHelpers.CreateUniformBins(0.0, double.NaN, 5));
+            Assert.Throws(typeof(ArgumentOutOfRangeException), () => HistogramHelpers.CreateUniformBins(0.0, double.NegativeInfinity, 5));
+            Assert.Throws(typeof(ArgumentOutOfRangeException), () => HistogramHelpers.CreateUniformBins(0.0, double.PositiveInfinity, 5));
 
             // disallow binCount < 1
-            Assert.Throws(typeof(ArgumentException), () => HistogramHelpers.CreateUniformBins(0.0, 1.0, -100));
-            Assert.Throws(typeof(ArgumentException), () => HistogramHelpers.CreateUniformBins(0.0, 1.0, 0));
+            Assert.Throws(typeof(ArgumentOutOfRangeException), () => HistogramHelpers.CreateUniformBins(0.0, 1.0, -100));
+            Assert.Throws(typeof(ArgumentOutOfRangeException), () => HistogramHelpers.CreateUniformBins(0.0, 1.0, 0));
 
             // disallow start >= end
-            Assert.Throws(typeof(ArgumentException), () => HistogramHelpers.CreateUniformBins(1.0, 0.0, 5));
-            Assert.Throws(typeof(ArgumentException), () => HistogramHelpers.CreateUniformBins(1.0, 1.0, 5));
+            Assert.Throws(typeof(ArgumentOutOfRangeException), () => HistogramHelpers.CreateUniformBins(1.0, 0.0, 5));
+            Assert.Throws(typeof(ArgumentOutOfRangeException), () => HistogramHelpers.CreateUniformBins(1.0, 1.0, 5));
         }
 
         [Test]

@@ -59,7 +59,7 @@ namespace OxyPlot
                 return result;
             }
 
-            throw new InvalidOperationException("Could not find property " + string.Join(".", this.items) + " in " + instance);
+            throw new ArgumentException($"Could not find property {string.Join(".", this.items)} in {instance}.", nameof(instance));
         }
 
         /// <summary>

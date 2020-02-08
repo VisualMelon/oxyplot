@@ -54,7 +54,7 @@ namespace OxyPlot
         {
             if (s == null)
             {
-                throw new ArgumentException("Argument is null");
+                throw new ArgumentNullException(nameof(s), "Stream must not be null.");
             }
 
             this.input = new BinaryReader(s);

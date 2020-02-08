@@ -31,22 +31,22 @@ namespace OxyPlot
         {
             if (binCount < 1)
             {
-                throw new ArgumentException("The bin count must be positive.", nameof(binCount));
+                throw new ArgumentOutOfRangeException(nameof(binCount), "The bin count must be positive.");
             }
 
             if (double.IsNaN(start) || double.IsInfinity(start))
             {
-                throw new ArgumentException("The start may not be NaN or infinite.", nameof(start));
+                throw new ArgumentOutOfRangeException(nameof(start), "The start may not be NaN or infinite.");
             }
 
             if (double.IsNaN(end) || double.IsInfinity(end))
             {
-                throw new ArgumentException("The start may not be NaN or infinite.", nameof(end));
+                throw new ArgumentOutOfRangeException(nameof(end), "The start may not be NaN or infinite.");
             }
 
             if (end <= start)
             {
-                throw new ArgumentException("The end must be strictly greater than the start.", nameof(end));
+                throw new ArgumentOutOfRangeException(nameof(end), "The end must be strictly greater than the start.");
             }
 
             List<double> binBreaks = new List<double>(binCount + 1);

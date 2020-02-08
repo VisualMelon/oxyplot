@@ -199,7 +199,7 @@ namespace OxyPlot
         {
             if (hsv.Length != 3)
             {
-                throw new InvalidOperationException("Wrong length of hsv array.");
+                throw new ArgumentException("HSV array must be of length 3.", nameof(hsv));
             }
 
             return FromHsv(hsv[0], hsv[1], hsv[2]);

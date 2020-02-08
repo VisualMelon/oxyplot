@@ -702,7 +702,7 @@ namespace OxyPlot
         {
             if (image == null)
             {
-                throw new ArgumentNullException("image");
+                throw new ArgumentNullException(nameof(image));
             }
 
             var imageId = GetCached(image, this.imageCache, () => this.AddImage(image));

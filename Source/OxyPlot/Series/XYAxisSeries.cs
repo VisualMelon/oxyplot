@@ -368,7 +368,7 @@ namespace OxyPlot.Series
         {
             if (points == null)
             {
-                throw new ArgumentNullException("points");
+                throw new ArgumentNullException(nameof(points));
             }
 
             this.IsXMonotonic = true;
@@ -496,7 +496,7 @@ namespace OxyPlot.Series
         {
             if (items == null)
             {
-                throw new ArgumentNullException("items");
+                throw new ArgumentNullException(nameof(items));
             }
 
             this.IsXMonotonic = true;
@@ -606,7 +606,7 @@ namespace OxyPlot.Series
         {
             if (items == null)
             {
-                throw new ArgumentNullException("items");
+                throw new ArgumentNullException(nameof(items));
             }
 
             this.IsXMonotonic = true;

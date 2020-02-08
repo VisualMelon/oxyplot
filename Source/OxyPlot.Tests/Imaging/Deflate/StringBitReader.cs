@@ -35,7 +35,7 @@ namespace OxyPlot.Tests
         {
             if (!Regex.IsMatch(text, "[01]*"))
             {
-                throw new ArgumentException("str");
+                throw new FormatException("Text must comprise only the characters 0 and 1");
             }
 
             this.text = text;

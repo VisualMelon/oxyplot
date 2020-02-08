@@ -1005,7 +1005,7 @@ namespace OxyPlot.Axes
         {
             if (yaxis == null)
             {
-                throw new NullReferenceException("Y axis should not be null when transforming.");
+                throw new ArgumentNullException(nameof(yaxis), "Y axis should not be null when transforming.");
             }
 
             return new ScreenPoint(this.Transform(x), yaxis.Transform(y));
@@ -1661,12 +1661,12 @@ namespace OxyPlot.Axes
 
             if (Math.Abs(maxIntervalSize) < double.Epsilon)
             {
-                throw new ArgumentException("Maximum interval size cannot be zero.", "maxIntervalSize");
+                throw new ArgumentOutOfRangeException(nameof(maxIntervalSize), "Maximum interval size cannot be zero.");
             }
 
             if (Math.Abs(range) < double.Epsilon)
             {
-                throw new ArgumentException("Range cannot be zero.", "range");
+                throw new ArgumentOutOfRangeException(nameof(range), "Range cannot be zero.");
             }
 
             Func<double, double> exponent = x => Math.Ceiling(Math.Log(x, 10));

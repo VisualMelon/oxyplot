@@ -81,19 +81,19 @@ namespace OxyPlot
                 outlierMode != BinningOutlierMode.CountOutliers &&
                 outlierMode != BinningOutlierMode.IgnoreOutliers)
             {
-                throw new ArgumentException(nameof(outlierMode), "Unsupported binning outlier mode");
+                throw new ArgumentException(nameof(outlierMode), "Unsupported binning outlier mode.");
             }
 
             if (intervalType != BinningIntervalType.InclusiveLowerBound &&
                 intervalType != BinningIntervalType.InclusiveUpperBound)
             {
-                throw new ArgumentException(nameof(outlierMode), "Unsupported bin interval type");
+                throw new ArgumentException(nameof(outlierMode), "Unsupported bin interval type.");
             }
 
             if (intervalType != BinningIntervalType.InclusiveLowerBound &&
                 intervalType != BinningIntervalType.InclusiveUpperBound)
             {
-                throw new ArgumentException(nameof(outlierMode), "Unsupported bin interval type");
+                throw new ArgumentException(nameof(outlierMode), "Unsupported bin interval type.");
             }
 
             this.OutlierMode = outlierMode;

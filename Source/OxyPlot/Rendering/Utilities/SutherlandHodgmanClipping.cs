@@ -158,7 +158,7 @@ namespace OxyPlot
                 case RectangleEdge.Bottom:
                     if (b.Y.Equals(a.Y))
                     {
-                        throw new ArgumentException("no intercept found");
+                        throw new ArgumentException("No intercept found.");
                     }
 
                     return new ScreenPoint(a.X + (((b.X - a.X) * (bounds.Bottom - a.Y)) / (b.Y - a.Y)), bounds.Bottom);
@@ -166,7 +166,7 @@ namespace OxyPlot
                 case RectangleEdge.Left:
                     if (b.X.Equals(a.X))
                     {
-                        throw new ArgumentException("no intercept found");
+                        throw new ArgumentException("No intercept found.");
                     }
 
                     return new ScreenPoint(bounds.Left, a.Y + (((b.Y - a.Y) * (bounds.Left - a.X)) / (b.X - a.X)));
@@ -174,7 +174,7 @@ namespace OxyPlot
                 case RectangleEdge.Right:
                     if (b.X.Equals(a.X))
                     {
-                        throw new ArgumentException("no intercept found");
+                        throw new ArgumentException("No intercept found.");
                     }
 
                     return new ScreenPoint(bounds.Right, a.Y + (((b.Y - a.Y) * (bounds.Right - a.X)) / (b.X - a.X)));
@@ -182,13 +182,13 @@ namespace OxyPlot
                 case RectangleEdge.Top:
                     if (b.Y.Equals(a.Y))
                     {
-                        throw new ArgumentException("no intercept found");
+                        throw new ArgumentException("No intercept found.");
                     }
 
                     return new ScreenPoint(a.X + (((b.X - a.X) * (bounds.Top - a.Y)) / (b.Y - a.Y)), bounds.Top);
             }
 
-            throw new ArgumentException("no intercept found");
+            throw new ArgumentException("No intercept found.");
         }
     }
 }

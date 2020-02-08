@@ -25,7 +25,7 @@ namespace OxyPlot
         {
             if (symbol < 0)
             {
-                throw new ArgumentException("Illegal symbol value", "symbol");
+                throw new ArgumentOutOfRangeException(nameof(symbol), "Illegal symbol value: must be non-negative.");
             }
 
             this.Symbol = symbol;

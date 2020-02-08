@@ -139,7 +139,7 @@ namespace OxyPlot.Tests
             model.Axes.Add(new LinearAxis());
             model.Series.Add(new LineSeries { XAxisKey = "invalidKey" });
             ((IPlotModel)model).Update(true);
-            Assert.IsNotNull(model.GetLastPlotException() as InvalidOperationException);
+            Assert.IsNotNull(model.GetLastPlotException() as System.Collections.Generic.KeyNotFoundException);
         }
 
         /// <summary>
@@ -187,7 +187,8 @@ namespace OxyPlot.Tests
             plot.Axes.Add(verticalAxis);
             plot.Axes.Add(horizontalAxis);
 
-            Assert.That(() => plot.GetAxis("ThisIsAnInvalidKey"), Throws.InvalidOperationException);
+            Assert.Throws(typeof(ArgumentNullException), () => plot.GetAxis(null));
+            Assert.Throws(typeof(System.Collections.Generic.KeyNotFoundException), () => plot.GetAxis("ThisIsAnInvalidKey"));
         }
 
         /// <summary>

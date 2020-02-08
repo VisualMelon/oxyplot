@@ -712,13 +712,13 @@ namespace OxyPlot
         {
             if (key == null)
             {
-                throw new ArgumentException("Axis key cannot be null.");
+                throw new ArgumentNullException(nameof(key), "Axis key cannot be null.");
             }
 
             var legend = this.Legends.FirstOrDefault(l => l.Key == key);
             if (legend == null)
             {
-                throw new InvalidOperationException($"Cannot find legend with Key = \"{key}\"");
+                throw new KeyNotFoundException($"Cannot find legend with Key = \"{key}\"");
             }
             return legend;
         }
@@ -812,13 +812,13 @@ namespace OxyPlot
         {
             if (key == null)
             {
-                throw new ArgumentException("Axis key cannot be null.");
+                throw new ArgumentNullException(nameof(key), "Axis key cannot be null.");
             }
 
             var axis = this.Axes.FirstOrDefault(a => a.Key == key);
             if (axis == null)
             {
-                throw new InvalidOperationException($"Cannot find axis with Key = \"{key}\"");
+                throw new KeyNotFoundException($"Cannot find axis with Key = \"{key}\"");
             }
             return axis;
         }

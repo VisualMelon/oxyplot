@@ -37,7 +37,7 @@ namespace OxyPlot
         {
             if (root == null)
             {
-                throw new Exception("Argument is null");
+                throw new ArgumentNullException(nameof(root), "Root must not be null.");
             }
 
             this.Root = root;
@@ -65,12 +65,12 @@ namespace OxyPlot
         {
             if (symbol < 0)
             {
-                throw new Exception("Illegal symbol");
+                throw new ArgumentOutOfRangeException(nameof(symbol), "Symbol must be non-negative.");
             }
 
             if (this.codes[symbol] == null)
             {
-                throw new Exception("No code for given symbol");
+                throw new KeyNotFoundException("No code for given symbol.");
             }
 
             return this.codes[symbol];

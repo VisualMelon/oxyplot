@@ -229,7 +229,7 @@ namespace OxyPlot
 
             if (array.Rank > 2)
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException("Arrays with Rank greater than 2 are not supported.");
             }
         }
 

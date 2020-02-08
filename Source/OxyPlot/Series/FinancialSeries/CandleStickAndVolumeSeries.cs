@@ -200,7 +200,7 @@ namespace OxyPlot.Series
 
             if (this.data.Count > 0 && this.data[this.data.Count - 1].X > bar.X)
             {
-                throw new ArgumentException("cannot append bar out of order, must be sequential in X");
+                throw new ArgumentException("Cannot append bar out of order: must be sequential in X.");
             }
 
             this.data.Add(bar);
@@ -548,7 +548,7 @@ namespace OxyPlot.Series
                 this.minDx = Math.Min(this.minDx, items[i].X - items[i - 1].X);
                 if (this.minDx < 0)
                 {
-                    throw new ArgumentException("bars are out of order, must be sequential in x");
+                    throw new ArgumentException("Bars are out of order: must be sequential in x.");
                 }
             }
 
