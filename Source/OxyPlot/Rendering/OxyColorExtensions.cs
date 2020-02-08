@@ -175,7 +175,11 @@ namespace OxyPlot
         public static string GetColorName(this OxyColor color)
         {
             var t = typeof(OxyColors);
+#if NET_STANDARD
             var colors = t.GetRuntimeFields().Where(fi => fi.IsPublic && fi.IsStatic);
+#else
+            var colors = t.GetFields(BindingFlags.Public | BindingFlags.Static);
+#endif
 
             var colorField = colors.FirstOrDefault(field => color.Equals(field.GetValue(null)));
             return colorField != null ? colorField.Name : null;

@@ -137,7 +137,11 @@ namespace OxyPlot
         private string Add(object obj)
         {
             var type = obj.GetType();
+#if NET_STANDARD
             var hasParameterLessCtor = type.GetTypeInfo().DeclaredConstructors.Any(ci => ci.GetParameters().Length == 0);
+#else
+            var hasParameterLessCtor = type.GetConstructors().Any(ci => ci.GetParameters().Length == 0);
+#endif
 
             if (!hasParameterLessCtor)
             {
@@ -346,7 +350,11 @@ namespace OxyPlot
             var listsToAdd = new Dictionary<string, IList>();
             var arraysToAdd = new Dictionary<string, Array>();
 
-            var properties = instanceType.GetRuntimeProperties().Where(pi => pi.GetMethod.IsPublic && !pi.GetMethod.IsStatic);
+#if NET_STANDARD
+            var properties = this.GetType().GetRuntimeProperties().Where(pi => pi.GetMethod.IsPublic && !pi.GetMethod.IsStatic);
+#else
+            var properties = this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+#endif
             foreach (var pi in properties)
             {
                 // check the [CodeGeneration] attribute
@@ -382,7 +390,11 @@ namespace OxyPlot
                 }
 
                 // only properties with public setters are used
+#if NET_STANDARD
                 var setter = pi.SetMethod;
+#else
+                var setter = pi.GetSetMethod();
+#endif
                 if (setter == null || !setter.IsPublic)
                 {
                     continue;

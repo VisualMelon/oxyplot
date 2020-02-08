@@ -26,8 +26,11 @@ namespace OxyPlot
         /// <returns>An object that represents the specified property, or null if the property is not found.</returns>
         public static PropertyInfo GetRuntimeProperty(this Type type, string name)
         {
-            var typeInfo = type.GetTypeInfo();
-            var source = typeInfo.AsType().GetRuntimeProperties();
+#if NET_STANDARD
+            var source = type.GetRuntimeProperties();
+#else
+            var source = type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
+#endif
 
             return (from x in source
                     where x.Name == name
