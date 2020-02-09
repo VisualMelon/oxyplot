@@ -41,6 +41,7 @@ All notable changes to this project will be documented in this file.
 - ErrorBarSeries, IntervalBarSeries and TornadoBarSeries work correctly in transposed mode (#1402)
 - OxyPlot.WindowsForms package description (#1457)
 - Custom tracker strings can cause exception in histogram chart (#1455)
+- Don't clip zerocrossing axis lines within plot bounds (#1441)
 
 ## [2.0.0] - 2019-10-19
 ### Added 

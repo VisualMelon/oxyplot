@@ -2105,7 +2105,7 @@ namespace ExampleLibrary
             return plot;
         }
 
-        [Example("#1441: Zero crossing quadrant axes disappear on zoom and pan")]
+        [Example("#1441: Zero crossing quadrant axes disappear on zoom and pan (Closed)")]
         public static PlotModel ZeroCrossingQuadrantAxes()
         {
             var plot = new PlotModel() { Title = "Zoom or Pan axes to make them disappear" };
@@ -2178,6 +2178,48 @@ namespace ExampleLibrary
             plot.PlotAreaBorderThickness = new OxyThickness(1, 1, 1, 1);
 
             return plot;
+        }
+
+        [Example("#1441: Near-boarder axis line clipping (Closed)")]
+        public static PlotModel ZeroCrossingWithInsertHorizontalAxisAndTransparentBorder()
+        {
+            var plotModel1 = new PlotModel
+            {
+                Title = "PositionAtZeroCrossing = true",
+                Subtitle = "Horizontal axis StartPosition = 0.1 End Position = 0.9",
+                PlotAreaBorderThickness = new OxyThickness(5),
+                PlotAreaBorderColor = OxyColor.FromArgb(127, 127, 127, 127),
+                PlotMargins = new OxyThickness(10, 10, 10, 10)
+            };
+            plotModel1.Axes.Add(new LinearAxis
+            {
+                Minimum = -100,
+                Maximum = 100,
+                PositionAtZeroCrossing = true,
+                AxislineStyle = LineStyle.Solid,
+                TickStyle = TickStyle.Crossing
+            });
+            plotModel1.Axes.Add(new LinearAxis
+            {
+                Minimum = -100,
+                Maximum = 100,
+                Position = AxisPosition.Bottom,
+                PositionAtZeroCrossing = true,
+                AxislineStyle = LineStyle.Solid,
+                TickStyle = TickStyle.Crossing,
+                StartPosition = 0.9,
+                EndPosition = 0.1
+            });
+
+            var scatter = new ScatterSeries();
+            var rnd = new Random(0);
+            for (int i = 0; i < 100; i++)
+            {
+                scatter.Points.Add(new ScatterPoint(rnd.NextDouble() * 100 - 50, rnd.NextDouble() * 100 - 50));
+            }
+            plotModel1.Series.Add(scatter);
+
+            return plotModel1;
         }
 
         private class TimeSpanPoint

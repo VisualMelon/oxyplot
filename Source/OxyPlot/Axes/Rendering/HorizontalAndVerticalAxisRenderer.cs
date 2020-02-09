@@ -85,6 +85,7 @@ namespace OxyPlot.Axes
                 // also consider the plot area
                 var areaMin = axis.IsHorizontal() ? plotAreaTop : plotAreaLeft;
                 var areaMax = axis.IsHorizontal() ? plotAreaBottom : plotAreaRight;
+
                 min = Math.Max(min, areaMin);
                 max = Math.Min(max, areaMax);
 
@@ -95,7 +96,11 @@ namespace OxyPlot.Axes
                     var borderThickness = axis.IsHorizontal()
                         ? this.Plot.PlotAreaBorderThickness.Top
                         : this.Plot.PlotAreaBorderThickness.Left;
-                    if (borderThickness > 0 && this.Plot.PlotAreaBorderColor.IsVisible())
+                    var borderPosition = axis.IsHorizontal()
+                        ? this.Plot.PlotArea.Top
+                        : this.Plot.PlotArea.Left;
+                    // small 0.00001 term compensates for floating point inaccuracies in computing axis' bounds
+                    if (axisPosition <= borderPosition + 0.00001 && borderThickness > 0 && this.Plot.PlotAreaBorderColor.IsVisible())
                     {
                         // there is already a line here...
                         drawAxisLine = false;
@@ -109,7 +114,11 @@ namespace OxyPlot.Axes
                     var borderThickness = axis.IsHorizontal()
                         ? this.Plot.PlotAreaBorderThickness.Bottom
                         : this.Plot.PlotAreaBorderThickness.Right;
-                    if (borderThickness > 0 && this.Plot.PlotAreaBorderColor.IsVisible())
+                    var borderPosition = axis.IsHorizontal()
+                        ? this.Plot.PlotArea.Bottom
+                        : this.Plot.PlotArea.Right;
+                    // small 0.00001 term compensates for floating point inaccuracies in computing axis' bounds
+                    if (axisPosition >= borderPosition - 0.00001 && borderThickness > 0 && this.Plot.PlotAreaBorderColor.IsVisible())
                     {
                         // there is already a line here...
                         drawAxisLine = false;
