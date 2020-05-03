@@ -22,7 +22,7 @@ namespace OxyPlot.Tests
         [Test]
         public void Double_IsEmpty()
         {
-            var dsh = new DoubleSequenceHelper(-2.0, 2.0, false);
+            var dsh = new DoubleSequenceHelper(false, -2.0, 2.0, false, false);
             Assert.IsTrue(dsh.IsEmpty);
 
             dsh.ObserveNext(0.0);
@@ -35,7 +35,7 @@ namespace OxyPlot.Tests
         [Test]
         public void Double_Count()
         {
-            var dsh = new DoubleSequenceHelper(-2.0, 2.0, false);
+            var dsh = new DoubleSequenceHelper(false, -2.0, 2.0, false, false);
             Assert.AreEqual(0, dsh.Count);
 
             dsh.ObserveNext(0.0);
@@ -46,9 +46,34 @@ namespace OxyPlot.Tests
         }
 
         [Test]
+        public void Double_PreserveMinAndMax()
+        {
+            // preserve minX
+            var dsh = new DoubleSequenceHelper(false, -2.0, 2.0, true, false);
+            dsh.ObserveNext(0.0);
+
+            Assert.AreEqual(-2.0, dsh.Minimum);
+            Assert.AreEqual(0.0, dsh.Maximum);
+
+            // preserve minY
+            dsh = new DoubleSequenceHelper(false, -2.0, 2.0, false, true);
+            dsh.ObserveNext(0.0);
+
+            Assert.AreEqual(0.0, dsh.Minimum);
+            Assert.AreEqual(2.0, dsh.Maximum);
+
+            // preserve both; extremes
+            dsh = new DoubleSequenceHelper(false, double.MaxValue, double.MinValue, true, true);
+            dsh.ObserveNext(0.0);
+
+            Assert.AreEqual(0.0, dsh.Minimum);
+            Assert.AreEqual(0.0, dsh.Maximum);
+        }
+
+        [Test]
         public void Double_Min()
         {
-            var dsh = new DoubleSequenceHelper(-2.0, 2.0, false);
+            var dsh = new DoubleSequenceHelper(false, -2.0, 2.0, false, false);
             Assert.AreEqual(-2.0, dsh.Minimum);
 
             dsh.ObserveNext(0.0);
@@ -60,7 +85,7 @@ namespace OxyPlot.Tests
             dsh.ObserveNext(-1.0);
             Assert.AreEqual(-1.0, dsh.Minimum);
 
-            dsh = new DoubleSequenceHelper(-2.0, 2.0, false);
+            dsh = new DoubleSequenceHelper(false, -2.0, 2.0, false, false);
             var rnd = new Random(1);
             var doubles = RandomDoubles(rnd, 100);
             foreach (var d in doubles)
@@ -71,7 +96,7 @@ namespace OxyPlot.Tests
         [Test]
         public void Double_Max()
         {
-            var dsh = new DoubleSequenceHelper(-2.0, 2.0, false);
+            var dsh = new DoubleSequenceHelper(false, -2.0, 2.0, false, false);
             Assert.AreEqual(2.0, dsh.Maximum);
 
             dsh.ObserveNext(0.0);
@@ -83,7 +108,7 @@ namespace OxyPlot.Tests
             dsh.ObserveNext(-1.0);
             Assert.AreEqual(1.0, dsh.Maximum);
 
-            dsh = new DoubleSequenceHelper(-2.0, 2.0, false);
+            dsh = new DoubleSequenceHelper(false, -2.0, 2.0, false, false);
             var rnd = new Random(1);
             var doubles = RandomDoubles(rnd, 100);
             foreach (var d in doubles)
@@ -94,7 +119,7 @@ namespace OxyPlot.Tests
         [Test]
         public void Double_IgnoreNaN()
         {
-            var dsh = new DoubleSequenceHelper(-2.0, 2.0, false);
+            var dsh = new DoubleSequenceHelper(false, -2.0, 2.0, false, false);
 
             Assert.AreEqual(true, dsh.CheckValid(1.0));
             Assert.AreEqual(false, dsh.CheckValid(double.NaN));
@@ -114,7 +139,7 @@ namespace OxyPlot.Tests
         [Test]
         public void Double_ThrowOnNaN()
         {
-            var dsh = new DoubleSequenceHelper(-2.0, 2.0, true);
+            var dsh = new DoubleSequenceHelper(true, -2.0, 2.0, false, false);
 
             Assert.AreEqual(true, dsh.CheckValid(1.0));
             Assert.Throws(typeof(ArgumentException), () => dsh.CheckValid(double.NaN));
@@ -165,7 +190,7 @@ namespace OxyPlot.Tests
 
         private static Monotonicity GetMonotonicty(IEnumerable<double> sequence)
         {
-            var dsh = new DoubleSequenceHelper(double.NaN, double.NaN, false);
+            var dsh = new DoubleSequenceHelper(false, double.NaN, double.NaN, false, false);
 
             foreach (var d in sequence)
             {

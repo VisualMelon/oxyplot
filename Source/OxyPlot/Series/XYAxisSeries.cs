@@ -378,32 +378,10 @@ namespace OxyPlot.Series
                 return;
             }
 
-            double minx = this.MinX;
-            double miny = this.MinY;
-            double maxx = this.MaxX;
-            double maxy = this.MaxY;
+            // preserve existing min/max if non-NaN
+            var xdsh = new Utilities.DoubleSequenceHelper(false, this.MinX, this.MaxX, !double.IsNaN(this.MinX), !double.IsNaN(this.MaxX));
+            var ydsh = new Utilities.DoubleSequenceHelper(false, this.MinY, this.MaxY, !double.IsNaN(this.MinY), !double.IsNaN(this.MaxY));
 
-            if (double.IsNaN(minx))
-            {
-                minx = double.MaxValue;
-            }
-
-            if (double.IsNaN(miny))
-            {
-                miny = double.MaxValue;
-            }
-
-            if (double.IsNaN(maxx))
-            {
-                maxx = double.MinValue;
-            }
-
-            if (double.IsNaN(maxy))
-            {
-                maxy = double.MinValue;
-            }
-
-            double lastX = double.MinValue;
             foreach (var pt in points)
             {
                 double x = pt.X;
@@ -415,72 +393,18 @@ namespace OxyPlot.Series
                     continue;
                 }
 
-                if (x < lastX)
-                {
-                    this.IsXMonotonic = false;
-                }
-
-                if (x < minx)
-                {
-                    minx = x;
-                }
-
-                if (x > maxx)
-                {
-                    maxx = x;
-                }
-
-                if (y < miny)
-                {
-                    miny = y;
-                }
-
-                if (y > maxy)
-                {
-                    maxy = y;
-                }
-
-                lastX = x;
+                xdsh.ObserveNext(x);
+                ydsh.ObserveNext(y);
             }
 
-            if (minx < double.MaxValue)
+            if (!xdsh.IsEmpty)
             {
-                if (minx < this.XAxis.FilterMinValue)
-                {
-                    minx = this.XAxis.FilterMinValue;
-                }
+                this.IsXMonotonic = xdsh.GetMonotonicity().IsNonDecreasing;
 
-                this.MinX = minx;
-            }
-
-            if (miny < double.MaxValue)
-            {
-                if (miny < this.YAxis.FilterMinValue)
-                {
-                    miny = this.YAxis.FilterMinValue;
-                }
-
-                this.MinY = miny;
-            }
-
-            if (maxx > double.MinValue)
-            {
-                if (maxx > this.XAxis.FilterMaxValue)
-                {
-                    maxx = this.XAxis.FilterMaxValue;
-                }
-
-                this.MaxX = maxx;
-            }
-
-            if (maxy > double.MinValue)
-            {
-                if (maxy > this.YAxis.FilterMaxValue)
-                {
-                    maxy = this.YAxis.FilterMaxValue;
-                }
-
-                this.MaxY = maxy;
+                this.MinX = Math.Max(xdsh.Minimum, this.XAxis.FilterMinValue);
+                this.MinY = Math.Max(ydsh.Minimum, this.YAxis.FilterMinValue);
+                this.MaxX = Math.Min(xdsh.Maximum, this.XAxis.FilterMaxValue);
+                this.MaxY = Math.Min(ydsh.Maximum, this.YAxis.FilterMaxValue);
             }
         }
 
@@ -506,32 +430,10 @@ namespace OxyPlot.Series
                 return;
             }
 
-            double minx = this.MinX;
-            double miny = this.MinY;
-            double maxx = this.MaxX;
-            double maxy = this.MaxY;
+            // preserve existing min/max if non-NaN
+            var xdsh = new Utilities.DoubleSequenceHelper(false, this.MinX, this.MaxX, !double.IsNaN(this.MinX), !double.IsNaN(this.MaxX));
+            var ydsh = new Utilities.DoubleSequenceHelper(false, this.MinY, this.MaxY, !double.IsNaN(this.MinY), !double.IsNaN(this.MaxY));
 
-            if (double.IsNaN(minx))
-            {
-                minx = double.MaxValue;
-            }
-
-            if (double.IsNaN(miny))
-            {
-                miny = double.MaxValue;
-            }
-
-            if (double.IsNaN(maxx))
-            {
-                maxx = double.MinValue;
-            }
-
-            if (double.IsNaN(maxy))
-            {
-                maxy = double.MinValue;
-            }
-
-            double lastX = double.MinValue;
             foreach (var item in items)
             {
                 double x = xf(item);
@@ -543,52 +445,18 @@ namespace OxyPlot.Series
                     continue;
                 }
 
-                if (x < lastX)
-                {
-                    this.IsXMonotonic = false;
-                }
-
-                if (x < minx)
-                {
-                    minx = x;
-                }
-
-                if (x > maxx)
-                {
-                    maxx = x;
-                }
-
-                if (y < miny)
-                {
-                    miny = y;
-                }
-
-                if (y > maxy)
-                {
-                    maxy = y;
-                }
-
-                lastX = x;
+                xdsh.ObserveNext(x);
+                xdsh.ObserveNext(y);
             }
 
-            if (minx < double.MaxValue)
+            if (!xdsh.IsEmpty)
             {
-                this.MinX = minx;
-            }
+                this.IsXMonotonic = xdsh.GetMonotonicity().IsNonDecreasing;
 
-            if (miny < double.MaxValue)
-            {
-                this.MinY = miny;
-            }
-
-            if (maxx > double.MinValue)
-            {
-                this.MaxX = maxx;
-            }
-
-            if (maxy > double.MinValue)
-            {
-                this.MaxY = maxy;
+                this.MinX = Math.Max(xdsh.Minimum, this.XAxis.FilterMinValue);
+                this.MinY = Math.Max(ydsh.Minimum, this.YAxis.FilterMinValue);
+                this.MaxX = Math.Min(xdsh.Maximum, this.XAxis.FilterMaxValue);
+                this.MaxY = Math.Min(ydsh.Maximum, this.YAxis.FilterMaxValue);
             }
         }
 
@@ -616,33 +484,12 @@ namespace OxyPlot.Series
                 return;
             }
 
-            double minx = this.MinX;
-            double miny = this.MinY;
-            double maxx = this.MaxX;
-            double maxy = this.MaxY;
+            // preserve existing min/max if non-NaN
+            var x0dsh = new Utilities.DoubleSequenceHelper(false, this.MinX, this.MaxX, !double.IsNaN(this.MinX), !double.IsNaN(this.MaxX));
+            var x1dsh = new Utilities.DoubleSequenceHelper(false, this.MinX, this.MaxX, !double.IsNaN(this.MinX), !double.IsNaN(this.MaxX));
+            var y0dsh = new Utilities.DoubleSequenceHelper(false, this.MinY, this.MaxY, !double.IsNaN(this.MinY), !double.IsNaN(this.MaxY));
+            var y1dsh = new Utilities.DoubleSequenceHelper(false, this.MinY, this.MaxY, !double.IsNaN(this.MinY), !double.IsNaN(this.MaxY));
 
-            if (double.IsNaN(minx))
-            {
-                minx = double.MaxValue;
-            }
-
-            if (double.IsNaN(miny))
-            {
-                miny = double.MaxValue;
-            }
-
-            if (double.IsNaN(maxx))
-            {
-                maxx = double.MinValue;
-            }
-
-            if (double.IsNaN(maxy))
-            {
-                maxy = double.MinValue;
-            }
-
-            double lastX0 = double.MinValue;
-            double lastX1 = double.MinValue;
             foreach (var item in items)
             {
                 double x0 = xmin(item);
@@ -655,53 +502,20 @@ namespace OxyPlot.Series
                     continue;
                 }
 
-                if (x0 < lastX0 || x1 < lastX1)
-                {
-                    this.IsXMonotonic = false;
-                }
-
-                if (x0 < minx)
-                {
-                    minx = x0;
-                }
-
-                if (x1 > maxx)
-                {
-                    maxx = x1;
-                }
-
-                if (y0 < miny)
-                {
-                    miny = y0;
-                }
-
-                if (y1 > maxy)
-                {
-                    maxy = y1;
-                }
-
-                lastX0 = x0;
-                lastX1 = x1;
+                x0dsh.ObserveNext(x0);
+                x1dsh.ObserveNext(x1);
+                y0dsh.ObserveNext(y0);
+                y1dsh.ObserveNext(y1);
             }
 
-            if (minx < double.MaxValue)
+            if (!x0dsh.IsEmpty)
             {
-                this.MinX = minx;
-            }
+                this.IsXMonotonic = x0dsh.GetMonotonicity().IsNonDecreasing && x1dsh.GetMonotonicity().IsNonDecreasing;
 
-            if (miny < double.MaxValue)
-            {
-                this.MinY = miny;
-            }
-
-            if (maxx > double.MinValue)
-            {
-                this.MaxX = maxx;
-            }
-
-            if (maxy > double.MinValue)
-            {
-                this.MaxY = maxy;
+                this.MinX = Math.Max(XAxis.FilterMinValue, Math.Min(x0dsh.Minimum, x1dsh.Minimum));
+                this.MinY = Math.Max(YAxis.FilterMinValue, Math.Min(y0dsh.Minimum, y1dsh.Minimum));
+                this.MaxX = Math.Min(XAxis.FilterMaxValue, Math.Max(x0dsh.Maximum, x1dsh.Maximum));
+                this.MaxY = Math.Min(YAxis.FilterMaxValue, Math.Max(y0dsh.Maximum, y1dsh.Maximum));
             }
         }
 
@@ -732,7 +546,7 @@ namespace OxyPlot.Series
         /// <returns>The new window start index.</returns>
         protected int UpdateWindowStartIndex<T>(IList<T> items, Func<T, double> xgetter, double targetX, int lastIndex)
         {
-            lastIndex = this.FindWindowStartIndex(items, xgetter, targetX, lastIndex);
+            lastIndex = this.FindWindowStartIndex(items, xgetter, targetX);
             if (lastIndex > 0)
             {
                 lastIndex--;
@@ -748,11 +562,65 @@ namespace OxyPlot.Series
         /// <param name="items">vector of data points</param>
         /// <param name="xgetter">Function that gets data point X coordinate.</param>
         /// <param name="targetX">target x.</param>
+        /// <returns>
+        /// Index of x with max(x) &lt;= target x or 0 if not found.
+        /// </returns>
+        protected int FindWindowStartIndex<T>(IList<T> items, Func<T, double> xgetter, double targetX)
+        {
+            int start = 0;
+            int end = items.Count - 1;
+
+            while (start < end)
+            {
+                // mid-point closest to start
+                var mid = start + (end - start) / 2;
+                var guess = mid;
+
+                var guessX = xgetter(items[guess]);
+
+                // scan backward through NaNs
+                while (double.IsNaN(guessX))
+                {
+                    if (guess <= start)
+                    {
+                        // ran off the end
+                        start = mid + 1;
+                        continue;
+                    }
+
+                    guess--;
+                    guessX = xgetter(items[guess]);
+                }
+
+                if (guessX >= targetX)
+                {
+                    end = guess;
+                }
+                else if (guess == start)
+                {
+                    break;
+                }
+                else
+                {
+                    start = guess;
+                }
+            }
+
+            return start;
+        }
+
+        /// <summary>
+        /// Finds the index of max(x) &lt;= target x in a list of data points
+        /// </summary>
+        /// <typeparam name="T">The type of the list items.</typeparam>
+        /// <param name="items">vector of data points</param>
+        /// <param name="xgetter">Function that gets data point X coordinate.</param>
+        /// <param name="targetX">target x.</param>
         /// <param name="initialGuess">initial guess index.</param>
         /// <returns>
         /// index of x with max(x) &lt;= target x or -1 if cannot find
         /// </returns>
-        protected int FindWindowStartIndex<T>(IList<T> items, Func<T, double> xgetter, double targetX, int initialGuess)
+        protected int FindWindowStartIndexOld<T>(IList<T> items, Func<T, double> xgetter, double targetX, int initialGuess)
         {
             int lastguess = 0;
             int start = 0;

@@ -70,7 +70,7 @@ namespace OxyPlot.Series
                 startIndex = this.WindowStartIndex;
             }
 
-            return this.FindWindowStartIndex(this.Items, item => item.X, x, startIndex);
+            return this.FindWindowStartIndex(this.Items, item => item.X, x);
         }
 
         /// <summary>
@@ -218,7 +218,7 @@ namespace OxyPlot.Series
                 return null;
             }
 
-            var pidx = this.FindWindowStartIndex(this.Items, item => item.X, targetX, this.WindowStartIndex);
+            var pidx = this.FindWindowStartIndex(this.Items, item => item.X, targetX);
             var nidx = ((pidx + 1) < this.Items.Count) ? pidx + 1 : pidx;
 
             Func<HighLowItem, double> distance = bar =>

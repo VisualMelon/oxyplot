@@ -20,18 +20,36 @@ namespace OxyPlot.Utilities
         /// Initalised an sequence helper with the given default miniums and maximums for empty sequences.
         /// These values will be overwritten when any entry if observed.
         /// </summary>
-        /// <param name="defaultMinimum">The deafult minimum of an empty sequence.</param>
-        /// <param name="defaultMaximum">The deafult maximum of an empty sequence.</param>
-        public SequenceHelperBase(T defaultMinimum, T defaultMaximum)
+        /// <param name="defaultMinimum">The default minimum of an empty sequence.</param>
+        /// <param name="defaultMaximum">The default maximum of an empty sequence.</param>
+        /// <param name="preserveDefaultMinimum">Whether the default minimum value should be preserved.</param>
+        /// <param name="preserveDefaultMaximum">Whether the default maximum value should be preserved.</param>
+        public SequenceHelperBase(T defaultMinimum, T defaultMaximum, bool preserveDefaultMinimum, bool preserveDefaultMaximum)
         {
             Minimum = defaultMinimum;
             Maximum = defaultMaximum;
+            PreserveDefaultMinimum = preserveDefaultMinimum;
+            PreserveDefaultMaximum = preserveDefaultMaximum;
 
             Count = 0;
             HasIncreases = false;
             HasDecreases = false;
             HasRepeats = false;
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the default minimum value should be preserved.
+        /// If true, then the computed minimum is bounded by the default minimum.
+        /// If false, the default values are discarded when the first value is observed.
+        /// </summary>
+        public bool PreserveDefaultMinimum { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the default maximum value should be preserved.
+        /// If true, then the computed maximum is bounded by the default maximum.
+        /// If false, the default values are discarded when the first value is observed.
+        /// </summary>
+        public bool PreserveDefaultMaximum { get; }
 
         /// <summary>
         /// Gets a value indicating whether the sequence so far as contained any increases.
@@ -86,8 +104,16 @@ namespace OxyPlot.Utilities
 
             if (IsEmpty)
             {
-                Minimum = value;
-                Maximum = value;
+                if (!PreserveDefaultMinimum || value.CompareTo(Minimum) < 0)
+                {
+                    Minimum = value;
+                }
+
+                // don't assume Minimum < Maximum initially
+                if (!PreserveDefaultMaximum || value.CompareTo(Maximum) > 0)
+                {
+                    Maximum = value;
+                }
             }
             else
             {

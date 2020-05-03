@@ -300,33 +300,25 @@ namespace OxyPlot.Series
                 return;
             }
 
-            double minValueX = double.MaxValue;
-            double maxValueX = double.MinValue;
-            double minValueY = double.MaxValue;
-            double maxValueY = double.MinValue;
+            var x0dsh = new Utilities.DoubleSequenceHelper(false, double.MaxValue, double.MinValue, true, true);
+            var x1dsh = new Utilities.DoubleSequenceHelper(false, double.MaxValue, double.MinValue, true, true);
+            var y0dsh = new Utilities.DoubleSequenceHelper(false, double.MaxValue, double.MinValue, true, true);
+            var y1dsh = new Utilities.DoubleSequenceHelper(false, double.MaxValue, double.MinValue, true, true);
 
-            double lastX0 = double.MinValue;
-            double lastX1 = double.MinValue;
             foreach (var item in this.Items)
             {
-                if (item.X0 < lastX0 || item.X1 < lastX1)
-                {
-                    this.IsXMonotonic = false;
-                }
-
-                minValueX = Math.Min(minValueX, Math.Min(item.X0, item.X1));
-                maxValueX = Math.Max(maxValueX, Math.Max(item.X1, item.X0));
-                minValueY = Math.Min(minValueY, Math.Min(item.Y0, item.Y1));
-                maxValueY = Math.Max(maxValueY, Math.Max(item.Y0, item.Y1));
-
-                lastX0 = item.X0;
-                lastX1 = item.X1;
+                x0dsh.ObserveNext(item.X0);
+                x1dsh.ObserveNext(item.X1);
+                y0dsh.ObserveNext(item.Y0);
+                y1dsh.ObserveNext(item.Y1);
             }
 
-            this.MinX = minValueX;
-            this.MaxX = maxValueX;
-            this.MinY = minValueY;
-            this.MaxY = maxValueY;
+            this.IsXMonotonic = x0dsh.GetMonotonicity().IsNonDecreasing && x1dsh.GetMonotonicity().IsNonDecreasing;
+
+            this.MinX = Math.Max(XAxis.FilterMinValue, Math.Min(x0dsh.Minimum, x1dsh.Minimum));
+            this.MinY = Math.Max(YAxis.FilterMinValue, Math.Min(y0dsh.Minimum, y1dsh.Minimum));
+            this.MaxX = Math.Min(XAxis.FilterMaxValue, Math.Max(x0dsh.Maximum, x1dsh.Maximum));
+            this.MaxY = Math.Min(YAxis.FilterMaxValue, Math.Max(y0dsh.Maximum, y1dsh.Maximum));
         }
 
         /// <summary>

@@ -155,10 +155,10 @@ namespace OxyPlot.Series
             var xy = this.InverseTransform(point);
             var targetX = xy.X;
             int startIdx = this.IsXMonotonic 
-                ? this.FindWindowStartIndex(this.ActualPoints, p => p.x, targetX, this.WindowStartIndex)
+                ? this.FindWindowStartIndex(this.ActualPoints, p => p.x, targetX)
                 : 0;
             int startIdx2 = this.IsXMonotonic
-                ? this.FindWindowStartIndex(this.ActualPoints2, p => p.x, targetX, this.WindowStartIndex2)
+                ? this.FindWindowStartIndex(this.ActualPoints2, p => p.x, targetX)
                 : 0;
 
             TrackerHitResult result1, result2;

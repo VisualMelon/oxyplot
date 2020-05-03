@@ -20,11 +20,13 @@ namespace OxyPlot.Utilities
         /// Initalises an sequence helper with the given default miniums and maximums for empty sequences.
         /// These values will be overwritten when any entry if observed.
         /// </summary>
-        /// <param name="defaultMinimum">The deafult minimum of an empty sequence.</param>
-        /// <param name="defaultMaximum">The deafult maximum of an empty sequence.</param>
-        /// <param name="throwOnNaN"></param>
-        public DoubleSequenceHelper(double defaultMinimum, double defaultMaximum, bool throwOnNaN)
-            : base(defaultMinimum, defaultMaximum)
+        /// <param name="throwOnNaN">Whether the <see cref="DoubleSequenceHelper"/> should thrown if a NaN value is observed.</param>
+        /// <param name="defaultMinimum">The default minimum of an empty sequence.</param>
+        /// <param name="defaultMaximum">The default maximum of an empty sequence.</param>
+        /// <param name="preserveDefaultMinimum">Whether the default minimum value should be preserved.</param>
+        /// <param name="preserveDefaultMaximum">Whether the default maximum value should be preserved.</param>
+        public DoubleSequenceHelper(bool throwOnNaN, double defaultMinimum, double defaultMaximum, bool preserveDefaultMinimum, bool preserveDefaultMaximum)
+            : base(defaultMinimum, defaultMaximum, preserveDefaultMinimum, preserveDefaultMaximum)
         {
             ThrowOnNaN = throwOnNaN;
         }
