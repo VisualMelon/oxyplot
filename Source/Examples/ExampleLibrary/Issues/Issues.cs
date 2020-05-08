@@ -2265,6 +2265,35 @@ namespace ExampleLibrary
             return plot;
         }
 
+        [Example("#1495: Text only sometimes visible on LineAnnotation")]
+        public static PlotModel LineAnnotationTextVisibility()
+        {
+            var plot = new PlotModel() { Title = "Text of LineAnnotation is only sometimes visible", Subtitle = "Zoom in and it will appear!" };
+            plot.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Minimum = 0, Maximum = 100 });
+            plot.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Minimum = 0, Maximum = 100 });
+
+            var exampleAnnotation = new LineAnnotation
+            {
+                Text = "Example Text",
+                TextOrientation = AnnotationTextOrientation.Horizontal,
+                TextHorizontalAlignment = HorizontalAlignment.Right,
+                TextVerticalAlignment = VerticalAlignment.Bottom,
+                LineStyle = LineStyle.Solid,
+                Type = LineAnnotationType.Vertical,
+                X = 50,
+                Y = 49,
+                MaximumY = 51,
+                MinimumY = 49,
+                StrokeThickness = 3,
+                Color = OxyColors.Red,
+                TextMargin = 0
+            };
+
+            plot.Annotations.Add(exampleAnnotation);
+
+            return plot;
+        }
+
         private class TimeSpanPoint
         {
             public TimeSpan X { get; set; }
