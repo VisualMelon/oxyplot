@@ -43,11 +43,6 @@ namespace OxyPlot.WindowsForms
         private readonly object renderingLock = new object();
 
         /// <summary>
-        /// The render context.
-        /// </summary>
-        private readonly GraphicsRenderContext renderContext;
-
-        /// <summary>
         /// The tracker label.
         /// </summary>
         [NonSerialized]
@@ -85,11 +80,16 @@ namespace OxyPlot.WindowsForms
         private Rectangle zoomRectangle;
 
         /// <summary>
+        /// The <see cref="IPlotModelPainter"/> that will paint the plot model.
+        /// </summary>
+        public IPlotModelPainter Painter { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="PlotView" /> class.
         /// </summary>
         public PlotView()
         {
-            this.renderContext = new GraphicsRenderContext();
+            this.Painter = new GraphicsRenderContextPlotModelPainter();
 
             // ReSharper disable DoNotCallOverridableMethodsInConstructor
             this.DoubleBuffered = true;
@@ -443,30 +443,26 @@ namespace OxyPlot.WindowsForms
 
                 lock (this.renderingLock)
                 {
-                    this.renderContext.SetGraphicsTarget(e.Graphics);
-
-                    if (this.model != null)
+                    if (this.Painter != null)
                     {
-                        if (!this.model.Background.IsUndefined())
-                        {
-                            using (var brush = new SolidBrush(this.model.Background.ToColor()))
-                            {
-                                e.Graphics.FillRectangle(brush, e.ClipRectangle);
-                            }
-                        }
-
-                        ((IPlotModel)this.model).Render(this.renderContext, new OxyRect(0, 0, this.Width, this.Height));
+                        var dpi = 96; // TODO: Add DPI awareness for NET Core
+                        this.Painter.Paint(this.ActualModel, e, this.ClientSize, dpi);
                     }
-
-                    if (this.zoomRectangle != Rectangle.Empty)
+                    else
                     {
-                        using (var zoomBrush = new SolidBrush(Color.FromArgb(0x40, 0xFF, 0xFF, 0x00)))
-                        using (var zoomPen = new Pen(Color.Black))
-                        {
-                            zoomPen.DashPattern = new float[] { 3, 1 };
-                            e.Graphics.FillRectangle(zoomBrush, this.zoomRectangle);
-                            e.Graphics.DrawRectangle(zoomPen, this.zoomRectangle);
-                        }
+                        throw new Exception();
+                        //PaintOverride(e);
+                    }
+                }
+
+                if (this.zoomRectangle != Rectangle.Empty)
+                {
+                    using (var zoomBrush = new SolidBrush(Color.FromArgb(0x40, 0xFF, 0xFF, 0x00)))
+                    using (var zoomPen = new Pen(Color.Black))
+                    {
+                        zoomPen.DashPattern = new float[] { 3, 1 };
+                        e.Graphics.FillRectangle(zoomBrush, this.zoomRectangle);
+                        e.Graphics.DrawRectangle(zoomPen, this.zoomRectangle);
                     }
                 }
             }
@@ -482,6 +478,39 @@ namespace OxyPlot.WindowsForms
                         "OxyPlot paint exception: " + paintException.Message, font, Brushes.Red, this.Width * 0.5f, this.Height * 0.5f, new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
                 }
             }
+        }
+
+        /// <summary>
+        /// Paints the PlotModel.
+        /// </summary>
+        /// <param name="e">A <see cref="T:System.Windows.Forms.PaintEventArgs" /> that contains the event data.</param>
+        protected virtual void PaintOverride(PaintEventArgs e)
+        {
+            //this.renderContext.SetGraphicsTarget(e.Graphics);
+
+            //if (this.model != null)
+            //{
+            //    if (!this.model.Background.IsUndefined())
+            //    {
+            //        using (var brush = new SolidBrush(this.model.Background.ToColor()))
+            //        {
+            //            e.Graphics.FillRectangle(brush, e.ClipRectangle);
+            //        }
+            //    }
+
+            //    ((IPlotModel)this.model).Render(this.renderContext, new OxyRect(0, 0, this.Width, this.Height));
+            //}
+
+            //if (this.zoomRectangle != Rectangle.Empty)
+            //{
+            //    using (var zoomBrush = new SolidBrush(Color.FromArgb(0x40, 0xFF, 0xFF, 0x00)))
+            //    using (var zoomPen = new Pen(Color.Black))
+            //    {
+            //        zoomPen.DashPattern = new float[] { 3, 1 };
+            //        e.Graphics.FillRectangle(zoomBrush, this.zoomRectangle);
+            //        e.Graphics.DrawRectangle(zoomPen, this.zoomRectangle);
+            //    }
+            //}
         }
 
         /// <summary>
@@ -521,10 +550,8 @@ namespace OxyPlot.WindowsForms
                 return;
             }
 
-            if (disposing)
-            {
-                this.renderContext.Dispose();
-            }
+            this.Painter?.Dispose();
+            this.Painter = null;
         }
 
         /// <summary>

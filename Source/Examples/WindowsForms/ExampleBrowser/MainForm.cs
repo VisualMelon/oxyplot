@@ -6,10 +6,13 @@
 
 namespace ExampleBrowser
 {
+    using System;
     using System.Drawing;
     using System.Windows.Forms;
 
     using ExampleLibrary;
+    using OxyPlot.SkiaSharp.WindowsForms;
+    using OxyPlot.WindowsForms;
 
     public partial class MainForm : Form
     {
@@ -73,6 +76,13 @@ namespace ExampleBrowser
         private void transposedCheck_CheckedChanged(object sender, System.EventArgs e)
         {
             InitPlot();
+        }
+
+        private void painterCombo_Validated(object sender, System.EventArgs e)
+        {
+            ((IDisposable)this.plot1.Painter).Dispose();
+            this.plot1.Painter = (string)painterCombo.SelectedItem == "SkiaSharp" ? (IPlotModelPainter)new SkiaRenderContextPlotModelPainter() : new GraphicsRenderContextPlotModelPainter();
+            this.plot1.Invalidate();
         }
     }
 }

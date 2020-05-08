@@ -5,6 +5,7 @@
     <OutputType>WinExe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\OxyPlot.SkiaSharp.WindowsForms\OxyPlot.SkiaSharp.WindowsForms.csproj" />
     <ProjectReference Include="..\..\..\OxyPlot.WindowsForms\OxyPlot.WindowsForms.csproj" />
     <ProjectReference Include="..\..\..\OxyPlot\OxyPlot.csproj" />
     <ProjectReference Include="..\..\ExampleLibrary\ExampleLibrary.csproj" />

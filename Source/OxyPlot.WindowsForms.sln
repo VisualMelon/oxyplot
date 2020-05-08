@@ -30,6 +30,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OxyPlot.Tests", "OxyPlot.Te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExampleBrowser.WindowsForms", "Examples\WindowsForms\ExampleBrowser\ExampleBrowser.WindowsForms.csproj", "{EDD7672B-8D5D-459C-A7BE-DBF29F40E0D4}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SkiaSharp", "SkiaSharp", "{A926797E-D069-48A3-986F-E4F2796D5F5F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OxyPlot.SkiaSharp", "OxyPlot.SkiaSharp\OxyPlot.SkiaSharp.csproj", "{34F0B077-5A49-41F6-904C-7D187B3BD92F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OxyPlot.SkiaSharp.WindowsForms", "OxyPlot.SkiaSharp.WindowsForms\OxyPlot.SkiaSharp.WindowsForms.csproj", "{DAC3044E-EEA4-4EF7-8800-31E00B2E2ADE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,6 +66,14 @@ Global
 		{EDD7672B-8D5D-459C-A7BE-DBF29F40E0D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EDD7672B-8D5D-459C-A7BE-DBF29F40E0D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EDD7672B-8D5D-459C-A7BE-DBF29F40E0D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34F0B077-5A49-41F6-904C-7D187B3BD92F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34F0B077-5A49-41F6-904C-7D187B3BD92F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34F0B077-5A49-41F6-904C-7D187B3BD92F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34F0B077-5A49-41F6-904C-7D187B3BD92F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DAC3044E-EEA4-4EF7-8800-31E00B2E2ADE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DAC3044E-EEA4-4EF7-8800-31E00B2E2ADE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DAC3044E-EEA4-4EF7-8800-31E00B2E2ADE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DAC3044E-EEA4-4EF7-8800-31E00B2E2ADE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -68,6 +82,8 @@ Global
 		{BBAECBB8-149A-42EE-A4F4-6207D7954F8B} = {B630CA82-A785-49CA-8FA0-3D3AF4D6626A}
 		{FACB89E5-53A5-4748-9F5B-E0714EBB37B2} = {B630CA82-A785-49CA-8FA0-3D3AF4D6626A}
 		{EDD7672B-8D5D-459C-A7BE-DBF29F40E0D4} = {B630CA82-A785-49CA-8FA0-3D3AF4D6626A}
+		{34F0B077-5A49-41F6-904C-7D187B3BD92F} = {A926797E-D069-48A3-986F-E4F2796D5F5F}
+		{DAC3044E-EEA4-4EF7-8800-31E00B2E2ADE} = {A926797E-D069-48A3-986F-E4F2796D5F5F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {248F16EA-57DA-4799-A5C0-23578EF1FD12}
