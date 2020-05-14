@@ -222,6 +222,7 @@ namespace OxyPlot.Tests
             var textMeasurer = new MockTextMeasurer();
             textMeasurer.AddBasicAlphabet();
             textMeasurer.AddEllipsisChars();
+            textMeasurer.AddBasicWhitespace();
 
             var trimmer = new SimpleTextTrimmer();
 
@@ -229,6 +230,7 @@ namespace OxyPlot.Tests
 
             var text = "OxyPlot is a multiplatform plotting library";
             var fontSize = 10.0;
+            var oneChar = textMeasurer.CharacterWidth * fontSize;
             var tiny = textMeasurer.CharacterWidth * fontSize / 10;
 
             var previousTarget = "";
@@ -240,14 +242,18 @@ namespace OxyPlot.Tests
                 var widthWithEllipsis = textMeasurer.MeasureTextWidth(target + trimmer.Ellipsis, null, fontSize, 500);
 
                 trimmer.AppendEllipsis = false;
+                Assert.AreEqual(previousTarget, trimmer.Trim(textMeasurer, text, width - tiny - oneChar, null, fontSize, 500));
                 Assert.AreEqual(previousTarget, trimmer.Trim(textMeasurer, text, width - tiny, null, fontSize, 500));
                 Assert.AreEqual(target, trimmer.Trim(textMeasurer, text, width, null, fontSize, 500));
                 Assert.AreEqual(target, trimmer.Trim(textMeasurer, text, width + tiny, null, fontSize, 500));
+                Assert.AreEqual(target, trimmer.Trim(textMeasurer, text, width + tiny + oneChar, null, fontSize, 500));
 
                 trimmer.AppendEllipsis = true;
+                Assert.AreEqual(previousTarget + trimmer.Ellipsis, trimmer.Trim(textMeasurer, text, widthWithEllipsis - tiny - oneChar, null, fontSize, 500));
                 Assert.AreEqual(previousTarget + trimmer.Ellipsis, trimmer.Trim(textMeasurer, text, widthWithEllipsis - tiny, null, fontSize, 500));
                 Assert.AreEqual(target + trimmer.Ellipsis, trimmer.Trim(textMeasurer, text, widthWithEllipsis, null, fontSize, 500));
                 Assert.AreEqual(target + trimmer.Ellipsis, trimmer.Trim(textMeasurer, text, widthWithEllipsis + tiny, null, fontSize, 500));
+                Assert.AreEqual(target + trimmer.Ellipsis, trimmer.Trim(textMeasurer, text, widthWithEllipsis + tiny + oneChar, null, fontSize, 500));
 
                 previousTarget = target;
             }

@@ -45,6 +45,11 @@ namespace OxyPlot.Tests
             }
         }
 
+        public void AddBasicWhitespace()
+        {
+            this.CharsWithWidth.Add(' ');
+        }
+
         public void AddEllipsisChars()
         {
             this.CharsWithWidth.Add(SimpleTextTrimmer.AsciiEllipsis[0]);
