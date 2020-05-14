@@ -48,6 +48,7 @@ All notable changes to this project will be documented in this file.
 - OxyPlot.ImageSharp now targets .NET Standard 1.3 (#1530)
 - SkiaRenderContext does not apply pixel snapping when rendering to vector graphic (#1539)
 - Mark OxyPlot.PdfExporter and OxyPlot.Pdf.PdfExporter as obsolete (#1527)
+- OxyPlot.Wpf to use common text arranging and trimming
 
 ### Removed
 - Remove PlotModel.Legends (#644)
