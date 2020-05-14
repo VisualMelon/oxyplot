@@ -9,10 +9,13 @@
 
 namespace OxyPlot.Wpf
 {
+    using OxyPlot.Rendering;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Reflection;
+    using System.Security.Cryptography;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Media;
@@ -27,7 +30,7 @@ namespace OxyPlot.Wpf
     /// <summary>
     /// Implements <see cref="IRenderContext" /> for <see cref="System.Windows.Controls.Canvas" />.
     /// </summary>
-    public class CanvasRenderContext : IRenderContext
+    public class CanvasRenderContext : IRenderContext, ITextMeasurer
     {
         /// <summary>
         /// The maximum number of figures per geometry.
@@ -635,6 +638,33 @@ namespace OxyPlot.Wpf
             this.clip = null;
         }
 
+        /// <inheritdoc/>
+        public FontMetrics GetFontMetrics(string fontFamily, double fontSize, double fontWeight)
+        {
+            var typeface = new Typeface(
+                new FontFamily(fontFamily), FontStyles.Normal, GetFontWeight(fontWeight), FontStretches.Normal);
+
+            if (!typeface.TryGetGlyphTypeface(out var glyphTypeface))
+            {
+                throw new InvalidOperationException("No glyph typeface found");
+            }
+
+            var lineHeight = Math.Abs(glyphTypeface.Height) * fontSize;
+            var ascender = Math.Abs(typeface.FontFamily.Baseline) * fontSize;
+            var descender = lineHeight - ascender;
+            var leading = (Math.Abs(typeface.FontFamily.LineSpacing) * fontSize) - lineHeight;
+
+            // TODO: review DPI support here
+            return new FontMetrics(ascender, descender, leading);
+        }
+
+        /// <inheritdoc/>
+        public double MeasureTextWidth(string text, string fontFamily, double fontSize, double fontWeight)
+        {
+            // TODO: refit
+            return this.MeasureText(text, fontFamily, fontSize, fontWeight).Width;
+        }
+
         /// <summary>
         /// Cleans up resources not in use.
         /// </summary>
@@ -1035,10 +1065,10 @@ namespace OxyPlot.Wpf
         }
 
         /// <summary>
-        /// Converts an <see cref="OxyRect" /> to a <see cref="Rect" />.
+        /// Converts an <see cref="OxyRect" /> to a <see cref="System.Windows.Rect" />.
         /// </summary>
         /// <param name="r">The rectangle.</param>
-        /// <returns>A <see cref="Rect" />.</returns>
+        /// <returns>A <see cref="System.Windows.Rect" />.</returns>
         private static Rect ToRect(OxyRect r)
         {
             return new Rect(r.Left, r.Top, r.Width, r.Height);

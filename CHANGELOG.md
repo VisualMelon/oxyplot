@@ -28,6 +28,8 @@ All notable changes to this project will be documented in this file.
 - Support for unix line endings in OxyPlot.ImageSharp, OxyPlot.Svg, and OxyPlot.Pdf (#1545)
 - Multi-Line Text support to SkiaRenderContext (#1538)
 - Added title clipping to PlotModel (#1510)
+- SvgExporter for OxyPlot.ImageSharp
+- Consistent support for DrawText's maxSize parameter in OxyPlot.ImageSharp, OxyPlot.SkiaSharp, OxyPlot.WindowsForms, and OxyPlot.SvgRenderContext (#1559)
 
 ### Changed
 - Legends model (#644)
@@ -54,6 +56,7 @@ All notable changes to this project will be documented in this file.
 - Remove exporter Background properties (#1409)
 - Remove OxyThickness Width and Height properties (#1429)
 - RenderingExtensions.DrawRectangleAsPolygon(...) extension methods. IRenderContext.DrawRectangle(...) with an appropriate EdgeRenderingMode can be used instead.
+- UseVerticalAlignmentWorkaround property of OxyPlot.SvgRenderContext
 
 ### Fixed
 - Legend font size is not affected by DefaultFontSize (#1396)
@@ -66,6 +69,9 @@ All notable changes to this project will be documented in this file.
 - WPF CanvasRenderContext draws ellipses too small by half stroke thickness (#1537)
 - Text measurement and rendering in OxyPlot.ImageSharp
 - ExampleLibrary reporting annotation-only PlotModels as transposable (#1544)
+- Vertical text alignment in OxyPlot.SvgRenderContext (#1531)
+- Horizontal text alignment for mutliline text for OxyPlot.ImageSharp, OxyPlot.SvgRenderContext, and OxyPlot.WindowsForms (#1554)
+- MeasureText method inconsistent between OxyPlot.ImageSharp, OxyPlot.SkiaSharp, and OxyPlot.WindowsForms
 
 ## [2.0.0] - 2019-10-19
 ### Added 

@@ -11,6 +11,7 @@ namespace OxyPlot
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     /// Provides an abstract base class for rendering contexts.
