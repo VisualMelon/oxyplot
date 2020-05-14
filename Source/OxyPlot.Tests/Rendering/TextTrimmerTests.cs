@@ -7,10 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
-namespace OxyPlot.Tests.Rendering
+namespace OxyPlot.Tests
 {
-    using System;
-    using System.Collections.Generic;
     using System.Linq;
     using NUnit.Framework;
     using OxyPlot.Rendering;
@@ -145,6 +143,114 @@ namespace OxyPlot.Tests.Rendering
         private static int[] Range(int start, int count)
         {
             return Enumerable.Range(start, count).ToArray();
+        }
+
+        /// <summary>
+        /// Tests the <see cref="MockTextMeasurer"/>.
+        /// </summary>
+        [Test]
+        public void MockTextMeasurerMeasureTextWidth()
+        {
+            var textMeasurer = new MockTextMeasurer();
+
+            var simpleTestString = "OxyPlot"; // 7 basic chars
+            var trickyTestString = "áéíóú"; // 10 chars, 5 characters with width
+            var fontSize = 10.0;
+
+            Assert.AreEqual(0.0, textMeasurer.MeasureTextWidth(simpleTestString, null, fontSize, 500));
+            Assert.AreEqual(0.0, textMeasurer.MeasureTextWidth(trickyTestString, null, fontSize, 500));
+
+            textMeasurer.AddBasicAlphabet();
+
+            Assert.AreEqual(fontSize * textMeasurer.CharacterWidth * 7, textMeasurer.MeasureTextWidth(simpleTestString, null, fontSize, 10));
+            Assert.AreEqual(fontSize * textMeasurer.CharacterWidth * 5, textMeasurer.MeasureTextWidth(trickyTestString, null, fontSize, 10));
+        }
+
+        /// <summary>
+        /// Basics tests of character trimming.
+        /// </summary>
+        [Test]
+        public void TrimmingByChar()
+        {
+            var textMeasurer = new MockTextMeasurer();
+            textMeasurer.AddBasicAlphabet();
+            textMeasurer.AddEllipsisChars();
+
+            var trimmer = new SimpleTextTrimmer();
+
+            trimmer.AppendEllipsis = false;
+            trimmer.TrimToWord = false;
+
+            var simpleTestString = "OxyPlot"; // 7 basic chars
+            var trickyTestString = "áéíóúaa"; // 12 chars, 5 characters with width
+            var fontSize = 10.0;
+
+            var widthZero = textMeasurer.MeasureTextWidth("", null, fontSize, 500);
+            var widthNearZero = textMeasurer.MeasureTextWidth("a", null, fontSize, 500) / 10.0;
+
+            var widthSmall = textMeasurer.MeasureTextWidth("aaa", null, fontSize, 500);
+            var widthNearSmall = textMeasurer.MeasureTextWidth("aaa", null, fontSize, 500) + widthNearZero;
+
+            var widthLarge = textMeasurer.MeasureTextWidth("aaaaaaa", null, fontSize, 500);
+            var widthVeryLarge = widthLarge * 2.0;
+
+            Assert.AreEqual("", trimmer.Trim(textMeasurer, simpleTestString, widthZero, null, fontSize, 500));
+            Assert.AreEqual("", trimmer.Trim(textMeasurer, trickyTestString, widthZero, null, fontSize, 500));
+
+            Assert.AreEqual("", trimmer.Trim(textMeasurer, simpleTestString, widthNearZero, null, fontSize, 500));
+            Assert.AreEqual("", trimmer.Trim(textMeasurer, trickyTestString, widthNearZero, null, fontSize, 500));
+
+            Assert.AreEqual(simpleTestString.Substring(0, 3), trimmer.Trim(textMeasurer, simpleTestString, widthSmall, null, fontSize, 500));
+            Assert.AreEqual(trickyTestString.Substring(0, 6), trimmer.Trim(textMeasurer, trickyTestString, widthSmall, null, fontSize, 500));
+
+            Assert.AreEqual(simpleTestString.Substring(0, 3), trimmer.Trim(textMeasurer, simpleTestString, widthNearSmall, null, fontSize, 500));
+            Assert.AreEqual(trickyTestString.Substring(0, 6), trimmer.Trim(textMeasurer, trickyTestString, widthNearSmall, null, fontSize, 500));
+
+            Assert.AreEqual(simpleTestString, trimmer.Trim(textMeasurer, simpleTestString, widthLarge, null, fontSize, 500));
+            Assert.AreEqual(trickyTestString, trimmer.Trim(textMeasurer, trickyTestString, widthLarge, null, fontSize, 500));
+
+            Assert.AreEqual(simpleTestString, trimmer.Trim(textMeasurer, simpleTestString, widthVeryLarge, null, fontSize, 500));
+            Assert.AreEqual(trickyTestString, trimmer.Trim(textMeasurer, trickyTestString, widthVeryLarge, null, fontSize, 500));
+        }
+
+        /// <summary>
+        /// Basics tests of word trimming.
+        /// </summary>
+        [Test]
+        public void TrimmingByWord()
+        {
+            var textMeasurer = new MockTextMeasurer();
+            textMeasurer.AddBasicAlphabet();
+            textMeasurer.AddEllipsisChars();
+
+            var trimmer = new SimpleTextTrimmer();
+
+            trimmer.TrimToWord = true;
+
+            var text = "OxyPlot is a multiplatform plotting library";
+            var fontSize = 10.0;
+            var tiny = textMeasurer.CharacterWidth * fontSize / 10;
+
+            var previousTarget = "";
+            int i = 0;
+            while (++i < text.Length && (i = text.IndexOf(' ', i)) > 0)
+            {
+                var target = text.Substring(0, i);
+                var width = textMeasurer.MeasureTextWidth(target, null, fontSize, 500);
+                var widthWithEllipsis = textMeasurer.MeasureTextWidth(target + trimmer.Ellipsis, null, fontSize, 500);
+
+                trimmer.AppendEllipsis = false;
+                Assert.AreEqual(previousTarget, trimmer.Trim(textMeasurer, text, width - tiny, null, fontSize, 500));
+                Assert.AreEqual(target, trimmer.Trim(textMeasurer, text, width, null, fontSize, 500));
+                Assert.AreEqual(target, trimmer.Trim(textMeasurer, text, width + tiny, null, fontSize, 500));
+
+                trimmer.AppendEllipsis = true;
+                Assert.AreEqual(previousTarget + trimmer.Ellipsis, trimmer.Trim(textMeasurer, text, widthWithEllipsis - tiny, null, fontSize, 500));
+                Assert.AreEqual(target + trimmer.Ellipsis, trimmer.Trim(textMeasurer, text, widthWithEllipsis, null, fontSize, 500));
+                Assert.AreEqual(target + trimmer.Ellipsis, trimmer.Trim(textMeasurer, text, widthWithEllipsis + tiny, null, fontSize, 500));
+
+                previousTarget = target;
+            }
         }
     }
 }

@@ -202,7 +202,7 @@ namespace OxyPlot.Rendering
             if (ellipsis != null)
             {
                 var ellipsisWidth = textMeasurer.MeasureTextWidth(ellipsis, fontFamily, fontSize, fontWeight);
-                if (ellipsisWidth <= width)
+                if (width < ellipsisWidth)
                 {
                     // ellipsis won't fit
                     boundaryResult = string.Empty;
