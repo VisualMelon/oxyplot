@@ -4,6 +4,8 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot.Series
 {
     using OxyPlot.Axes;
@@ -25,31 +27,31 @@ namespace OxyPlot.Series
         /// The current offset of the bars (not used for stacked bar series).
         /// </summary>
         /// <remarks>These offsets are modified during rendering.</remarks>
-        private double[] currentBarOffset;
+        private double[]? currentBarOffset;
 
         /// <summary>
         /// The current max value per StackIndex and Label.
         /// </summary>
         /// <remarks>These values are modified during rendering.</remarks>
-        private double[,] currentMaxValue;
+        private double[,]? currentMaxValue;
 
         /// <summary>
         /// The current min value per StackIndex and Label.
         /// </summary>
         /// <remarks>These values are modified during rendering.</remarks>
-        private double[,] currentMinValue;
+        private double[,]? currentMinValue;
 
         /// <summary>
         /// The base value per StackIndex and Label for negative values of stacked bar series.
         /// </summary>
         /// <remarks>These values are modified during rendering.</remarks>
-        private double[,] currentNegativeBaseValues;
+        private double[,]? currentNegativeBaseValues;
 
         /// <summary>
         /// The base value per StackIndex and Label for positive values of stacked bar series.
         /// </summary>
         /// <remarks>These values are modified during rendering.</remarks>
-        private double[,] currentPositiveBaseValues;
+        private double[,]? currentPositiveBaseValues;
 
         /// <summary>
         /// The maximal width of all labels.
@@ -103,12 +105,12 @@ namespace OxyPlot.Series
         /// <summary>
         /// Gets or set the offset of the bars.
         /// </summary>
-        private double[] BarOffset { get; set; }
+        private double[]? BarOffset { get; set; }
 
         /// <summary>
         /// Gets or sets the offset of the bars per StackIndex and Label (only used for stacked bar series).
         /// </summary>
-        private double[,] StackedBarOffset { get; set; }
+        private double[,]? StackedBarOffset { get; set; }
 
         /// <summary>
         /// Gets or sets the stack index mapping. The mapping indicates to which rank a specific stack index belongs.
@@ -124,6 +126,11 @@ namespace OxyPlot.Series
         /// <returns>The get category value.</returns>
         public double GetCategoryValue(int categoryIndex, int stackIndex, double actualBarWidth)
         {
+            if (this.StackedBarOffset == null)
+            {
+                throw new InvalidOperationException($"{nameof(GetCategoryValue)} must not be called before rendering.");
+            }    
+
             var offsetBegin = this.StackedBarOffset[stackIndex, categoryIndex];
             var offsetEnd = this.StackedBarOffset[stackIndex + 1, categoryIndex];
             return categoryIndex - 0.5 + ((offsetEnd + offsetBegin - actualBarWidth) * 0.5);
@@ -136,6 +143,11 @@ namespace OxyPlot.Series
         /// <returns>The offset.</returns>
         public double GetCurrentBarOffset(int categoryIndex)
         {
+            if (this.currentBarOffset == null)
+            {
+                throw new InvalidOperationException($"{nameof(GetCurrentBarOffset)} must not be called before rendering.");
+            }
+
             return this.currentBarOffset[categoryIndex];
         }
 
@@ -148,6 +160,11 @@ namespace OxyPlot.Series
         /// <returns>The current base value.</returns>
         public double GetCurrentBaseValue(int stackIndex, int categoryIndex, bool negativeValue)
         {
+            if (this.currentNegativeBaseValues == null || this.currentPositiveBaseValues == null)
+            {
+                throw new InvalidOperationException($"{nameof(GetCurrentBaseValue)} must not be called before rendering.");
+            }
+
             return negativeValue ? this.currentNegativeBaseValues[stackIndex, categoryIndex] : this.currentPositiveBaseValues[stackIndex, categoryIndex];
         }
 
@@ -159,6 +176,11 @@ namespace OxyPlot.Series
         /// <returns>The current value.</returns>
         public double GetCurrentMaxValue(int stackIndex, int categoryIndex)
         {
+            if (this.currentMaxValue == null)
+            {
+                throw new InvalidOperationException($"{nameof(GetCurrentMaxValue)} must not be called before rendering.");
+            }
+
             return this.currentMaxValue[stackIndex, categoryIndex];
         }
 
@@ -170,6 +192,11 @@ namespace OxyPlot.Series
         /// <returns>The current value.</returns>
         public double GetCurrentMinValue(int stackIndex, int categoryIndex)
         {
+            if (this.currentMinValue == null)
+            {
+                throw new InvalidOperationException($"{nameof(GetCurrentMinValue)} must not be called before rendering.");
+            }
+
             return this.currentMinValue[stackIndex, categoryIndex];
         }
 
@@ -199,6 +226,11 @@ namespace OxyPlot.Series
         /// <param name="delta">The offset increase.</param>
         public void IncreaseCurrentBarOffset(int categoryIndex, double delta)
         {
+            if (this.currentBarOffset == null)
+            {
+                throw new InvalidOperationException($"{nameof(IncreaseCurrentBarOffset)} must not be called before rendering.");
+            }
+
             this.currentBarOffset[categoryIndex] += delta;
         }
 
@@ -219,6 +251,11 @@ namespace OxyPlot.Series
         /// <param name="newValue">The new value.</param>
         public void SetCurrentBaseValue(int stackIndex, int categoryIndex, bool negativeValue, double newValue)
         {
+            if (this.currentNegativeBaseValues == null || this.currentPositiveBaseValues == null)
+            {
+                throw new InvalidOperationException($"{nameof(SetCurrentBaseValue)} must not be called before rendering.");
+            }
+
             if (negativeValue)
             {
                 this.currentNegativeBaseValues[stackIndex, categoryIndex] = newValue;
@@ -237,6 +274,11 @@ namespace OxyPlot.Series
         /// <param name="newValue">The new value.</param>
         public void SetCurrentMaxValue(int stackIndex, int categoryIndex, double newValue)
         {
+            if (this.currentMaxValue == null)
+            {
+                throw new InvalidOperationException($"{nameof(SetCurrentMaxValue)} must not be called before rendering.");
+            }
+
             this.currentMaxValue[stackIndex, categoryIndex] = newValue;
         }
 
@@ -248,6 +290,11 @@ namespace OxyPlot.Series
         /// <param name="newValue">The new value.</param>
         public void SetCurrentMinValue(int stackIndex, int categoryIndex, double newValue)
         {
+            if (this.currentMinValue == null)
+            {
+                throw new InvalidOperationException($"{nameof(SetCurrentMinValue)} must not be called before rendering.");
+            }
+
             this.currentMinValue[stackIndex, categoryIndex] = newValue;
         }
 

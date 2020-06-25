@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot.Series
 {
     using System;
@@ -25,7 +27,7 @@ namespace OxyPlot.Series
         /// <summary>
         /// The data points from the items source.
         /// </summary>
-        private List<DataPoint> itemsSourcePoints;
+        private List<DataPoint>? itemsSourcePoints;
 
         /// <summary>
         /// Specifies if the itemsSourcePoints list can be modified.
@@ -41,20 +43,20 @@ namespace OxyPlot.Series
         /// Gets or sets the data field X. The default is <c>null</c>.
         /// </summary>
         /// <value>The data field X.</value>
-        public string DataFieldX { get; set; }
+        public string? DataFieldX { get; set; }
 
         /// <summary>
         /// Gets or sets the data field Y. The default is <c>null</c>.
         /// </summary>
         /// <value>The data field Y.</value>
-        public string DataFieldY { get; set; }
+        public string? DataFieldY { get; set; }
 
         /// <summary>
         /// Gets or sets the delegate used to map from <see cref="ItemsSeries.ItemsSource" /> to the <see cref="ActualPoints" />. The default is <c>null</c>.
         /// </summary>
         /// <value>The mapping.</value>
         /// <remarks>Example: series1.Mapping = item => new DataPoint(((MyType)item).Time,((MyType)item).Value);</remarks>
-        public Func<object, DataPoint> Mapping { get; set; }
+        public Func<object, DataPoint>? Mapping { get; set; }
 
         /// <summary>
         /// Gets the list of points.
@@ -76,7 +78,7 @@ namespace OxyPlot.Series
         {
             get
             {
-                return this.ItemsSource != null ? this.itemsSourcePoints : this.points;
+                return this.ItemsSource != null ? this.itemsSourcePoints! : this.points;
             }
         }
 
@@ -86,14 +88,14 @@ namespace OxyPlot.Series
         /// <param name="point">The point.</param>
         /// <param name="interpolate">Interpolate the series if this flag is set to <c>true</c>.</param>
         /// <returns>A TrackerHitResult for the current hit.</returns>
-        public override TrackerHitResult GetNearestPoint(ScreenPoint point, bool interpolate)
+        public override TrackerHitResult? GetNearestPoint(ScreenPoint point, bool interpolate)
         {
             if (interpolate && !this.CanTrackerInterpolatePoints)
             {
                 return null;
             }
 
-            TrackerHitResult result = null;
+            TrackerHitResult? result = null;
             if (interpolate)
             {
                 result = this.GetNearestInterpolatedPointInternal(this.ActualPoints, point);
@@ -111,9 +113,9 @@ namespace OxyPlot.Series
                     this.TrackerFormatString,
                     result.Item,
                     this.Title,
-                    this.XAxis.Title ?? XYAxisSeries.DefaultXAxisTitle,
+                    this.XAxis!.Title ?? XYAxisSeries.DefaultXAxisTitle,
                     this.XAxis.GetValue(result.DataPoint.X),
-                    this.YAxis.Title ?? XYAxisSeries.DefaultYAxisTitle,
+                    this.YAxis!.Title ?? XYAxisSeries.DefaultYAxisTitle,
                     this.YAxis.GetValue(result.DataPoint.Y));
             }
 
@@ -147,7 +149,7 @@ namespace OxyPlot.Series
         /// </summary>
         /// <param name="i">The index of the item.</param>
         /// <returns>The item of the index.</returns>
-        protected override object GetItem(int i)
+        protected override object? GetItem(int i)
         {
             var actualPoints = this.ActualPoints;
             if (this.ItemsSource == null && actualPoints != null && i < actualPoints.Count)
@@ -183,10 +185,15 @@ namespace OxyPlot.Series
             // Use the Mapping property to generate the points
             if (this.Mapping != null)
             {
+                if (this.ItemsSource == null)
+                {
+                    throw new InvalidOperationException($"{nameof(ItemsSource)} must be non-null if {nameof(Mapping)} is non-null.");
+                }
+
                 this.ClearItemsSourcePoints();
                 foreach (var item in this.ItemsSource)
                 {
-                    this.itemsSourcePoints.Add(this.Mapping(item));
+                    this.itemsSourcePoints!.Add(this.Mapping(item));
                 }
 
                 return;
@@ -205,7 +212,7 @@ namespace OxyPlot.Series
             var sourceAsEnumerableDataPoints = this.ItemsSource as IEnumerable<DataPoint>;
             if (sourceAsEnumerableDataPoints != null)
             {
-                this.itemsSourcePoints.AddRange(sourceAsEnumerableDataPoints);
+                this.itemsSourcePoints!.AddRange(sourceAsEnumerableDataPoints);
                 return;
             }
 
@@ -214,11 +221,16 @@ namespace OxyPlot.Series
             // If DataFields are set, this is not used
             if (this.DataFieldX == null || this.DataFieldY == null)
             {
+                if (this.ItemsSource == null)
+                {
+                    throw new InvalidOperationException($"{nameof(ItemsSource)} must be non-null if {nameof(DataFieldX)} or {nameof(DataFieldY)} is non-null.");
+                }
+
                 foreach (var item in this.ItemsSource)
                 {
                     if (item is DataPoint)
                     {
-                        this.itemsSourcePoints.Add((DataPoint)item);
+                        this.itemsSourcePoints!.Add((DataPoint)item);
                         continue;
                     }
 
@@ -228,7 +240,7 @@ namespace OxyPlot.Series
                         continue;
                     }
 
-                    this.itemsSourcePoints.Add(idpp.GetDataPoint());
+                    this.itemsSourcePoints!.Add(idpp.GetDataPoint());
                 }
             }
             else

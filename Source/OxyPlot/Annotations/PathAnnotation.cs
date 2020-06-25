@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot.Annotations
 {
     using System;
@@ -21,7 +23,7 @@ namespace OxyPlot.Annotations
         /// <summary>
         /// The points of the line, transformed to screen coordinates.
         /// </summary>
-        private IList<ScreenPoint> screenPoints;
+        private IList<ScreenPoint>? screenPoints;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PathAnnotation" /> class.
@@ -281,7 +283,7 @@ namespace OxyPlot.Annotations
         /// <returns>
         /// The result of the hit test.
         /// </returns>
-        protected override HitTestResult HitTestOverride(HitTestArguments args)
+        protected override HitTestResult? HitTestOverride(HitTestArguments args)
         {
             if (this.screenPoints == null)
             {
@@ -309,10 +311,10 @@ namespace OxyPlot.Annotations
         /// </summary>
         protected virtual void CalculateActualMinimumsMaximums()
         {
-            this.ActualMinimumX = Math.Max(this.MinimumX, this.XAxis.ActualMinimum);
-            this.ActualMaximumX = Math.Min(this.MaximumX, this.XAxis.ActualMaximum);
-            this.ActualMinimumY = Math.Max(this.MinimumY, this.YAxis.ActualMinimum);
-            this.ActualMaximumY = Math.Min(this.MaximumY, this.YAxis.ActualMaximum);
+            this.ActualMinimumX = Math.Max(this.MinimumX, this.XAxis!.ActualMinimum);
+            this.ActualMaximumX = Math.Min(this.MaximumX, this.XAxis!.ActualMaximum);
+            this.ActualMinimumY = Math.Max(this.MinimumY, this.YAxis!.ActualMinimum);
+            this.ActualMaximumY = Math.Min(this.MaximumY, this.YAxis!.ActualMaximum);
 
             var topLeft = this.InverseTransform(this.PlotModel.PlotArea.TopLeft);
             var bottomRight = this.InverseTransform(this.PlotModel.PlotArea.BottomRight);

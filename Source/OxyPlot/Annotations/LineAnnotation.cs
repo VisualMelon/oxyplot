@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot.Annotations
 {
     using System;
@@ -66,10 +68,10 @@ namespace OxyPlot.Annotations
         protected override IList<ScreenPoint> GetScreenPoints()
         {
             // y=f(x)
-            Func<double, double> fx = null;
+            Func<double, double> fx = null!;
 
             // x=f(y)
-            Func<double, double> fy = null;
+            Func<double, double> fy = null!;
 
             switch (this.Type)
             {

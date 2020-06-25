@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot.Series
 {
     using System;
@@ -71,25 +73,25 @@ namespace OxyPlot.Series
         /// Gets the x-axis.
         /// </summary>
         /// <value>The x-axis.</value>
-        public Axis XAxis { get; private set; }
+        public Axis? XAxis { get; private set; }
 
         /// <summary>
         /// Gets or sets the x-axis key. The default is <c>null</c>.
         /// </summary>
         /// <value>The x-axis key.</value>
-        public string XAxisKey { get; set; }
+        public string? XAxisKey { get; set; }
 
         /// <summary>
         /// Gets the y-axis.
         /// </summary>
         /// <value>The y-axis.</value>
-        public Axis YAxis { get; private set; }
+        public Axis? YAxis { get; private set; }
 
         /// <summary>
         /// Gets or sets the y-axis key. The default is <c>null</c>.
         /// </summary>
         /// <value>The y-axis key.</value>
-        public string YAxisKey { get; set; }
+        public string? YAxisKey { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the X coordinate of all data point increases monotonically.
@@ -164,10 +166,10 @@ namespace OxyPlot.Series
         /// </summary>
         protected internal override void UpdateAxisMaxMin()
         {
-            this.XAxis.Include(this.MinX);
-            this.XAxis.Include(this.MaxX);
-            this.YAxis.Include(this.MinY);
-            this.YAxis.Include(this.MaxY);
+            this.XAxis!.Include(this.MinX);
+            this.XAxis!.Include(this.MaxX);
+            this.YAxis!.Include(this.MinY);
+            this.YAxis!.Include(this.MaxY);
         }
 
         /// <summary>
@@ -193,7 +195,7 @@ namespace OxyPlot.Series
         /// <param name="point">The point.</param>
         /// <returns>A tracker hit result if a point was found.</returns>
         /// <remarks>The Text property of the result will not be set, since the formatting depends on the various series.</remarks>
-        protected TrackerHitResult GetNearestInterpolatedPointInternal(List<DataPoint> points, ScreenPoint point)
+        protected TrackerHitResult? GetNearestInterpolatedPointInternal(List<DataPoint> points, ScreenPoint point)
         {
             return this.GetNearestInterpolatedPointInternal(points, 0, point);
         }
@@ -206,7 +208,7 @@ namespace OxyPlot.Series
         /// <param name="point">The point.</param>
         /// <returns>A tracker hit result if a point was found.</returns>
         /// <remarks>The Text property of the result will not be set, since the formatting depends on the various series.</remarks>
-        protected TrackerHitResult GetNearestInterpolatedPointInternal(List<DataPoint> points, int startIdx, ScreenPoint point)
+        protected TrackerHitResult? GetNearestInterpolatedPointInternal(List<DataPoint> points, int startIdx, ScreenPoint point)
         {
             if (this.XAxis == null || this.YAxis == null || points == null)
             {
@@ -276,7 +278,7 @@ namespace OxyPlot.Series
         /// <param name="point">The point (screen coordinates).</param>
         /// <returns>A <see cref="TrackerHitResult" /> if a point was found, <c>null</c> otherwise.</returns>
         /// <remarks>The Text property of the result will not be set, since the formatting depends on the various series.</remarks>
-        protected TrackerHitResult GetNearestPointInternal(IEnumerable<DataPoint> points, ScreenPoint point)
+        protected TrackerHitResult? GetNearestPointInternal(IEnumerable<DataPoint> points, ScreenPoint point)
         {
             return this.GetNearestPointInternal(points, 0, point);
         }
@@ -289,7 +291,7 @@ namespace OxyPlot.Series
         /// <param name="point">The point (screen coordinates).</param>
         /// <returns>A <see cref="TrackerHitResult" /> if a point was found, <c>null</c> otherwise.</returns>
         /// <remarks>The Text property of the result will not be set, since the formatting depends on the various series.</remarks>
-        protected TrackerHitResult GetNearestPointInternal(IEnumerable<DataPoint> points, int startIdx, ScreenPoint point)
+        protected TrackerHitResult? GetNearestPointInternal(IEnumerable<DataPoint> points, int startIdx, ScreenPoint point)
         {
             var spn = default(ScreenPoint);
             var dpn = default(DataPoint);
@@ -445,7 +447,7 @@ namespace OxyPlot.Series
 
             if (minx < double.MaxValue)
             {
-                if (minx < this.XAxis.FilterMinValue)
+                if (minx < this.XAxis!.FilterMinValue)
                 {
                     minx = this.XAxis.FilterMinValue;
                 }
@@ -455,7 +457,7 @@ namespace OxyPlot.Series
 
             if (miny < double.MaxValue)
             {
-                if (miny < this.YAxis.FilterMinValue)
+                if (miny < this.YAxis!.FilterMinValue)
                 {
                     miny = this.YAxis.FilterMinValue;
                 }
@@ -465,7 +467,7 @@ namespace OxyPlot.Series
 
             if (maxx > double.MinValue)
             {
-                if (maxx > this.XAxis.FilterMaxValue)
+                if (maxx > this.XAxis!.FilterMaxValue)
                 {
                     maxx = this.XAxis.FilterMaxValue;
                 }
@@ -475,7 +477,7 @@ namespace OxyPlot.Series
 
             if (maxy > double.MinValue)
             {
-                if (maxy > this.YAxis.FilterMaxValue)
+                if (maxy > this.YAxis!.FilterMaxValue)
                 {
                     maxy = this.YAxis.FilterMaxValue;
                 }

@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot
 {
     using System;
@@ -71,7 +73,7 @@ namespace OxyPlot
         /// <summary>
         /// The plot view that renders this plot.
         /// </summary>
-        private WeakReference plotViewReference;
+        private WeakReference? plotViewReference;
 
         /// <summary>
         /// The current color index.
@@ -87,7 +89,7 @@ namespace OxyPlot
         /// The last update exception.
         /// </summary>
         /// <value>The exception or <c>null</c> if there was no exceptions during the last update.</value>
-        private Exception lastPlotException;
+        private Exception? lastPlotException;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PlotModel" /> class.
@@ -152,19 +154,19 @@ namespace OxyPlot
         /// Occurs when the tracker has been changed.
         /// </summary>
         [Obsolete("May be removed in v4.0 (#111)")]
-        public event EventHandler<TrackerEventArgs> TrackerChanged;
+        public event EventHandler<TrackerEventArgs>? TrackerChanged;
 
         /// <summary>
         /// Occurs when the plot has been updated.
         /// </summary>
         [Obsolete("May be removed in v4.0 (#111)")]
-        public event EventHandler Updated;
+        public event EventHandler? Updated;
 
         /// <summary>
         /// Occurs when the plot is about to be updated.
         /// </summary>
         [Obsolete("May be removed in v4.0 (#111)")]
-        public event EventHandler Updating;
+        public event EventHandler? Updating;
 
         /// <summary>
         /// Gets or sets the default font.
@@ -201,7 +203,7 @@ namespace OxyPlot
         /// </summary>
         /// <value>The plot view.</value>
         /// <remarks>Only one view can render the plot at the same time.</remarks>
-        public IPlotView PlotView
+        public IPlotView? PlotView
         {
             get
             {
@@ -238,7 +240,7 @@ namespace OxyPlot
         /// Gets or sets the culture.
         /// </summary>
         /// <value>The culture.</value>
-        public CultureInfo Culture { get; set; }
+        public CultureInfo? Culture { get; set; }
 
         /// <summary>
         /// Gets or sets the default colors.
@@ -336,19 +338,19 @@ namespace OxyPlot
         /// <value>
         /// The rendering decorator.
         /// </value>
-        public Func<IRenderContext, IRenderContext> RenderingDecorator { get; set; }
+        public Func<IRenderContext, IRenderContext>? RenderingDecorator { get; set; }
 
         /// <summary>
         /// Gets or sets the subtitle.
         /// </summary>
         /// <value>The subtitle.</value>
-        public string Subtitle { get; set; }
+        public string? Subtitle { get; set; }
 
         /// <summary>
         /// Gets or sets the subtitle font. If this property is <c>null</c>, the Title font will be used.
         /// </summary>
         /// <value>The subtitle font.</value>
-        public string SubtitleFont { get; set; }
+        public string? SubtitleFont { get; set; }
 
         /// <summary>
         /// Gets or sets the size of the subtitle font.
@@ -372,13 +374,13 @@ namespace OxyPlot
         /// Gets or sets the title.
         /// </summary>
         /// <value>The title.</value>
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         /// <summary>
         /// Gets or sets the title tool tip.
         /// </summary>
         /// <value>The title tool tip.</value>
-        public string TitleToolTip { get; set; }
+        public string? TitleToolTip { get; set; }
 
         /// <summary>
         /// Gets or sets the color of the title.
@@ -421,7 +423,7 @@ namespace OxyPlot
         /// Gets or sets the title font.
         /// </summary>
         /// <value>The title font.</value>
-        public string TitleFont { get; set; }
+        public string? TitleFont { get; set; }
 
         /// <summary>
         /// Gets or sets the size of the title font.
@@ -445,31 +447,31 @@ namespace OxyPlot
         /// Gets the default angle axis.
         /// </summary>
         /// <value>The default angle axis.</value>
-        public AngleAxis DefaultAngleAxis { get; private set; }
+        public AngleAxis? DefaultAngleAxis { get; private set; }
 
         /// <summary>
         /// Gets the default magnitude axis.
         /// </summary>
         /// <value>The default magnitude axis.</value>
-        public MagnitudeAxis DefaultMagnitudeAxis { get; private set; }
+        public MagnitudeAxis? DefaultMagnitudeAxis { get; private set; }
 
         /// <summary>
         /// Gets the default X axis.
         /// </summary>
         /// <value>The default X axis.</value>
-        public Axis DefaultXAxis { get; private set; }
+        public Axis? DefaultXAxis { get; private set; }
 
         /// <summary>
         /// Gets the default Y axis.
         /// </summary>
         /// <value>The default Y axis.</value>
-        public Axis DefaultYAxis { get; private set; }
+        public Axis? DefaultYAxis { get; private set; }
 
         /// <summary>
         /// Gets the default color axis.
         /// </summary>
         /// <value>The default color axis.</value>
-        public IColorAxis DefaultColorAxis { get; private set; }
+        public IColorAxis? DefaultColorAxis { get; private set; }
 
         /// <summary>
         /// Gets the actual title font.
@@ -534,7 +536,7 @@ namespace OxyPlot
         /// <param name="pt">The point.</param>
         /// <param name="xaxis">The x-axis.</param>
         /// <param name="yaxis">The y-axis.</param>
-        public void GetAxesFromPoint(ScreenPoint pt, out Axis xaxis, out Axis yaxis)
+        public void GetAxesFromPoint(ScreenPoint pt, out Axis? xaxis, out Axis? yaxis)
         {
             xaxis = yaxis = null;
 
@@ -677,10 +679,10 @@ namespace OxyPlot
         /// <param name="point">The point.</param>
         /// <param name="limit">The limit.</param>
         /// <returns>The nearest series.</returns>
-        public Series.Series GetSeriesFromPoint(ScreenPoint point, double limit = 100)
+        public Series.Series? GetSeriesFromPoint(ScreenPoint point, double limit = 100)
         {
             double mindist = double.MaxValue;
-            Series.Series nearestSeries = null;
+            Series.Series? nearestSeries = null;
             foreach (var series in this.Series.Reverse().Where(s => s.IsVisible))
             {
                 var thr = series.GetNearestPoint(point, true) ?? series.GetNearestPoint(point, false);
@@ -721,7 +723,7 @@ namespace OxyPlot
         /// Returns a <see cref="System.String" /> that represents this instance.
         /// </summary>
         /// <returns>A <see cref="System.String" /> that represents this instance.</returns>
-        public override string ToString()
+        public override string? ToString()
         {
             return this.Title;
         }
@@ -751,7 +753,7 @@ namespace OxyPlot
         /// Gets any exception thrown during the last <see cref="IPlotModel.Update" /> call.
         /// </summary>
         /// <returns>The exception or <c>null</c> if there was no exception.</returns>
-        public Exception GetLastPlotException()
+        public Exception? GetLastPlotException()
         {
             return this.lastPlotException;
         }
@@ -1188,7 +1190,7 @@ namespace OxyPlot
 
             foreach (var group in barSeriesGroups)
             {
-                var manager = new BarSeriesManager(group.Key.CategoryAxis, group.Key.ValueAxis, group);
+                var manager = new BarSeriesManager(group.Key.CategoryAxis!, group.Key.ValueAxis, group);
                 manager.Update();
                 this.barSeriesManagers.Add(manager);
             }

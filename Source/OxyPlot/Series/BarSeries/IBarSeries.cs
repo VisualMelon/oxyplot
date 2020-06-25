@@ -4,6 +4,8 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot.Series
 {
     using OxyPlot.Axes;
@@ -22,7 +24,7 @@ namespace OxyPlot.Series
         /// <summary>
         /// Gets the <see cref="CategoryAxis"/> the bar series uses.
         /// </summary>
-        CategoryAxis CategoryAxis { get; }
+        CategoryAxis? CategoryAxis { get; }
 
         /// <summary>
         /// Gets a value indicating whether the bar series is visible.
@@ -32,12 +34,12 @@ namespace OxyPlot.Series
         /// <summary>
         /// Gets or sets the manager of the bar series.
         /// </summary>
-        BarSeriesManager Manager { get; set; }
+        BarSeriesManager? Manager { get; set; }
 
         /// <summary>
         /// Gets the <see cref="PlotModel"/> the bar series belongs to.
         /// </summary>
-        PlotModel PlotModel { get; }
+        PlotModel? PlotModel { get; }
 
         /// <summary>
         /// Gets the <see cref="ValueAxis"/> the bar series uses.

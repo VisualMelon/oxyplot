@@ -1,0 +1,58 @@
+# `Series`
+
+`TrackerFormatString`
+ - Presently non-nullable, with null forgiven
+ - Could move the default into the constructor
+
+# `Series` Inheriting
+
+`public` Axes (e.g. `XAxis`, `CategoryAxis`)   (also `ITransposablePlotElement`)
+ - Presently nullable, as there is nothing stopping anyone interacting with the series before it calling `EnusureAxes`
+   - Forgiving nulls everywhere they are used (looks like this will be mostly private/protected methods), which is basically the equivalent of being null oblivous and just hoping it will be OK
+ - Could make non-nullable and call `EnusureAxes` from the getter and throw if the series is not yet associated with a `PlotModel`
+   - This could take a while if a solution wide replacement doesn't work, but a useful exception wouldn't hurt either way
+   - In a sense, it is incorrect usage to access the `Axes` before associating with a `PlotModel`, and unless we want to cut every series/annotation into a data part and plot model part (something which I wouldn't immediately oppose, but it would be an immense amount of work for us and consumers), we arn't going to do better than informing people when they use it incorrectly (nullable or not)
+     - We already do this to some extend for `PlotModel` (e.g. `throw new InvalidOperationException("The category axis must be part of a plot model.");`)
+
+# `DataPointSeries`
+
+`protected ActualPoints`
+ - Forgives `null` on `itemsSourcePoints`
+   - Could perform a `null` check and throw, indicating that it hasn't been updated
+
+`private UpdateItemsSourcePoints()`
+ - Adds null-check for `ItemsSource`
+ - Forgives `itemsSourcePoints` is a number of places
+   - Could be removed by passing the list back from `ClearItemsSourcePoints`, as that can guarantee it is non-null, and so make the code less brittle
+
+# `LineSeries`
+
+`private` buffers
+ - Should all be fine as nullable
+ - Should `smoothedPoints` be the same? Or should we initialise all the buffers as we do with `smoothedPoints`?
+
+`protcted RenderPoints()`
+ - Presently non-nullable; not sure what is best here
+ - `Broken` is left as `null` to avoid an allocation when it isn't needed
+
+`protected internal UpdateMaxMin`
+ - Update Min/Max for smoothed should probably be using `base.InternalUpdateMaxMin(List<DataPoint>)`
+
+# `BarSeriesManager`
+
+Made everything nullable, and added null-checks everywhere
+Not certain how this should be done (ask Jon)
+
+# `Axis`
+
+This line makes no sense (axis.cs:1611):
+  string format = string.Concat("{0:", this.ActualStringFormat ?? this.StringFormat ?? string.Empty, "}");
+
+# `PlotModel`
+
+`UpdateBarSeriesManagers`
+ - Not sure what to do about this; just forgiving the null
+
+# `Element`
+
+I can't immediately think what to do about all the selection methods

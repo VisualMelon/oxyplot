@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot
 {
     using OxyPlot.Axes;
@@ -19,11 +21,11 @@ namespace OxyPlot
         /// <summary>
         /// Gets the X axis.
         /// </summary>
-        Axis XAxis { get; }
+        Axis? XAxis { get; }
 
         /// <summary>
         /// Gets the Y axis.
         /// </summary>
-        Axis YAxis { get; }
+        Axis? YAxis { get; }
     }
 }

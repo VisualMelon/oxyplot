@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot.Series
 {
     using System.Collections;
@@ -22,7 +24,7 @@ namespace OxyPlot.Series
         /// </summary>
         /// <value>The items source.</value>
         [CodeGeneration(false)]
-        public IEnumerable ItemsSource { get; set; }
+        public IEnumerable? ItemsSource { get; set; }
 
         /// <summary>
         /// Gets the item for the specified index.
@@ -31,7 +33,7 @@ namespace OxyPlot.Series
         /// <param name="index">The index.</param>
         /// <returns>The get item.</returns>
         /// <remarks>Returns <c>null</c> if ItemsSource is not set, or the index is outside the boundaries.</remarks>
-        protected static object GetItem(IEnumerable itemsSource, int index)
+        protected static object? GetItem(IEnumerable? itemsSource, int index)
         {
             if (itemsSource == null || index < 0)
             {
@@ -58,7 +60,7 @@ namespace OxyPlot.Series
         /// </summary>
         /// <param name="i">The index of the item.</param>
         /// <returns>The item of the index.</returns>
-        protected virtual object GetItem(int i)
+        protected virtual object? GetItem(int i)
         {
             return GetItem(this.ItemsSource, i);
         }

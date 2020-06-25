@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot.Axes
 {
     using System;
@@ -135,13 +137,13 @@ namespace OxyPlot.Axes
         /// Occurs when the axis has been changed (by zooming, panning or resetting).
         /// </summary>
         [Obsolete("May be removed in v4.0 (#111)")]
-        public event EventHandler<AxisChangedEventArgs> AxisChanged;
+        public event EventHandler<AxisChangedEventArgs>? AxisChanged;
 
         /// <summary>
         /// Occurs when the transform changed (size or axis range was changed).
         /// </summary>
         [Obsolete("May be removed in v4.0 (#111)")]
-        public event EventHandler TransformChanged;
+        public event EventHandler? TransformChanged;
 
         /// <summary>
         /// Gets or sets the absolute maximum. This is only used for the UI control. It will not be possible to zoom/pan beyond this limit. The default value is <c>double.MaxValue</c>.
@@ -182,13 +184,13 @@ namespace OxyPlot.Axes
         /// <summary>
         /// Gets or sets the actual string format being used.
         /// </summary>
-        public string ActualStringFormat { get; protected set; }
+        public string? ActualStringFormat { get; protected set; }
 
         /// <summary>
         /// Gets the actual title of the axis.
         /// </summary>
         /// <remarks>If the <see cref="Unit" /> property is set, the <see cref="TitleFormatString" /> property is used to format the actual title.</remarks>
-        public string ActualTitle
+        public string? ActualTitle
         {
             get
             {
@@ -281,12 +283,12 @@ namespace OxyPlot.Axes
         /// <summary>
         /// Gets or sets the values for the extra gridlines. The default value is <c>null</c>.
         /// </summary>
-        public double[] ExtraGridlines { get; set; }
+        public double[]? ExtraGridlines { get; set; }
 
         /// <summary>
         /// Gets or sets the filter function. The default value is <c>null</c>.
         /// </summary>
-        public Func<double, bool> FilterFunction { get; set; }
+        public Func<double, bool>? FilterFunction { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum value that can be shown using this axis. Values greater or equal to this value will not be shown. The default value is <c>double.MaxValue</c>.
@@ -332,13 +334,13 @@ namespace OxyPlot.Axes
         /// <summary>
         /// Gets or sets the key of the axis. This can be used to specify an axis if you have defined multiple axes in a plot. The default value is <c>null</c>.
         /// </summary>
-        public string Key { get; set; }
+        public string? Key { get; set; }
 
         /// <summary>
         /// Gets or sets the formatting function for the labels. The default value is <c>null</c>.
         /// </summary>
         /// <remarks>This function can be used instead of overriding the <see cref="FormatValue" /> method.</remarks>
-        public Func<double, string> LabelFormatter { get; set; }
+        public Func<double, string>? LabelFormatter { get; set; }
 
         /// <summary>
         /// Gets or sets the layer of the axis. The default value is <see cref="AxisLayer.BelowSeries"/>.
@@ -513,7 +515,7 @@ namespace OxyPlot.Axes
         /// <summary>
         /// Gets or sets the string format used for formatting the axis values. The default value is <c>null</c>.
         /// </summary>
-        public string StringFormat { get; set; }
+        public string? StringFormat { get; set; }
 
         /// <summary>
         /// Gets or sets the tick style for major and minor ticks. The default value is <see cref="OxyPlot.Axes.TickStyle.Outside"/>.
@@ -528,7 +530,7 @@ namespace OxyPlot.Axes
         /// <summary>
         /// Gets or sets the title of the axis. The default value is <c>null</c>.
         /// </summary>
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         /// <summary>
         /// Gets or sets the length of the title clipping rectangle (fraction of the available length of the axis). The default value is <c>0.9</c>.
@@ -544,7 +546,7 @@ namespace OxyPlot.Axes
         /// <summary>
         /// Gets or sets the title font. The default value is <c>null</c>.
         /// </summary>
-        public string TitleFont { get; set; }
+        public string? TitleFont { get; set; }
 
         /// <summary>
         /// Gets or sets the size of the title font. The default value is <c>double.NaN</c>.
@@ -573,7 +575,7 @@ namespace OxyPlot.Axes
         /// Gets or sets the unit of the axis. The default value is <c>null</c>.
         /// </summary>
         /// <remarks>The <see cref="TitleFormatString" /> is used to format the title including this unit.</remarks>
-        public string Unit { get; set; }
+        public string? Unit { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to use superscript exponential format. The default value is <c>false</c>.

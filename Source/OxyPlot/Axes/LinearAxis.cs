@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot.Axes
 {
     /// <summary>
@@ -39,7 +41,7 @@ namespace OxyPlot.Axes
         /// Gets or sets the fraction unit symbol. Use FractionUnit = Math.PI and FractionUnitSymbol = "π" if you want the axis to show "π/2,π,3π/2,2π" etc. Use FractionUnit = 1 and FractionUnitSymbol = "L" if you want the axis to show "0,L/2,L" etc. Remember to set FormatAsFractions to <c>true</c>.
         /// </summary>
         /// <value>The fraction unit symbol.</value>
-        public string FractionUnitSymbol { get; set; }
+        public string? FractionUnitSymbol { get; set; }
 
         /// <summary>
         /// Determines whether the axis is used for X/Y values.

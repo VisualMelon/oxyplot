@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot.Series
 {
     using OxyPlot.Axes;
@@ -25,6 +27,9 @@ namespace OxyPlot.Series
             this.IsVisible = true;
             this.Background = OxyColors.Undefined;
             this.RenderInLegend = true;
+
+            // must be set by the inheriting class
+            this.TrackerFormatString = null!;
         }
 
         /// <summary>
@@ -42,7 +47,7 @@ namespace OxyPlot.Series
         /// Gets or sets the title of the series. The default is <c>null</c>.
         /// </summary>
         /// <value>The title that is shown in the legend of the plot. The default value is <c>null</c>.</value>
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         /// <summary>
         /// Gets or sets the key for the Legend to use on this series. The default is <c>null</c>.
@@ -50,7 +55,7 @@ namespace OxyPlot.Series
         /// <remarks>
         /// This key may be used by the plot model to show a custom Legend for the series.
         /// </remarks>
-        public string LegendKey { get; set; }
+        public string? LegendKey { get; set; }
 
         /// <summary>
         /// Gets or sets the groupname for the Series. The default is <c>null</c>.
@@ -58,7 +63,7 @@ namespace OxyPlot.Series
         /// <remarks>
         /// This groupname may for e.g. be used by the Legend class to group series into separated blocks.
         /// </remarks>
-        public string SeriesGroupName { get; set; }
+        public string? SeriesGroupName { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the series should be rendered in the legend. The default is <c>true</c>.
@@ -79,7 +84,7 @@ namespace OxyPlot.Series
         /// <remarks>
         /// This key may be used by the plot view to show a custom tracker for the series.
         /// </remarks>
-        public string TrackerKey { get; set; }
+        public string? TrackerKey { get; set; }
 
         /// <summary>
         /// Gets the point on the series that is nearest the specified point.
@@ -87,7 +92,7 @@ namespace OxyPlot.Series
         /// <param name="point">The point.</param>
         /// <param name="interpolate">Interpolate the series if this flag is set to <c>true</c>.</param>
         /// <returns>A TrackerHitResult for the current hit.</returns>
-        public virtual TrackerHitResult GetNearestPoint(ScreenPoint point, bool interpolate)
+        public virtual TrackerHitResult? GetNearestPoint(ScreenPoint point, bool interpolate)
         {
             return null;
         }
@@ -151,7 +156,7 @@ namespace OxyPlot.Series
         /// <returns>
         /// The result of the hit test.
         /// </returns>
-        protected override HitTestResult HitTestOverride(HitTestArguments args)
+        protected override HitTestResult? HitTestOverride(HitTestArguments args)
         {
             var thr = this.GetNearestPoint(args.Point, true) ?? this.GetNearestPoint(args.Point, false);
 

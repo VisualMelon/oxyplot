@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace OxyPlot.Series
 {
     using System;
@@ -26,17 +28,17 @@ namespace OxyPlot.Series
         /// <summary>
         /// The output buffer.
         /// </summary>
-        private List<ScreenPoint> outputBuffer;
+        private List<ScreenPoint>? outputBuffer;
 
         /// <summary>
         /// The buffer for contiguous screen points.
         /// </summary>
-        private List<ScreenPoint> contiguousScreenPointsBuffer;
+        private List<ScreenPoint>? contiguousScreenPointsBuffer;
 
         /// <summary>
         /// The buffer for decimated points.
         /// </summary>
-        private List<ScreenPoint> decimatorBuffer;
+        private List<ScreenPoint>? decimatorBuffer;
 
         /// <summary>
         /// The default color.
@@ -111,22 +113,22 @@ namespace OxyPlot.Series
         /// </summary>
         /// <value>The dash array.</value>
         /// <remarks>If this is not <c>null</c> it overrides the <see cref="LineStyle" /> property.</remarks>
-        public double[] Dashes { get; set; }
+        public double[]? Dashes { get; set; }
 
         /// <summary>
-        /// Gets or sets the decimator.
+        /// Gets or sets the decimator. The default values is <c>null</c> (no decimator).
         /// </summary>
         /// <value>
         /// The decimator action.
         /// </value>
         /// <remarks>The decimator can be used to improve the performance of the rendering. See the example.</remarks>
-        public Action<List<ScreenPoint>, List<ScreenPoint>> Decimator { get; set; }
+        public Action<List<ScreenPoint>, List<ScreenPoint>>? Decimator { get; set; }
 
         /// <summary>
         /// Gets or sets the label format string. The default is <c>null</c> (no labels).
         /// </summary>
         /// <value>The label format string.</value>
-        public string LabelFormatString { get; set; }
+        public string? LabelFormatString { get; set; }
 
         /// <summary>
         /// Gets or sets the label margins. The default is <c>6</c>.
@@ -161,7 +163,7 @@ namespace OxyPlot.Series
         /// Gets or sets the a custom polygon outline for the markers. Set <see cref="MarkerType" /> to <see cref="OxyPlot.MarkerType.Custom" /> to use this property. The default is <c>null</c>.
         /// </summary>
         /// <value>A polyline.</value>
-        public ScreenPoint[] MarkerOutline { get; set; }
+        public ScreenPoint[]? MarkerOutline { get; set; }
 
         /// <summary>
         /// Gets or sets the marker resolution. The default is <c>0</c>.
@@ -203,10 +205,10 @@ namespace OxyPlot.Series
         public double MinimumSegmentLength { get; set; }
 
         /// <summary>
-        /// Gets or sets a type of interpolation algorithm used for smoothing this <see cref = "DataPointSeries" />.
+        /// Gets or sets a type of interpolation algorithm used for smoothing this <see cref = "DataPointSeries" />. The default is <c>null</c> (no interpolation).
         /// </summary>
         /// <value>Type of interpolation algorithm.</value>
-        public IInterpolationAlgorithm InterpolationAlgorithm { get; set; }
+        public IInterpolationAlgorithm? InterpolationAlgorithm { get; set; }
 
         /// <summary>
         /// Gets or sets the thickness of the curve.
@@ -279,7 +281,7 @@ namespace OxyPlot.Series
         /// <param name="point">The point.</param>
         /// <param name="interpolate">Interpolate the series if this flag is set to <c>true</c>.</param>
         /// <returns>A TrackerHitResult for the current hit.</returns>
-        public override TrackerHitResult GetNearestPoint(ScreenPoint point, bool interpolate)
+        public override TrackerHitResult? GetNearestPoint(ScreenPoint point, bool interpolate)
         {
             if (interpolate)
             {
@@ -305,10 +307,10 @@ namespace OxyPlot.Series
                         this.TrackerFormatString,
                         result.Item,
                         this.Title,
-                        this.XAxis.Title ?? XYAxisSeries.DefaultXAxisTitle,
-                        this.XAxis.GetValue(result.DataPoint.X),
-                        this.YAxis.Title ?? XYAxisSeries.DefaultYAxisTitle,
-                        this.YAxis.GetValue(result.DataPoint.Y));
+                        this.XAxis!.Title ?? XYAxisSeries.DefaultXAxisTitle,
+                        this.XAxis!.GetValue(result.DataPoint.X),
+                        this.YAxis!.Title ?? XYAxisSeries.DefaultYAxisTitle,
+                        this.YAxis!.GetValue(result.DataPoint.Y));
                 }
 
                 return result;
@@ -444,7 +446,7 @@ namespace OxyPlot.Series
             var lastValidPoint = new ScreenPoint?();
             var areBrokenLinesRendered = this.BrokenLineThickness > 0 && this.BrokenLineStyle != LineStyle.None;
             var dashArray = areBrokenLinesRendered ? this.BrokenLineStyle.GetDashArray() : null;
-            var broken = areBrokenLinesRendered ? new List<ScreenPoint>(2) : null;
+            var broken = areBrokenLinesRendered ? new List<ScreenPoint>(2) : null!;
 
             if (this.contiguousScreenPointsBuffer == null)
             {
@@ -457,7 +459,7 @@ namespace OxyPlot.Series
 			if (this.IsXMonotonic)
 			{
 				// determine render range
-				var xmin = this.XAxis.ActualMinimum;
+				var xmin = this.XAxis!.ActualMinimum;
 				xmax = this.XAxis.ActualMaximum;
 				this.WindowStartIndex = this.UpdateWindowStartIndex(points, point => point.X, xmin, this.WindowStartIndex);
 				
@@ -785,6 +787,11 @@ namespace OxyPlot.Series
         /// </summary>
         protected virtual void ResetSmoothedPoints()
         {
+            if (this.InterpolationAlgorithm == null)
+            {
+                throw new InvalidOperationException($"{nameof(this.ResetSmoothedPoints)} can only be called if {nameof(this.InterpolationAlgorithm)} is non-null.");
+            }
+
             double tolerance = Math.Abs(Math.Max(this.MaxX - this.MinX, this.MaxY - this.MinY) / ToleranceDivisor);
             this.smoothedPoints = this.InterpolationAlgorithm.CreateSpline(this.ActualPoints, false, tolerance);
         }
