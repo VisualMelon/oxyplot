@@ -393,7 +393,7 @@ namespace ExampleLibrary
 
             for (int i = 1; i <= n; i++)
             {
-                var s = new LineSeries { Title = "Series " + i };
+                var s = new LineSeries { Title = "Series " + i, LegendToolTip = $"y = {i} + sin({i}X)/{i}" };
                 model.Series.Add(s);
                 for (double x = 0; x < 2 * Math.PI; x += 0.1)
                 {

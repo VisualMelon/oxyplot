@@ -33,6 +33,7 @@ All notable changes to this project will be documented in this file.
 - Native Clipping for OxyPlot.SvgRenderContext (#1564)
 - Examples of full plot area polar plots with non-zero minimums (#1586)
 - Read-Only collection interfaces for .NET 4.0 (#1600)
+- Series.LegendToolTip property (#1628)
 
 ### Changed
 - Legends model (#644)

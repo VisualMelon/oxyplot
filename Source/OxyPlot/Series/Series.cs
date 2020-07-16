@@ -53,6 +53,14 @@ namespace OxyPlot.Series
         public string LegendKey { get; set; }
 
         /// <summary>
+        /// Gets or sets the tool tip for this series in the legend. The default is <c>null</c>.
+        /// </summary>
+        /// <remarks>
+        /// When <c>null</c>, the <see cref="PlotElement.ToolTip"/> property will be used.
+        /// </remarks>
+        public string LegendToolTip { get; set; }
+
+        /// <summary>
         /// Gets or sets the groupname for the Series. The default is <c>null</c>.
         /// </summary>
         /// <remarks>

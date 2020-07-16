@@ -236,7 +236,15 @@ namespace OxyPlot.Legends
             var actualLegendFontSize = double.IsNaN(this.LegendFontSize) ? this.PlotModel.DefaultFontSize : this.LegendFontSize;
             var legendTextColor = s.IsVisible ? this.LegendTextColor : this.SeriesInvisibleTextColor;
 
-            rc.SetToolTip(s.ToolTip);
+            if (s.LegendToolTip != null)
+            {
+                rc.SetToolTip(s.LegendToolTip);
+            }
+            else
+            {
+                rc.SetToolTip(s.ToolTip);
+            }
+
             var textSize = rc.DrawMathText(
                 new ScreenPoint(x, y),
                 s.Title,
@@ -275,6 +283,7 @@ namespace OxyPlot.Legends
 
                 s.RenderLegend(rc, symbolRect);
             }
+
             rc.SetToolTip(null);
         }
 
