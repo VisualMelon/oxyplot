@@ -61,6 +61,7 @@ All notable changes to this project will be documented in this file.
 - System.Drawing.Common references updated to 4.7.0 (#1608)
 - Invisible series are assigned automatic colors by default, configurable with PlotModel.AssignColorsToInvisibleSeries property that defaults to true (#1599)
 - StemSeries, AreaSeries, TwoColorAreaSeries, and StairStepSeries use `ActualMarkerColor` (#1630)
+- Clipping API changed from SetClip(...) and ResetClip() to PushClip(...) and PopClip() (#1593)
 
 ### Removed
 - Remove PlotModel.Legends (#644)
@@ -71,6 +72,8 @@ All notable changes to this project will be documented in this file.
 - RenderingExtensions.DrawRectangleAsPolygon(...) extension methods. IRenderContext.DrawRectangle(...) with an appropriate EdgeRenderingMode can be used instead.
 - SkiaSharp.PdfExporter.Dpi property (#1591)
 - Axis.UpdateFromSeries(...) and Series.UpdateValidData() (#741)
+- Support for IRenderContext implementations without native clipping (#1593)
+- CohenSutherlandClipping and SutherlandHodgmanClipping (#1593)
 
 ### Fixed
 - Legend font size is not affected by DefaultFontSize (#1396)
