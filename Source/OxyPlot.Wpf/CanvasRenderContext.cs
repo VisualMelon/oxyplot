@@ -28,7 +28,7 @@ namespace OxyPlot.Wpf
     /// <summary>
     /// Implements <see cref="IRenderContext" /> for <see cref="System.Windows.Controls.Canvas" />.
     /// </summary>
-    public class CanvasRenderContext : ClippingRenderContextITextMeasurer
+    public class CanvasRenderContext : ClippingRenderContext, ITextMeasurer
     {
         /// <summary>
         /// The maximum number of figures per geometry.
@@ -135,12 +135,6 @@ namespace OxyPlot.Wpf
         /// <value><c>true</c> if stream geometry should be used; otherwise, <c>false</c> .</value>
         /// <remarks>The XamlWriter does not serialize StreamGeometry, so set this to <c>false</c> if you want to export to XAML. Using stream geometry seems to be slightly faster than using path geometry.</remarks>
         public bool UseStreamGeometry { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the context renders to screen.
-        /// </summary>
-        /// <value><c>true</c> if the context renders to screen; otherwise, <c>false</c>.</value>
-        public bool RendersToScreen { get; set; }
 
         /// <summary>
         /// Gets or sets the default font familiy.
