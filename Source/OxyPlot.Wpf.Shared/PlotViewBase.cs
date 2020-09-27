@@ -164,9 +164,14 @@ namespace OxyPlot.Wpf
                 return;
             }
 
+            var dpiScale = this.UpdateDpi();
+            var width = ((int)(this.plotPresenter.ActualWidth * dpiScale)) / dpiScale;
+            var height = ((int)(this.plotPresenter.ActualHeight * dpiScale)) / dpiScale;
+
             lock (this.ActualModel.SyncRoot)
             {
                 ((IPlotModel)this.ActualModel).Update(updateData);
+                ((IPlotModel)this.ActualModel).Layout(this.renderContext, new OxyRect(0, 0, width, height));
             }
 
             this.BeginInvoke(this.Render);

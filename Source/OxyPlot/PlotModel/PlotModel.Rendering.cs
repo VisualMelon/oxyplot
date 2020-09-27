@@ -17,20 +17,24 @@ namespace OxyPlot
     using OxyPlot.Axes;
     using OxyPlot.Series;
     using OxyPlot.Legends;
+    using System.Diagnostics;
 
     /// <summary>
     /// Represents a plot.
     /// </summary>
     public partial class PlotModel
     {
-        /// <summary>
-        /// Renders the plot with the specified rendering context within the given rectangle.
-        /// </summary>
-        /// <param name="rc">The rendering context.</param>
-        /// <param name="rect">The plot bounds.</param>
+        /// <inheritdoc/>
         void IPlotModel.Render(IRenderContext rc, OxyRect rect)
         {
+            this.LayoutOverride(rc, rect);
             this.RenderOverride(rc, rect);
+        }
+
+        /// <inheritdoc/>
+        void IPlotModel.Layout(IRenderContext rc, OxyRect rect)
+        {
+            this.LayoutOverride(rc, rect);
         }
 
         /// <summary>
@@ -58,43 +62,6 @@ namespace OxyPlot
                                 this.lastPlotException.GetBaseException().StackTrace);
                         this.RenderErrorMessage(rc, string.Format("OxyPlot exception: {0}", this.lastPlotException.Message), errorMessage);
                         return;
-                    }
-
-                    if (this.RenderingDecorator != null)
-                    {
-                        rc = this.RenderingDecorator(rc);
-                    }
-
-                    this.PlotBounds = rect;
-
-                    this.ActualPlotMargins =
-                        new OxyThickness(
-                            double.IsNaN(this.PlotMargins.Left) ? 0 : this.PlotMargins.Left,
-                            double.IsNaN(this.PlotMargins.Top) ? 0 : this.PlotMargins.Top,
-                            double.IsNaN(this.PlotMargins.Right) ? 0 : this.PlotMargins.Right,
-                            double.IsNaN(this.PlotMargins.Bottom) ? 0 : this.PlotMargins.Bottom);
-
-                    foreach (var l in this.Legends)
-                    {
-                        l.EnsureLegendProperties();
-                    }
-
-                    for (var i = 0; i < 10; i++) // make we sure we don't loop infinitely
-                    {
-                        this.UpdatePlotArea(rc);
-                        this.UpdateAxisTransforms();
-                        this.UpdateIntervals();
-
-                        if (!this.AdjustPlotMargins(rc))
-                        {
-                            break;
-                        }
-                    }
-
-                    if (this.PlotType == PlotType.Cartesian)
-                    {
-                        this.EnforceCartesianTransforms();
-                        this.UpdateIntervals();
                     }
 
                     this.RenderBackgrounds(rc);
@@ -137,6 +104,60 @@ namespace OxyPlot
                     // Clean up unused images
                     rc.CleanUp();
                 }
+            }
+        }
+
+        int icc = 0;
+        /// <summary>
+        /// Renders the plot with the specified rendering context.
+        /// </summary>
+        /// <param name="rc">The rendering context.</param>
+        /// <param name="rect">The plot bounds.</param>
+        protected virtual void LayoutOverride(IRenderContext rc, OxyRect rect)
+        {
+            //lock (this.SyncRoot)
+            {
+                //if (this.RenderingDecorator != null)
+                //{
+                //    rc = this.RenderingDecorator(rc);
+                //}
+
+                var sw = new System.Diagnostics.Stopwatch();
+                sw.Restart();
+                this.PlotBounds = rect;
+
+                this.ActualPlotMargins =
+                    new OxyThickness(
+                        double.IsNaN(this.PlotMargins.Left) ? 0 : this.PlotMargins.Left,
+                        double.IsNaN(this.PlotMargins.Top) ? 0 : this.PlotMargins.Top,
+                        double.IsNaN(this.PlotMargins.Right) ? 0 : this.PlotMargins.Right,
+                        double.IsNaN(this.PlotMargins.Bottom) ? 0 : this.PlotMargins.Bottom);
+
+                foreach (var l in this.Legends)
+                {
+                    l.EnsureLegendProperties();
+                }
+
+                for (var i = 0; i < 10; i++) // make we sure we don't loop infinitely
+                {
+                    this.UpdatePlotArea(rc);
+                    this.UpdateAxisTransforms();
+                    this.UpdateIntervals();
+
+                    if (!this.AdjustPlotMargins(rc))
+                    {
+                        break;
+                    }
+                }
+
+                if (this.PlotType == PlotType.Cartesian)
+                {
+                    this.EnforceCartesianTransforms();
+                    this.UpdateIntervals();
+                }
+                sw.Stop();
+                icc++;
+                Debug.WriteLine(sw.ElapsedMilliseconds + " " + icc);
             }
         }
 

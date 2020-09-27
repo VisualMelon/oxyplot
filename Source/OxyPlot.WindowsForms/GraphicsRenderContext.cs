@@ -56,6 +56,11 @@ namespace OxyPlot.WindowsForms
         private readonly Dictionary<GraphicsPenDescription, Pen> pens = new Dictionary<GraphicsPenDescription, Pen>();
 
         /// <summary>
+        /// The font cache.
+        /// </summary>
+        private readonly Dictionary<GraphicsFontDescription, Font> fonts = new Dictionary<GraphicsFontDescription, Font>();
+
+        /// <summary>
         /// The string format.
         /// </summary>
         private readonly StringFormat stringFormat;
@@ -343,7 +348,8 @@ namespace OxyPlot.WindowsForms
         {
             // TODO: DPI support
             var fontStyle = fontWeight < 700 ? FontStyle.Regular : FontStyle.Bold;
-            using (var font = CreateFont(fontFamily, fontSize, fontStyle))
+            var font = this.GetCachedFont(fontFamily, fontSize, fontStyle);
+            //using (var font = CreateFont(fontFamily, fontSize, fontStyle))
             {
                 var factor = font.Height / (double)Math.Abs(font.FontFamily.GetLineSpacing(fontStyle));
 
@@ -501,6 +507,26 @@ namespace OxyPlot.WindowsForms
             }
 
             return this.pens[description] = CreatePen(stroke, thickness, dashArray, lineJoin);
+        }
+
+        /// <summary>
+        /// Gets the cached font.
+        /// </summary>
+        /// <param name="fontFamily">The font family.</param>
+        /// <param name="fontSize">The font size.</param>
+        /// <param name="fontStyle">The font style.</param>
+        /// <returns>A <see cref="Font" />.</returns>
+        private Font GetCachedFont(string fontFamily, double fontSize, FontStyle fontStyle)
+        {
+            GraphicsFontDescription description = new GraphicsFontDescription(fontFamily, fontSize, fontStyle);
+
+            Font font;
+            if (this.fonts.TryGetValue(description, out font))
+            {
+                return font;
+            }
+
+            return this.fonts[description] = CreateFont(fontFamily, fontSize, fontStyle);
         }
 
         /// <summary>

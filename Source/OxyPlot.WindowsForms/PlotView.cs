@@ -252,6 +252,15 @@ namespace OxyPlot.WindowsForms
             {
                 this.isModelInvalidated = true;
                 this.updateDataFlag = this.updateDataFlag || updateData;
+                if (this.currentModel is IPlotModel pm)
+                {
+                    using (var bmp = new Bitmap(1, 1))
+                    using (var g = Graphics.FromImage(bmp))
+                    {
+                        renderContext.SetGraphicsTarget(g);
+                        pm.Layout(renderContext, new OxyRect(0, 0, this.Width, this.Height));
+                    }
+                }
             }
 
             this.Invalidate();

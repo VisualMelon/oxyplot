@@ -35,6 +35,13 @@ namespace OxyPlot
         void Render(IRenderContext rc, OxyRect rect);
 
         /// <summary>
+        /// Lays out the plot with the specified rendering context within the given rectangle.
+        /// </summary>
+        /// <param name="rc">The rendering context.</param>
+        /// <param name="rect">The plot bounds.</param>
+        void Layout(IRenderContext rc, OxyRect rect);
+
+        /// <summary>
         /// Attaches this model to the specified plot view.
         /// </summary>
         /// <param name="plotView">The plot view.</param>
