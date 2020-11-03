@@ -1,0 +1,1 @@
+Now that we have some sort of a design, we need to stop thinking, and start coding

@@ -1008,7 +1008,8 @@ namespace ExampleLibrary
             plotModel.Axes.Add(new LinearAxis { AxislineStyle = LineStyle.Solid, AxisDistance = 20, Position = AxisPosition.Bottom });
             plotModel.Axes.Add(new LinearAxis { AxislineStyle = LineStyle.Solid, AxisDistance = 20, Position = AxisPosition.Left });
             plotModel.Axes.Add(new LinearAxis { AxislineStyle = LineStyle.Solid, AxisDistance = 20, Position = AxisPosition.Right });
-            plotModel.Axes.Add(new LinearAxis { AxislineStyle = LineStyle.Solid, AxisDistance = 20, Position = AxisPosition.Top });
+            plotModel.Axes.Add(new LinearAxis { AxislineStyle = LineStyle.Solid, AxisDistance = 20, Position = AxisPosition.Top, Title = "Magpies1" });
+            plotModel.Axes.Add(new LinearAxis { AxislineStyle = LineStyle.Solid, AxisDistance = 0, Position = AxisPosition.Top, Title = "Magpies2" });
             return plotModel;
         }
 
