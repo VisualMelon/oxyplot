@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace OxyPlot.Axes.ComposableAxes
+namespace OxyPlot.Axes.ComposableAxis
 {
     /// <summary>
     /// Band position
     /// </summary>
-    public enum BandPoisition
+    public enum BandPosition
     {
         /// <summary>
         /// Inline
@@ -27,7 +27,17 @@ namespace OxyPlot.Axes.ComposableAxes
         /// <summary>
         /// Far
         /// </summary>
-        Far
+        Far,
+
+        /// <summary>
+        /// InlineNear
+        /// </summary>
+        InlineNear,
+
+        /// <summary>
+        /// InlineFar
+        /// </summary>
+        InlineFar
     }
 
     /// <summary>
@@ -191,26 +201,89 @@ namespace OxyPlot.Axes.ComposableAxes
     public abstract class BandBase
     {
         /// <summary>
+        /// Gets or sets the position of the band.
+        /// </summary>
+        public BandPosition BandPoisition { get; set; }
+
+        /// <summary>
         /// Gets or sets the tier of the band.
         /// </summary>
         public int BandTier { get; set; }
 
         /// <summary>
-        /// Band Margins
+        /// Gets the Band Excessess
         /// </summary>
-        public OxyThickness Margins { get; protected set; } 
+        public BandExcesses Excesses { get; protected set; }
 
         /// <summary>
-        /// Measures the band
+        /// Measures the band, setting the <see cref="Excesses"/> accordingly.
         /// </summary>
         /// <param name="renderContext"></param>
         public abstract void Measure(IRenderContext renderContext);
 
         /// <summary>
-        /// 
+        /// Renders the band.
         /// </summary>
         /// <param name="renderContext"></param>
-        /// <param name="tierOffset"></param>
-        public abstract void Render(IRenderContext renderContext, double tierOffset);
+        /// <param name="location"></param>
+        public abstract void Render(IRenderContext renderContext, BandLocation location);
+    }
+
+    /// <summary>
+    /// Represents a discontenuity in a data-space.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    [Obsolete("Better to let the Transformations check on a case by case basis, I think: may be worth adding a Discontenuity Context to support either method")]
+    public struct Discontenuity<TData>
+    {
+        /// <summary>
+        /// Inializes a <see cref="Discontenuity{TData}"/> from a pair of start and end values.
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        public Discontenuity(TData start, TData end)
+        {
+            Start = start;
+            End = end;
+        }
+
+        /// <summary>
+        /// Gets the start of the discontenuity.
+        /// </summary>
+        public TData Start { get; }
+
+        /// <summary>
+        /// Gets the start of the discontenuity.
+        /// </summary>
+        public TData End { get; }
+    }
+
+    /// <summary>
+    /// Represents a sample.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    public struct DataSample<XData, YData>
+    {
+        /// <summary>
+        /// Creates a sample from values.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        public DataSample(XData x, YData y)
+        {
+            X = x;
+            Y = y;
+        }
+
+        /// <summary>
+        /// Gets the X value.
+        /// </summary>
+        public XData X { get; }
+
+        /// <summary>
+        /// Gets the Y value.
+        /// </summary>
+        public YData Y { get; }
     }
 }

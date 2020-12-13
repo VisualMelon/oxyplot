@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace OxyPlot.Axes.ComposableAxes
+namespace OxyPlot.Axes.ComposableAxis
 {
     /// <summary>
     /// Represents something with shared view state.
@@ -21,48 +21,136 @@ namespace OxyPlot.Axes.ComposableAxes
     }
 
     /// <summary>
-    /// Provides methods to project from Data space to Interaction space
+    /// Provides methods to interact with data
     /// </summary>
     /// <typeparam name="TData"></typeparam>
-    public interface IDataProjection<TData>
+    public interface IDataProvider<TData> : IComparer<TData>, IEqualityComparer<TData>
     {
         /// <summary>
-        /// Gets a value indicating whether the projection is continous.
+        /// Determines whether a value intersects a discontenuity.
         /// </summary>
-        bool IsSemiContinuous { get; }
+        /// <param name="discontenuity">The discontenuity to test.</param>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns>True if the range intersects the discontenuity.</returns>
+        bool Intersects(Discontenuity<TData> discontenuity, TData a, TData b);
 
         /// <summary>
-        /// Projects a value in Data space to Interaction space.
+        /// Gets a value indicating whether the values in the data space are discrete.
+        /// </summary>
+        bool IsDiscrete { get; }
+
+        /// <summary>
+        /// Computes v0 * (1 - c) + v1 * (c)
+        /// </summary>
+        /// <param name="v0"></param>
+        /// <param name="v1"></param>
+        /// <param name="c"></param>
+        /// <returns></returns>
+        TData Interpolate(TData v0, TData v1, double c);
+
+        /// <summary>
+        /// Computes c, such that v0 * (1 - c) + v1 * (c) = v
+        /// Equivalently, computes c = (v - v0) / (v1 - v0)
+        /// </summary>
+        /// <param name="v0"></param>
+        /// <param name="v1"></param>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        double Deinterpolate(TData v0, TData v1, TData v);
+    }
+
+    /// <summary>
+    /// Provides methods to transform between Data space and Interaction space
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    /// <typeparam name="TDataProvider"></typeparam>
+    public interface IDataTransformation<TData, TDataProvider> where TDataProvider : IDataProvider<TData>
+    {
+        /// <summary>
+        /// Gets the <see cref="IDataPointProvider"/> for <typeparamref name="TData"/>.
+        /// </summary>
+        public TDataProvider Provider { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the transformation is non-discontinuous.
+        /// </summary>
+        bool IsNonDiscontinuous { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the transformation is linear.
+        /// </summary>
+        bool IsLinear { get; }
+
+        /// <summary>
+        /// Transforms a value in Data space to Interaction space.
         /// </summary>
         /// <param name="data">The value in Data space.</param>
         /// <returns>A value in Interaction space.</returns>
-        double Project(TData data);
+        double Transform(TData data);
 
         /// <summary>
-        /// Projects a value in Interaction space to Data space.
+        /// Transforms a value in Interaction space to Data space.
         /// </summary>
         /// <param name="x">The value in Interaction space.</param>
         /// <returns>A value in Data space.</returns>
-        TData InverseProject(double x);
+        TData InverseTransform(double x);
 
         /// <summary>
-        /// Projects a value in Data space to Interaction space.
+        /// Determines whether there is a discontenuity between the two values.
         /// </summary>
-        /// <param name="data">The value in Data space.</param>
-        /// <param name="breaks">The breaks.</param>
-        /// <returns>A value in Interaction space.</returns>
-        void LocateBreaks(TData data, IList<double> breaks);
-
-        /// <summary>
-        /// Determines whether a value is between the minimum and maximum values.
-        /// </summary>
-        /// <param name="value">The value to test.</param>
-        /// <param name="min">The inclusive low bound.</param>
-        /// <param name="max">The inclusive upper bound.</param>
-        /// <returns></returns>
-        bool IsBetween(TData value, TData min, TData max);
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns><c>true</c> if there is a discontenuity between the two values.</returns>
+        bool IsDiscontinuous(TData a, TData b);
     }
 
+    /// <summary>
+    /// Provides methods to transform between Data space and Screen space along an axis
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    /// <typeparam name="TDataProvider"></typeparam>
+    public interface IAxisScreenTransformation<TData, TDataProvider> where TDataProvider : IDataProvider<TData>
+    {
+        /// <summary>
+        /// Gets the <see cref="IDataPointProvider"/> for <typeparamref name="TData"/>.
+        /// </summary>
+        public TDataProvider Provider { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the transformation is non-discontinuous.
+        /// </summary>
+        bool IsNonDiscontinuous { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the transformation is linear.
+        /// </summary>
+        bool IsLinear { get; }
+
+        /// <summary>
+        /// Transforms a value in Data space to Screen space.
+        /// </summary>
+        /// <param name="data">The value in Data space.</param>
+        /// <returns>A value in Screen space.</returns>
+        double Transform(TData data);
+
+        /// <summary>
+        /// Transforms a value in Screen space to Data space.
+        /// </summary>
+        /// <param name="s">The value in Screen space.</param>
+        /// <returns>A value in Data space.</returns>
+        TData InverseTransform(double s);
+
+        /// <summary>
+        /// Determines whether there is a discontenuity between the two values.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns><c>true</c> if there is a discontenuity between the two values.</returns>
+        bool IsDiscontinuous(TData a, TData b);
+    }
+
+    // TODO: to be exposed by Axis (so it probably shouldn't expose the interaction information)
     /// <summary>
     /// Represents a view over some data.
     /// </summary>
@@ -88,8 +176,8 @@ namespace OxyPlot.Axes.ComposableAxes
         /// The clip minimum value.
         /// </summary>
         public TData ClipMinimum { get; set; }
+
         /// <summary>
-        /// 
         /// The interaction maximum value.
         /// </summary>
         public double InteractionMaximum { get; set; }
@@ -129,12 +217,22 @@ namespace OxyPlot.Axes.ComposableAxes
     }
 
     /// <summary>
-    /// Providers 
+    /// Provides 
     /// </summary>
     public interface ISpacingOptions<TData>
     {
         /// <summary>
-        /// Gets the minimum allowed step.
+        /// Gets the maximum allowed number of ticks.
+        /// </summary>
+        public int MaximumTickCount { get; }
+
+        /// <summary>
+        /// Gets the minimum allowed number of ticks.
+        /// </summary>
+        public int MinimumTickCount { get; }
+
+        /// <summary>
+        /// Gets the maximum allowed step.
         /// </summary>
         public TData MaximumStep { get; }
 

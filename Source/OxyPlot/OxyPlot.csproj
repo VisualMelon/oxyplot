@@ -24,4 +24,7 @@
     <ItemGroup>
         <None Include="OxyPlot.snk" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Axes\ComposableAxis\NewFolder\" />
+    </ItemGroup>
 </Project>
