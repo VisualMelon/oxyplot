@@ -286,4 +286,282 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         public YData Y { get; }
     }
+
+    /// <summary>
+    /// Represents a value in Interaction space.
+    /// </summary>
+    public struct InteractionReal : IComparable<InteractionReal>
+    {
+        /// <summary>
+        /// Initialises a <see cref="InteractionReal"/> with the given value.
+        /// </summary>
+        /// <param name="value"></param>
+        public InteractionReal(double value)
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value))
+                throw new ArgumentOutOfRangeException(nameof(value), "Value must be finite");
+
+            Value = value;
+        }
+
+        /// <summary>
+        /// Zero.
+        /// </summary>
+        public static readonly InteractionReal Zero = new InteractionReal(0);
+
+        /// <summary>
+        /// The double value of the <see cref="InteractionReal"/>.
+        /// </summary>
+        public double Value { get; }
+
+        /// <inheritdoc/>
+        public int CompareTo(InteractionReal other)
+        {
+            return Value.CompareTo(other.Value);
+        }
+
+        /// <summary>
+        /// Adds two <see cref="InteractionReal"/> values.
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static InteractionReal operator +(InteractionReal l, InteractionReal r)
+        {
+            return new InteractionReal(l.Value + r.Value);
+        }
+
+        /// <summary>
+        /// Computes the difference between two <see cref="InteractionReal"/> values.
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static InteractionReal operator -(InteractionReal l, InteractionReal r)
+        {
+            return new InteractionReal(l.Value - r.Value);
+        }
+
+        /// <summary>
+        /// Scales a <see cref="InteractionReal"/> by a factor.
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static InteractionReal operator *(InteractionReal l, double r)
+        {
+            return new InteractionReal(l.Value * r);
+        }
+
+        /// <summary>
+        /// Scales a <see cref="InteractionReal"/> by a factor.
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static InteractionReal operator /(InteractionReal l, double r)
+        {
+            return new InteractionReal(l.Value / r);
+        }
+
+        /// <summary>
+        /// Computes the radio of two <see cref="InteractionReal"/> values.
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static double operator /(InteractionReal l, InteractionReal r)
+        {
+            return l.Value / r.Value;
+        }
+
+        /// <inheritdoc/>
+        public override bool Equals(object obj)
+        {
+            return obj is InteractionReal other && other.Value == Value;
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode();
+        }
+
+        /// <summary>
+        /// Compares two <see cref="InteractionReal"/> values for equality.
+        /// </summary>
+        public static bool operator ==(InteractionReal left, InteractionReal right)
+        {
+            return left.Value == right.Value;
+        }
+
+        /// <summary>
+        /// Compares two <see cref="InteractionReal"/> values for inequality.
+        /// </summary>
+        public static bool operator !=(InteractionReal left, InteractionReal right)
+        {
+            return !(left == right);
+        }
+    }
+
+    /// <summary>
+    /// Represents a value in Screen space.
+    /// </summary>
+    public struct ScreenReal : IComparable<ScreenReal>
+    {
+        /// <summary>
+        /// Initialises a <see cref="ScreenReal"/> with the given value.
+        /// </summary>
+        /// <param name="value"></param>
+        public ScreenReal(double value)
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value))
+                throw new ArgumentOutOfRangeException(nameof(value), "Value must be finite");
+
+            Value = value;
+        }
+
+        /// <summary>
+        /// Zero.
+        /// </summary>
+        public static readonly ScreenReal Zero = new ScreenReal(0);
+
+        /// <summary>
+        /// The double value of the <see cref="ScreenReal"/>.
+        /// </summary>
+        public double Value { get; }
+
+        /// <inheritdoc/>
+        public int CompareTo(ScreenReal other)
+        {
+            return Value.CompareTo(other.Value);
+        }
+
+        /// <summary>
+        /// Adds two <see cref="ScreenReal"/> values.
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static ScreenReal operator +(ScreenReal l, ScreenReal r)
+        {
+            return new ScreenReal(l.Value + r.Value);
+        }
+
+        /// <summary>
+        /// Computes the difference between two <see cref="ScreenReal"/> values.
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static ScreenReal operator -(ScreenReal l, ScreenReal r)
+        {
+            return new ScreenReal(l.Value - r.Value);
+        }
+
+        /// <summary>
+        /// Scales a <see cref="ScreenReal"/> by a factor.
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static ScreenReal operator *(ScreenReal l, double r)
+        {
+            return new ScreenReal(l.Value * r);
+        }
+
+        /// <summary>
+        /// Computes the radio of two <see cref="ScreenReal"/> values.
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static double operator /(ScreenReal l, ScreenReal r)
+        {
+            return l.Value / r.Value;
+        }
+
+        /// <inheritdoc/>
+        public override bool Equals(object obj)
+        {
+            return obj is ScreenReal other && other.Value == Value;
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode();
+        }
+
+        /// <summary>
+        /// Compares two <see cref="ScreenReal"/> values for equality.
+        /// </summary>
+        public static bool operator ==(ScreenReal left, ScreenReal right)
+        {
+            return left.Value == right.Value;
+        }
+
+        /// <summary>
+        /// Compares two <see cref="ScreenReal"/> values for inequality.
+        /// </summary>
+        public static bool operator !=(ScreenReal left, ScreenReal right)
+        {
+            return !(left == right);
+        }
+    }
+
+    /// <summary>
+    /// Represents a range that may be empty.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public struct Range<T>
+    {
+        private bool _isNonEmpty;
+        private T _min;
+        private T _max;
+
+        /// <summary>
+        /// Gets the empty range.
+        /// </summary>
+        public static readonly Range<T> Empty = default;
+
+        /// <summary>
+        /// Initialises a range.
+        /// </summary>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        public Range(T min, T max) : this()
+        {
+            _isNonEmpty = true;
+            _min = min;
+            _max = max;
+        }
+
+        /// <summary>
+        /// Initialises a zero-width range.
+        /// </summary>
+        /// <param name="value"></param>
+        public Range(T value)
+            : this(value, value)
+        {
+        }
+
+        /// <summary>
+        /// Gets a value indiciating whether the range is empty.
+        /// </summary>
+        public bool IsEmpty => !_isNonEmpty;
+        
+        /// <summary>
+        /// Tries to get the min and max values.
+        /// </summary>
+        /// <param name="max"></param>
+        /// <param name="min"></param>
+        /// <returns><c>true</c> if the range is not empty.</returns>
+        public bool TryGetMinMax(out T min, out T max)
+        {
+            max = _max;
+            min = _min;
+            return _isNonEmpty;
+        }
+    }
 }

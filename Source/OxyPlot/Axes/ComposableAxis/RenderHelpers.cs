@@ -28,7 +28,7 @@ namespace OxyPlot.Axes.ComposableAxis
             where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
             where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
         {
-            return new ScreenPoint(x.Transform(sample.X), y.Transform(sample.Y));
+            return new ScreenPoint(x.Transform(sample.X).Value, y.Transform(sample.Y).Value);
         }
 
         /// <summary>
@@ -151,12 +151,12 @@ namespace OxyPlot.Axes.ComposableAxis
 
                 if (xprinciple)
                 {
-                    var m = x.InverseTransform((p0.X + p1.X) / 2);
+                    var m = x.InverseTransform(new ScreenReal((p0.X + p1.X) / 2));
                     c = x.Provider.Deinterpolate(s0.X, s1.X, m);
                 }
                 else
                 {
-                    var m = y.InverseTransform((p0.Y + p1.Y) / 2);
+                    var m = y.InverseTransform(new ScreenReal((p0.Y + p1.Y) / 2));
                     c = y.Provider.Deinterpolate(s0.Y, s1.Y, m);
                 }
 

@@ -87,14 +87,14 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <param name="data">The value in Data space.</param>
         /// <returns>A value in Interaction space.</returns>
-        double Transform(TData data);
+        InteractionReal Transform(TData data);
 
         /// <summary>
         /// Transforms a value in Interaction space to Data space.
         /// </summary>
         /// <param name="x">The value in Interaction space.</param>
         /// <returns>A value in Data space.</returns>
-        TData InverseTransform(double x);
+        TData InverseTransform(InteractionReal x);
 
         /// <summary>
         /// Determines whether there is a discontenuity between the two values.
@@ -132,14 +132,14 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <param name="data">The value in Data space.</param>
         /// <returns>A value in Screen space.</returns>
-        double Transform(TData data);
+        ScreenReal Transform(TData data);
 
         /// <summary>
         /// Transforms a value in Screen space to Data space.
         /// </summary>
         /// <param name="s">The value in Screen space.</param>
         /// <returns>A value in Data space.</returns>
-        TData InverseTransform(double s);
+        TData InverseTransform(ScreenReal s);
 
         /// <summary>
         /// Determines whether there is a discontenuity between the two values.
@@ -245,5 +245,39 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets the minimum allowed number of steps.
         /// </summary>
         public int MinimumCount { get; }
+    }
+
+    /// <summary>
+    /// Provides for an optional over a given value.
+    /// </summary>
+    /// <typeparam name="TValue"></typeparam>
+    /// <typeparam name="TOptional"></typeparam>
+    public interface IOptionalProvider<TValue, TOptional>
+    {
+        /// <summary>
+        /// Gets a value indiciating whether the given value is set.
+        /// </summary>
+        /// <param name="optional"></param>
+        /// <returns><c>true</c> if the optional is not none.</returns>
+        bool HasValue(TOptional optional);
+
+        /// <summary>
+        /// Gets a value indiciating whether the given value is set.
+        /// Sets <paramref name="value"/> if it is.
+        /// </summary>
+        /// <param name="optional"></param>
+        /// <param name="value"></param>
+        /// <returns><c>true</c> if the optional is not none.</returns>
+        bool TryGetValue(TOptional optional, out TValue value);
+
+        /// <summary>
+        /// Gets a value that represents a 'none' option.
+        /// </summary>
+        TOptional None { get; }
+
+        /// <summary>
+        /// Gets an optional that wraps a value.
+        /// </summary>
+        TOptional Some(TValue value);
     }
 }

@@ -69,9 +69,9 @@ namespace OxyPlot.Axes.ComposableAxis
         public DoubleProvider Provider => default;
 
         /// <inheritdoc/>
-        public double InverseTransform(double x)
+        public double InverseTransform(InteractionReal x)
         {
-            return Math.Exp(x);
+            return Math.Exp(x.Value);
         }
 
         /// <inheritdoc/>
@@ -86,9 +86,9 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
-        public double Transform(double data)
+        public InteractionReal Transform(double data)
         {
-            return Math.Log(data);
+            return new InteractionReal(Math.Log(data));
         }
 
         /// <inheritdoc/>
@@ -122,15 +122,15 @@ namespace OxyPlot.Axes.ComposableAxis
         public DoubleProvider Provider => default;
 
         /// <inheritdoc/>
-        public double InverseTransform(double x)
+        public double InverseTransform(InteractionReal x)
         {
-            return x;
+            return x.Value;
         }
 
         /// <inheritdoc/>
-        public double Transform(double data)
+        public InteractionReal Transform(double data)
         {
-            return data;
+            return new InteractionReal(data);
         }
 
         /// <inheritdoc/>
@@ -147,9 +147,20 @@ namespace OxyPlot.Axes.ComposableAxis
     public struct ViewInfo
     {
         /// <summary>
+        /// Initialises a <see cref="ViewInfo"/>.
+        /// </summary>
+        /// <param name="screenOffset"></param>
+        /// <param name="screenScale"></param>
+        public ViewInfo(ScreenReal screenOffset, double screenScale)
+        {
+            ScreenOffset = screenOffset;
+            ScreenScale = screenScale;
+        }
+
+        /// <summary>
         /// Gets the Screen space offset, that is, the Screen space value to which the Interaction space zero maps.
         /// </summary>
-        public double ScreenOffset { get; }
+        public ScreenReal ScreenOffset { get; }
 
         /// <summary>
         /// Gets the Screen space offset, that is, the scaling between Screen space and Interaction space.
@@ -161,9 +172,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <param name="i">A value in Interaction space.</param>
         /// <returns>The resulting value in Screen space.</returns>
-        public double Transform(double i)
+        public ScreenReal Transform(InteractionReal i)
         {
-            return ScreenOffset + i * ScreenScale;
+            return ScreenOffset + new ScreenReal(i.Value * ScreenScale);
         }
 
         /// <summary>
@@ -171,9 +182,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <param name="s">A value in Screen space.</param>
         /// <returns>The resulting value in Interaction space.</returns>
-        public double InverseTransform(double s)
+        public InteractionReal InverseTransform(ScreenReal s)
         {
-            return (s - ScreenOffset) / ScreenScale;
+            return new InteractionReal((s.Value - ScreenOffset.Value) / ScreenScale);
         }
     }
 
@@ -183,16 +194,16 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="TData"></typeparam>
     /// <typeparam name="TDataProvider"></typeparam>
     /// <typeparam name="TDataTransformation"></typeparam>
-    public struct AxisScreenMapping<TData, TDataProvider, TDataTransformation> : IAxisScreenTransformation<TData, TDataProvider>
+    public struct AxisScreenTransformation<TData, TDataProvider, TDataTransformation> : IAxisScreenTransformation<TData, TDataProvider>
         where TDataProvider : IDataProvider<TData>
         where TDataTransformation : IDataTransformation<TData, TDataProvider>
     {
         /// <summary>
-        /// Initialises the <see cref="AxisScreenMapping{TData, TDataProvider, TDataTransformation}"/>.
+        /// Initialises the <see cref="AxisScreenTransformation{TData, TDataProvider, TDataTransformation}"/>.
         /// </summary>
         /// <param name="dataTransformation"></param>
         /// <param name="viewInfo"></param>
-        public AxisScreenMapping(TDataTransformation dataTransformation, ViewInfo viewInfo)
+        public AxisScreenTransformation(TDataTransformation dataTransformation, ViewInfo viewInfo)
         {
             DataTransformation = dataTransformation;
             ViewInfo = viewInfo;
@@ -218,7 +229,7 @@ namespace OxyPlot.Axes.ComposableAxis
         public bool IsLinear => DataTransformation.IsLinear;
 
         /// <inheritdoc/>
-        public TData InverseTransform(double s)
+        public TData InverseTransform(ScreenReal s)
         {
             return DataTransformation.InverseTransform(ViewInfo.InverseTransform(s));
         }
@@ -230,9 +241,40 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
-        public double Transform(TData data)
+        public ScreenReal Transform(TData data)
         {
             return ViewInfo.Transform(DataTransformation.Transform(data));
+        }
+    }
+
+    /// <summary>
+    /// Provides <see cref="System.Double"/> as option when <see cref="double.NaN"/>.
+    /// </summary>
+    public struct DoubleAsNaNOptional : IOptionalProvider<double, double>
+    {
+        /// <inheritdoc/>
+        public bool HasValue(double optional)
+        {
+            return !double.IsNaN(optional);
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetValue(double optional, out double value)
+        {
+            value = optional;
+            return !double.IsNaN(optional);
+        }
+
+        /// <inheritdoc/>
+        public double None => double.NaN;
+
+        /// <inheritdoc/>
+        public double Some(double value)
+        {
+            if (double.IsNaN(value))
+                throw new ArgumentException("Cannot represent NaN as a non-none value.");
+
+            return value;
         }
     }
 }
