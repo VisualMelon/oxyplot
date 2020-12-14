@@ -47,6 +47,17 @@ namespace OxyPlot.Axes.ComposableAxis
     public struct Tick<TData>
     {
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="label"></param>
+        public Tick(TData value, string label)
+        {
+            Value = value;
+            Label = label ?? throw new ArgumentNullException(nameof(label));
+        }
+
+        /// <summary>
         /// The value representated by this tick.
         /// </summary>
         public TData Value { get; }
@@ -155,6 +166,65 @@ namespace OxyPlot.Axes.ComposableAxis
 
             this._ticks.Clear();
             this.TickLocator.GetTicks(viewInformation.ClipMinimum, viewInformation.ClipMaximum, this.SpacingOptions, this._ticks);
+        }
+    }
+
+    /// <summary>
+    /// A basic Linear tick locator for doubles.
+    /// </summary>
+    public class LinearDoubleTickLocator : ITickLocator<double>
+    {
+        /// <summary>
+        /// Gets or sets the Tick Offset.
+        /// </summary>
+        public double Offset { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Formatter.
+        /// </summary>
+        public Func<double, string> Formatter { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Format String. Used if <see cref="Formatter"/> is <c>null</c>. Default is <c>"G5"</c>.
+        /// </summary>
+        public string FormatString { get; set; } = "G5";
+
+        /// <summary>
+        /// Formats a tick value.
+        /// </summary>
+        /// <param name="value">The tick value to format.</param>
+        /// <returns></returns>
+        public string Format(double value)
+        {
+            if (Formatter != null)
+                return Formatter(value);
+            else
+                return value.ToString(FormatString);
+        }
+
+        /// <inheritdoc/>
+        public void GetTicks(double minium, double maximum, ISpacingOptions<double> spacingOptions, IList<Tick<double>> ticks)
+        {
+            // TODO: proper implementation
+            var upperBound = (maximum - minium) / spacingOptions.MaximumTickCount;
+            var niceLog = Math.Floor(Math.Log10(upperBound));
+            var candidate = Math.Pow(10, niceLog);
+            if (candidate * 5 < upperBound)
+                candidate *= 5; ;
+            if (candidate * 2 < upperBound)
+                candidate *= 2;
+
+            var next = Math.Round((minium - Offset) / candidate) * candidate;
+            while (next < minium)
+                next += candidate;
+
+            do
+            {
+                ticks.Add(new Tick<double>(next, Format(next)));
+
+                next += candidate;
+            }
+            while (next < candidate);
         }
     }
 

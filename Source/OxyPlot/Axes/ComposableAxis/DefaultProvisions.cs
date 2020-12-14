@@ -277,4 +277,144 @@ namespace OxyPlot.Axes.ComposableAxis
             return value;
         }
     }
+
+    /// <summary>
+    /// Provides methods to help render XY values.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    public class XYRenderHelper<XData, YData>
+    {
+        // TODO: provide an XY consumer: this can just aggregate two, and pass them on (so that all the 'real' code doesn't get stuffed in here)
+
+        private XYRenderHelper(ITypedXYRenderHelper typed)
+        {
+            Typed = typed ?? throw new ArgumentNullException(nameof(typed));
+        }
+
+        private ITypedXYRenderHelper Typed { get; }
+
+        /// <summary>
+        /// Interpolates lines.
+        /// </summary>
+        /// <param name="dataSamples"></param>
+        /// <param name="minSegmentLength"></param>
+        /// <param name="screenPoints">The output buffer.</param>
+        public void InterpolateLines(IReadOnlyList<DataSample<XData, YData>> dataSamples, double minSegmentLength, IList<ScreenPoint> screenPoints)
+        {
+            Typed.InterpolateLines(dataSamples, minSegmentLength, screenPoints);
+        }
+
+        private interface ITypedXYRenderHelper
+        {
+            void InterpolateLines(IReadOnlyList<DataSample<XData, YData>> dataSamples, double minSegmentLength, IList<ScreenPoint> screenPoints);
+        }
+
+        /// <summary>
+        /// Attempts to prepare an <see cref="XYRenderHelper{XData, YData}"/> for two axis. Throws if either axis is of the wrong type.
+        /// This method should probably not be here.
+        /// </summary>
+        /// <param name="xaxis"></param>
+        /// <param name="yaxis"></param>
+        /// <returns></returns>
+        public XYRenderHelper<XData, YData> TryPrepare(IAxis xaxis, IAxis yaxis)
+        {
+            var tx = xaxis as IAxis<XData>;
+            var ty = yaxis as IAxis<YData>;
+
+            if (tx == null)
+                throw new InvalidOperationException($"XAxis {xaxis.Key} is not of the expected Data type.");
+            if (ty == null)
+                throw new InvalidOperationException($"YAxis {yaxis.Key} is not of the expected Data type.");
+
+            return Prepare(tx, ty);
+        }
+
+        /// <summary>
+        /// Prepares an <see cref="XYRenderHelper{XData, YData}"/> for two axis.
+        /// </summary>
+        /// <param name="xaxis"></param>
+        /// <param name="yaxis"></param>
+        /// <returns></returns>
+        public XYRenderHelper<XData, YData> Prepare(IAxis<XData> xaxis, IAxis<YData> yaxis)
+        {
+            var xconsumer = new XConsumer(xaxis, yaxis);
+            return xconsumer.Result;
+        }
+
+        private class XConsumer : IAxisScreenTransformationConsumer<XData>
+        {
+            private IAxis<XData> XAxis;
+            private IAxis<YData> YAxis;
+
+            public XConsumer(IAxis<XData> xAxis, IAxis<YData> yAxis)
+            {
+                XAxis = xAxis ?? throw new ArgumentNullException(nameof(xAxis));
+                YAxis = yAxis ?? throw new ArgumentNullException(nameof(yAxis));
+            }
+
+            private XYRenderHelper<XData, YData> _result = null;
+            public XYRenderHelper<XData, YData> Result
+            {
+                get
+                {
+                    if (_result == null)
+                        XAxis.Consume(this);
+                    return _result;
+                }
+            }
+
+            public void Consume<XDataProvider, XAxisScreenTransformation>(XAxisScreenTransformation transformation)
+                where XDataProvider : IDataProvider<XData>
+                where XAxisScreenTransformation : IAxisScreenTransformation<XData, XDataProvider>
+            {
+                var yconsumer = new YConsumer<XDataProvider, XAxisScreenTransformation>(transformation);
+                YAxis.Consume(yconsumer);
+                _result = yconsumer.Result;
+            }
+        }
+
+        private class YConsumer<XDataProvider, XAxisTransformation> : IAxisScreenTransformationConsumer<YData>
+            where XDataProvider : IDataProvider<XData>
+            where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+        {
+            public YConsumer(XAxisTransformation xTransformation)
+            {
+                XTransformation = xTransformation;
+            }
+
+            public XYRenderHelper<XData, YData> Result { get; private set; }
+
+            private XAxisTransformation XTransformation { get; }
+
+            public void Consume<YDataProvider, YAxisScreenTransformation>(YAxisScreenTransformation transformation)
+                where YDataProvider : IDataProvider<YData>
+                where YAxisScreenTransformation : IAxisScreenTransformation<YData, YDataProvider>
+            {
+                var typed = new TypedXYRenderHelper<XDataProvider, YDataProvider, XAxisTransformation, YAxisScreenTransformation>(XTransformation, transformation);
+                Result = new XYRenderHelper<XData, YData>(typed);
+            }
+        }
+
+        private class TypedXYRenderHelper<XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : ITypedXYRenderHelper
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+            where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+            where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+        {
+            public TypedXYRenderHelper(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
+            {
+                XTransformation = xTransformation;
+                YTransformation = yTransformation;
+            }
+
+            public XAxisTransformation XTransformation { get; }
+            public YAxisTransformation YTransformation { get; }
+
+            public void InterpolateLines(IReadOnlyList<DataSample<XData, YData>> dataSamples, double minSegmentLength, IList<ScreenPoint> screenPoints)
+            {
+                RenderHelpers.InterpolateLines<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(XTransformation, YTransformation, dataSamples, minSegmentLength, screenPoints);
+            }
+        }
+    }
 }
