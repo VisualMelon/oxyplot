@@ -300,35 +300,6 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
-    /// Represents a discontenuity in a data-space.
-    /// </summary>
-    /// <typeparam name="TData"></typeparam>
-    [Obsolete("Better to let the Transformations check on a case by case basis, I think: may be worth adding a Discontenuity Context to support either method")]
-    public struct Discontenuity<TData>
-    {
-        /// <summary>
-        /// Inializes a <see cref="Discontenuity{TData}"/> from a pair of start and end values.
-        /// </summary>
-        /// <param name="start"></param>
-        /// <param name="end"></param>
-        public Discontenuity(TData start, TData end)
-        {
-            Start = start;
-            End = end;
-        }
-
-        /// <summary>
-        /// Gets the start of the discontenuity.
-        /// </summary>
-        public TData Start { get; }
-
-        /// <summary>
-        /// Gets the start of the discontenuity.
-        /// </summary>
-        public TData End { get; }
-    }
-
-    /// <summary>
     /// Represents a sample.
     /// </summary>
     /// <typeparam name="XData"></typeparam>

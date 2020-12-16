@@ -41,14 +41,6 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             return v0 * (1 - c) + v1 * c;
         }
-
-        /// <inheritdoc/>
-        public bool Intersects(Discontenuity<double> discontenuity, double a, double b)
-        {
-            var min = Math.Min(a, b);
-            var max = Math.Max(a, b);
-            return min > discontenuity.End || max < discontenuity.Start;
-        }
     }
 
     /// <summary>
@@ -72,17 +64,6 @@ namespace OxyPlot.Axes.ComposableAxis
         public double InverseTransform(InteractionReal x)
         {
             return Math.Exp(x.Value);
-        }
-
-        /// <inheritdoc/>
-        public void LocateDiscontenuities(double min, double max, IList<Discontenuity<double>> discontenuities)
-        {
-            // anything <= 0 is invalid... not sure if that counts as a Discontenuity: should probably just throw here and in the transforms
-            // NOTE: we don't want to provide a double-wrapper, because that will mean we can't use DataPoint without much suffering (or does it?)
-            if (min <= 0 || max <= 0)
-            {
-                discontenuities.Add(new Discontenuity<double>(double.NegativeInfinity, +0));
-            }
         }
 
         /// <inheritdoc/>

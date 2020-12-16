@@ -27,15 +27,6 @@ namespace OxyPlot.Axes.ComposableAxis
     public interface IDataProvider<TData> : IComparer<TData>, IEqualityComparer<TData>
     {
         /// <summary>
-        /// Determines whether a value intersects a discontenuity.
-        /// </summary>
-        /// <param name="discontenuity">The discontenuity to test.</param>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <returns>True if the range intersects the discontenuity.</returns>
-        bool Intersects(Discontenuity<TData> discontenuity, TData a, TData b);
-
-        /// <summary>
         /// Gets a value indicating whether the values in the data space are discrete.
         /// </summary>
         bool IsDiscrete { get; }
