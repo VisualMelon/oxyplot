@@ -318,14 +318,51 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <summary>
-        /// Gets the X value.
+        /// Gets the X position.
         /// </summary>
         public XData X { get; }
 
         /// <summary>
-        /// Gets the Y value.
+        /// Gets the Y position.
         /// </summary>
         public YData Y { get; }
+    }
+
+    /// <summary>
+    /// Represents a sample.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    /// <typeparam name="VData"></typeparam>
+    public struct DataSample<XData, YData, VData>
+    {
+        /// <summary>
+        /// Creates a sample from values.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="value"></param>
+        public DataSample(XData x, YData y, VData value)
+        {
+            X = x;
+            Y = y;
+            Value = value;
+        }
+
+        /// <summary>
+        /// Gets the X position.
+        /// </summary>
+        public XData X { get; }
+
+        /// <summary>
+        /// Gets the Y position.
+        /// </summary>
+        public YData Y { get; }
+
+        /// <summary>
+        /// Gets the Value.
+        /// </summary>
+        public VData Value { get; }
     }
 
     /// <summary>

@@ -22,9 +22,148 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Consumes two axis-screen transformations.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    public interface IXYAxisScreenTransformationConsumer<XData, YData>
+    {
+        /// <summary>
+        /// Consumes two axis-screen transformations.
+        /// </summary>
+        /// <typeparam name="XDataProvider"></typeparam>
+        /// <typeparam name="YDataProvider"></typeparam>
+        /// <typeparam name="XAxisScreenTransformation"></typeparam>
+        /// <typeparam name="YAxisScreenTransformation"></typeparam>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        void Consume<XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(XAxisScreenTransformation x, YAxisScreenTransformation y)
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+            where XAxisScreenTransformation : IAxisScreenTransformation<XData, XDataProvider>
+            where YAxisScreenTransformation : IAxisScreenTransformation<YData, YDataProvider>;
+    }
+
+    /// <summary>
+    /// Consumes three axis-screen transformations.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    /// <typeparam name="ZData"></typeparam>
+    public interface IXYZAxisScreenTransformationConsumer<XData, YData, ZData>
+    {
+        /// <summary>
+        /// Consumes three axis-screen transformations.
+        /// </summary>
+        /// <typeparam name="XDataProvider"></typeparam>
+        /// <typeparam name="YDataProvider"></typeparam>
+        /// <typeparam name="ZDataProvider"></typeparam>
+        /// <typeparam name="XAxisScreenTransformation"></typeparam>
+        /// <typeparam name="YAxisScreenTransformation"></typeparam>
+        /// <typeparam name="ZAxisScreenTransformation"></typeparam>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        void Consume<XDataProvider, YDataProvider, ZDataProvider, XAxisScreenTransformation, YAxisScreenTransformation, ZAxisScreenTransformation>(XAxisScreenTransformation x, YAxisScreenTransformation y, ZAxisScreenTransformation z)
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+            where ZDataProvider : IDataProvider<ZData>
+            where XAxisScreenTransformation : IAxisScreenTransformation<XData, XDataProvider>
+            where YAxisScreenTransformation : IAxisScreenTransformation<YData, YDataProvider>
+            where ZAxisScreenTransformation : IAxisScreenTransformation<ZData, ZDataProvider>;
+    }
+
+    // TODO: will need seperate interfaces for color axis consumers?
+    // -> yes, because this is the context in which all serise will render (and who knows what else)
+
+    /// <summary>
+    /// Base class for axes.
+    /// </summary>
+    public abstract class AxisBase : PlotElement, IAxis
+    {
+        /// <summary>
+        /// Gets or sets the key of the axis. This can be used to specify an axis if you have defined multiple axes in a plot. The default value is <c>null</c>.
+        /// </summary>
+        public string Key { get; set; }
+
+        /// <summary>
+        /// Gets or sets the layer of the axis. The default value is <see cref="AxisLayer.BelowSeries"/>.
+        /// </summary>
+        public AxisLayer Layer { get; set; }
+
+        /// <summary>
+        /// Gets or sets the position of the axis. The default value is <see cref="AxisPosition.Left"/>.
+        /// </summary>
+        public AxisPosition Position { get; set; }
+
+        /// <summary>
+        /// Gets the view info
+        /// </summary>
+        public abstract ViewInfo ViewInfo { get; }
+
+        /// <summary>
+        /// Gets or sets the screen coordinate of the maximum end of the axis.
+        /// </summary>
+        public ScreenPoint ScreenMax { get; protected set; }
+
+        /// <summary>
+        /// Gets or sets the screen coordinate of the minimum end of the axis.
+        /// </summary>
+        public ScreenPoint ScreenMin { get; protected set; }
+
+        /// <summary>
+        /// Gets or sets the start position of the axis on the plot area. The default value is <c>0</c>.
+        /// </summary>
+        /// <remarks>The position is defined by a fraction in the range from <c>0</c> to <c>1</c>, where <c>0</c> is at the bottom/left
+        /// and <c>1</c> is at the top/right. </remarks>
+        public double StartPosition { get; set; }
+
+        /// <summary>
+        /// Gets or sets the end position of the axis on the plot area. The default value is <c>1</c>.
+        /// </summary>
+        /// <remarks>The position is defined by a fraction in the range from <c>0</c> to <c>1</c>, where <c>0</c> is at the bottom/left
+        /// and <c>1</c> is at the top/right. </remarks>
+        public double EndPosition { get; set; }
+
+        /// <summary>
+        /// Determines whether the axis is horizontal.
+        /// </summary>
+        /// <returns><c>true</c> if the axis is horizontal; otherwise, <c>false</c> .</returns>
+        public bool IsHorizontal => this.Position == AxisPosition.Top || this.Position == AxisPosition.Bottom;
+
+        /// <summary>
+        /// Determines whether the axis is vertical.
+        /// </summary>
+        /// <returns><c>true</c> if the axis is horizontal; otherwise, <c>false</c> .</returns>
+        public bool IsVertical => this.Position == AxisPosition.Left || this.Position == AxisPosition.Right;
+
+        /// <inheritdoc/>
+        public abstract void Reset();
+
+        /// <inheritdoc/>
+        public abstract void ZoomAtCenter(double factor);
+
+        /// <inheritdoc/>
+        public abstract void ZoomAt(ScreenPoint staticPoint, double factor);
+
+        /// <inheritdoc/>
+        public abstract void Pan(ScreenPoint previousPoint, ScreenPoint newPoint);
+
+        /// <inheritdoc/>
+        public bool IsAxisVisible { get; set; }
+    }
+
+    /// <summary>
+    /// All the stuff needed for compat that is too weakly typed.
+    /// </summary>
+    public interface IOldAxisStuffIWouldPreferDidNotExist
+    {
+    }
+
+    /// <summary>
     /// An axis.
     /// </summary>
-    public interface IAxis
+    public interface IAxis : IOldAxisStuffIWouldPreferDidNotExist
     {
         /// <summary>
         /// Gets the Key.
@@ -36,6 +175,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         AxisPosition Position { get; set; }
 
+        // TODO: these really should not be here... I think the only generic code that needs them is margin computation, and that's in the axis itself so that should be fine
         /// <summary>
         /// Gets the Start position.
         /// </summary>
@@ -50,6 +190,36 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets the View information.
         /// </summary>
         ViewInfo ViewInfo { get; }
+
+        /// <summary>
+        /// Resets the axis view.
+        /// </summary>
+        void Reset();
+
+        /// <summary>
+        /// Zooms by the given factor.
+        /// </summary>
+        /// <param name="factor"></param>
+        void ZoomAtCenter(double factor);
+
+        /// <summary>
+        /// Zooms by the given factor, maintaining the position of given screen-space point.
+        /// </summary>
+        /// <param name="staticPoint"></param>
+        /// <param name="factor"></param>
+        void ZoomAt(ScreenPoint staticPoint, double factor);
+
+        /// <summary>
+        /// Pans the axis.
+        /// </summary>
+        /// <param name="previousPoint"></param>
+        /// <param name="newPoint"></param>
+        public abstract void Pan(ScreenPoint previousPoint, ScreenPoint newPoint);
+
+        /// <summary>
+        /// Gets a value indicating whether the axis is visible.
+        /// </summary>
+        bool IsAxisVisible { get; }
     }
 
     /// <summary>
@@ -57,6 +227,13 @@ namespace OxyPlot.Axes.ComposableAxis
     /// </summary>
     public interface IAxis<TData> : IAxis
     {
+        /// <summary>
+        /// Zooms to the given range.
+        /// </summary>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        void ZoomTo(TData min, TData max);
+
         /// <summary>
         /// Consumes a <see cref="IAxisScreenTransformationConsumer{TData}"/>.
         /// </summary>
@@ -122,7 +299,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="TDataTransformation"></typeparam>
     /// <typeparam name="TDataOptional"></typeparam>
     /// <typeparam name="TDataOptionalProvider"></typeparam>
-    public class HorizontalVerticalAxis<TData, TDataProvider, TDataTransformation, TDataOptional, TDataOptionalProvider> : IAxis<TData>
+    public class HorizontalVerticalAxis<TData, TDataProvider, TDataTransformation, TDataOptional, TDataOptionalProvider> : AxisBase, IAxis<TData>
         where TDataProvider : IDataProvider<TData>
         where TDataTransformation : IDataTransformation<TData, TDataProvider>
         where TDataOptionalProvider : IOptionalProvider<TData, TDataOptional>
@@ -197,32 +374,10 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public double MaximumPadding { get; set; }
         
-        /// <inheritdoc/>
-        public string Key { get; set; }
-
-        /// <inheritdoc/>
-        public AxisPosition Position { get; set; }
-
         /// <summary>
         /// Gets a value indicating whether the axis is reversed.
         /// </summary>
         public bool IsReversed => StartPosition > EndPosition;
-
-        /// <summary>
-        /// Gets a value indicating whether the axis is horizontal.
-        /// </summary>
-        public bool IsHorizontal => Position == AxisPosition.Top || Position == AxisPosition.Bottom;
-
-        /// <summary>
-        /// Gets a value indicating whether the axis is horizontal.
-        /// </summary>
-        public bool IsVertical => Position == AxisPosition.Left || Position == AxisPosition.Right;
-
-        /// <inheritdoc/>
-        public double StartPosition { get; set; }
-
-        /// <inheritdoc/>
-        public double EndPosition { get; set; }
 
         private ViewInfo _viewInfo;
 
@@ -276,7 +431,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// Resets the view.
         /// </summary>
-        public void ResetView()
+        public override void Reset()
         {
             ViewInteractionRadius = null;
             ViewInteractionCenter = null;
@@ -288,7 +443,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Zooms by the given factor.
         /// </summary>
         /// <param name="factor"></param>
-        public void Zoom(double factor)
+        public override void ZoomAtCenter(double factor)
         {
             ViewInteractionRadius = ActualInteractionRadius * factor;
             ViewInteractionCenter = ActualInteractionCenter;
@@ -304,6 +459,21 @@ namespace OxyPlot.Axes.ComposableAxis
         public void ZoomAt(ScreenReal position, double factor)
         {
             var ip = ViewInfo.InverseTransform(position);
+
+            ViewInteractionRadius = ActualInteractionRadius * factor;
+            ViewInteractionCenter = (ip - ActualInteractionCenter) * factor - ip;
+
+            RefreshView();
+        }
+
+        /// <summary>
+        /// Zooms by the given factor, maintaining the given screen-space point.
+        /// </summary>
+        /// <param name="staticPoint"></param>
+        /// <param name="factor"></param>
+        public override void ZoomAt(ScreenPoint staticPoint, double factor)
+        {
+            var ip = ViewInfo.InverseTransform(new ScreenReal(IsHorizontal ? staticPoint.X : staticPoint.Y));
 
             ViewInteractionRadius = ActualInteractionRadius * factor;
             ViewInteractionCenter = (ip - ActualInteractionCenter) * factor - ip;
@@ -331,7 +501,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Pans by the given factor.
         /// </summary>
         /// <param name="factor"></param>
-        public void Pan(double factor)
+        public override void Pan(double factor)
         {
             ViewInteractionRadius = ActualInteractionRadius;
             ViewInteractionCenter = ActualInteractionCenter + ActualInteractionRadius * factor * 2;
@@ -340,7 +510,7 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
-        public ViewInfo ViewInfo => _viewInfo;
+        public override ViewInfo ViewInfo => _viewInfo;
 
         /// <summary>
         /// Update the <see cref="ViewInfo"/> and other properties derived from the Actual Interaction Min/Max and the Screen Min/Max.

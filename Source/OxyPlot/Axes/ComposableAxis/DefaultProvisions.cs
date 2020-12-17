@@ -260,45 +260,111 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Provides basic methods to render in X/Y space
+    /// </summary>
+    public interface IXYRenderHelper<XData, YData>
+    {
+        /// <summary>
+        /// Interpolates lines
+        /// </summary>
+        /// <param name="dataSamples"></param>
+        /// <param name="minSegmentLength"></param>
+        /// <param name="screenPoints"></param>
+        void InterpolateLines(IReadOnlyList<DataSample<XData, YData>> dataSamples, double minSegmentLength, IList<ScreenPoint> screenPoints);
+    }
+
+    /// <summary>
+    /// Prepares instances of <see cref="IXYRenderHelper{XData, YData}"/>.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    public class XYRenderHelperPreparer<XData, YData>
+    {
+        private class Generator : IXYAxisScreenTransformationConsumer<XData, YData>
+        {
+            public void Consume<XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(XAxisScreenTransformation x, YAxisScreenTransformation y)
+                where XDataProvider : IDataProvider<XData>
+                where YDataProvider : IDataProvider<YData>
+                where XAxisScreenTransformation : IAxisScreenTransformation<XData, XDataProvider>
+                where YAxisScreenTransformation : IAxisScreenTransformation<YData, YDataProvider>
+            {
+                Result = new XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(x, y);
+            }
+
+            public IXYRenderHelper<XData, YData> Result { get; private set; }
+        }
+
+        /// <summary>
+        /// Prepares an <see cref="IXYRenderHelper{XData, YData}"/> from the given collator.
+        /// </summary>
+        /// <param name="collator"></param>
+        /// <returns></returns>
+        public static IXYRenderHelper<XData, YData> Prepare(XYCollator<XData, YData> collator)
+        {
+            var generator = new Generator();
+            collator.Consume(generator);
+            return generator.Result;
+        }
+    }
+
+    /// <summary>
+    /// Provides basic methods to render in X/Y space
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    /// <typeparam name="XDataProvider"></typeparam>
+    /// <typeparam name="YDataProvider"></typeparam>
+    /// <typeparam name="XAxisTransformation"></typeparam>
+    /// <typeparam name="YAxisTransformation"></typeparam>
+    public class XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYRenderHelper<XData, YData>
+        where XDataProvider : IDataProvider<XData>
+        where YDataProvider : IDataProvider<YData>
+        where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+        where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+    {
+        /// <summary>
+        /// Initialises an XYRenderHelper.
+        /// </summary>
+        /// <param name="xTransformation"></param>
+        /// <param name="yTransformation"></param>
+        public XYRenderHelper(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
+        {
+            XTransformation = xTransformation;
+            YTransformation = yTransformation;
+        }
+
+        private XAxisTransformation XTransformation { get; }
+        private YAxisTransformation YTransformation { get; }
+
+        /// <inheritdoc/>
+        public void InterpolateLines(IReadOnlyList<DataSample<XData, YData>> dataSamples, double minSegmentLength, IList<ScreenPoint> screenPoints)
+        {
+            RenderHelpers.InterpolateLines<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(XTransformation, YTransformation, dataSamples, minSegmentLength, screenPoints);
+        }
+    }
+
+    /// <summary>
     /// Provides methods to help render XY values.
     /// </summary>
     /// <typeparam name="XData"></typeparam>
     /// <typeparam name="YData"></typeparam>
-    public class XYRenderHelper<XData, YData>
+    public class XYCollator<XData, YData>
     {
-        // TODO: provide an XY consumer: this can just aggregate two, and pass them on (so that all the 'real' code doesn't get stuffed in here)
-
-        private XYRenderHelper(ITypedXYRenderHelper typed)
+        private XYCollator(ITypedCollator typed)
         {
             Typed = typed ?? throw new ArgumentNullException(nameof(typed));
         }
 
-        private ITypedXYRenderHelper Typed { get; }
+        private ITypedCollator Typed { get; }
 
         /// <summary>
-        /// Interpolates lines.
-        /// </summary>
-        /// <param name="dataSamples"></param>
-        /// <param name="minSegmentLength"></param>
-        /// <param name="screenPoints">The output buffer.</param>
-        public void InterpolateLines(IReadOnlyList<DataSample<XData, YData>> dataSamples, double minSegmentLength, IList<ScreenPoint> screenPoints)
-        {
-            Typed.InterpolateLines(dataSamples, minSegmentLength, screenPoints);
-        }
-
-        private interface ITypedXYRenderHelper
-        {
-            void InterpolateLines(IReadOnlyList<DataSample<XData, YData>> dataSamples, double minSegmentLength, IList<ScreenPoint> screenPoints);
-        }
-
-        /// <summary>
-        /// Attempts to prepare an <see cref="XYRenderHelper{XData, YData}"/> for two axis. Throws if either axis is of the wrong type.
+        /// Attempts to prepare an <see cref="XYCollator{XData, YData}"/> for two axis. Throws if either axis is of the wrong type.
         /// This method should probably not be here.
         /// </summary>
         /// <param name="xaxis"></param>
         /// <param name="yaxis"></param>
         /// <returns></returns>
-        public XYRenderHelper<XData, YData> TryPrepare(IAxis xaxis, IAxis yaxis)
+        public XYCollator<XData, YData> TryPrepare(IAxis xaxis, IAxis yaxis)
         {
             var tx = xaxis as IAxis<XData>;
             var ty = yaxis as IAxis<YData>;
@@ -312,12 +378,12 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <summary>
-        /// Prepares an <see cref="XYRenderHelper{XData, YData}"/> for two axis.
+        /// Prepares an <see cref="XYCollator{XData, YData}"/> for two axis.
         /// </summary>
         /// <param name="xaxis"></param>
         /// <param name="yaxis"></param>
         /// <returns></returns>
-        public XYRenderHelper<XData, YData> Prepare(IAxis<XData> xaxis, IAxis<YData> yaxis)
+        public XYCollator<XData, YData> Prepare(IAxis<XData> xaxis, IAxis<YData> yaxis)
         {
             var xconsumer = new XConsumer(xaxis, yaxis);
             return xconsumer.Result;
@@ -334,8 +400,8 @@ namespace OxyPlot.Axes.ComposableAxis
                 YAxis = yAxis ?? throw new ArgumentNullException(nameof(yAxis));
             }
 
-            private XYRenderHelper<XData, YData> _result = null;
-            public XYRenderHelper<XData, YData> Result
+            private XYCollator<XData, YData> _result = null;
+            public XYCollator<XData, YData> Result
             {
                 get
                 {
@@ -364,7 +430,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 XTransformation = xTransformation;
             }
 
-            public XYRenderHelper<XData, YData> Result { get; private set; }
+            public XYCollator<XData, YData> Result { get; private set; }
 
             private XAxisTransformation XTransformation { get; }
 
@@ -372,18 +438,23 @@ namespace OxyPlot.Axes.ComposableAxis
                 where YDataProvider : IDataProvider<YData>
                 where YAxisScreenTransformation : IAxisScreenTransformation<YData, YDataProvider>
             {
-                var typed = new TypedXYRenderHelper<XDataProvider, YDataProvider, XAxisTransformation, YAxisScreenTransformation>(XTransformation, transformation);
-                Result = new XYRenderHelper<XData, YData>(typed);
+                var typed = new TypedCollator<XDataProvider, YDataProvider, XAxisTransformation, YAxisScreenTransformation>(XTransformation, transformation);
+                Result = new XYCollator<XData, YData>(typed);
             }
         }
 
-        private class TypedXYRenderHelper<XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : ITypedXYRenderHelper
+        private interface ITypedCollator
+        {
+            void Consume(IXYAxisScreenTransformationConsumer<XData, YData> consumer);
+        }
+
+        private class TypedCollator<XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : ITypedCollator
             where XDataProvider : IDataProvider<XData>
             where YDataProvider : IDataProvider<YData>
             where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
             where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
         {
-            public TypedXYRenderHelper(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
+            public TypedCollator(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
             {
                 XTransformation = xTransformation;
                 YTransformation = yTransformation;
@@ -392,10 +463,196 @@ namespace OxyPlot.Axes.ComposableAxis
             public XAxisTransformation XTransformation { get; }
             public YAxisTransformation YTransformation { get; }
 
-            public void InterpolateLines(IReadOnlyList<DataSample<XData, YData>> dataSamples, double minSegmentLength, IList<ScreenPoint> screenPoints)
+            public void Consume(IXYAxisScreenTransformationConsumer<XData, YData> consumer)
             {
-                RenderHelpers.InterpolateLines<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(XTransformation, YTransformation, dataSamples, minSegmentLength, screenPoints);
+                consumer.Consume<XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(XTransformation, YTransformation);
             }
+        }
+
+        /// <summary>
+        /// Passes onto the given consumer.
+        /// </summary>
+        /// <param name="consumer"></param>
+        public void Consume(IXYAxisScreenTransformationConsumer<XData, YData> consumer)
+        {
+            Typed.Consume(consumer);
+        }
+    }
+
+    /// <summary>
+    /// Provides methods to help render XY values.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    /// <typeparam name="ZData"></typeparam>
+    public class XYZCollator<XData, YData, ZData>
+    {
+        private XYZCollator(ITypedCollator typed)
+        {
+            Typed = typed ?? throw new ArgumentNullException(nameof(typed));
+        }
+
+        private ITypedCollator Typed { get; }
+
+        /// <summary>
+        /// Attempts to prepare an <see cref="XYCollator{XData, YData}"/> for three axis. Throws if either axis is of the wrong type.
+        /// This method should probably not be here.
+        /// </summary>
+        /// <param name="xaxis"></param>
+        /// <param name="yaxis"></param>
+        /// <param name="zaxis"></param>
+        /// <returns></returns>
+        public XYZCollator<XData, YData, ZData> TryPrepare(IAxis xaxis, IAxis yaxis, IAxis zaxis)
+        {
+            var tx = xaxis as IAxis<XData>;
+            var ty = yaxis as IAxis<YData>;
+            var tz = zaxis as IAxis<ZData>;
+
+            if (tx == null)
+                throw new InvalidOperationException($"XAxis {xaxis.Key} is not of the expected Data type.");
+            if (ty == null)
+                throw new InvalidOperationException($"YAxis {yaxis.Key} is not of the expected Data type.");
+            if (tz == null)
+                throw new InvalidOperationException($"ZAxis {zaxis.Key} is not of the expected Data type.");
+
+            return Prepare(tx, ty, tz);
+        }
+
+        /// <summary>
+        /// Prepares an <see cref="XYZCollator{XData, YData, ZData}"/> for three axis.
+        /// </summary>
+        /// <param name="xaxis"></param>
+        /// <param name="yaxis"></param>
+        /// <param name="zaxis"></param>
+        /// <returns></returns>
+        public XYZCollator<XData, YData, ZData> Prepare(IAxis<XData> xaxis, IAxis<YData> yaxis, IAxis<ZData> zaxis)
+        {
+            var xconsumer = new XConsumer(xaxis, yaxis, zaxis);
+            return xconsumer.Result;
+        }
+
+        private class XConsumer : IAxisScreenTransformationConsumer<XData>
+        {
+            private IAxis<XData> XAxis;
+            private IAxis<YData> YAxis;
+            private IAxis<ZData> ZAxis;
+
+            public XConsumer(IAxis<XData> xAxis, IAxis<YData> yAxis, IAxis<ZData> zAxis)
+            {
+                XAxis = xAxis ?? throw new ArgumentNullException(nameof(xAxis));
+                YAxis = yAxis ?? throw new ArgumentNullException(nameof(yAxis));
+                ZAxis = zAxis ?? throw new ArgumentNullException(nameof(zAxis));
+            }
+
+            private XYZCollator<XData, YData, ZData> _result = null;
+            public XYZCollator<XData, YData, ZData> Result
+            {
+                get
+                {
+                    if (_result == null)
+                        XAxis.Consume(this);
+                    return _result;
+                }
+            }
+
+            public void Consume<XDataProvider, XAxisScreenTransformation>(XAxisScreenTransformation transformation)
+                where XDataProvider : IDataProvider<XData>
+                where XAxisScreenTransformation : IAxisScreenTransformation<XData, XDataProvider>
+            {
+                var yconsumer = new YConsumer<XDataProvider, XAxisScreenTransformation>(transformation, ZAxis);
+                YAxis.Consume(yconsumer);
+                _result = yconsumer.Result;
+            }
+        }
+
+        private class YConsumer<XDataProvider, XAxisTransformation> : IAxisScreenTransformationConsumer<YData>
+            where XDataProvider : IDataProvider<XData>
+            where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+        {
+            public YConsumer(XAxisTransformation xTransformation, IAxis<ZData> zAxis)
+            {
+                XTransformation = xTransformation;
+                ZAxis = zAxis;
+            }
+
+            public XYZCollator<XData, YData, ZData> Result { get; private set; }
+
+            private XAxisTransformation XTransformation { get; }
+            public IAxis<ZData> ZAxis { get; }
+
+            public void Consume<YDataProvider, YAxisScreenTransformation>(YAxisScreenTransformation transformation)
+                where YDataProvider : IDataProvider<YData>
+                where YAxisScreenTransformation : IAxisScreenTransformation<YData, YDataProvider>
+            {
+                var zconsumer = new ZConsumer<XDataProvider, YDataProvider, XAxisTransformation, YAxisScreenTransformation>(XTransformation, transformation);
+                ZAxis.Consume(zconsumer);
+                Result = zconsumer.Result;
+            }
+        }
+
+        private class ZConsumer<XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IAxisScreenTransformationConsumer<ZData>
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+            where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+            where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+        {
+            public ZConsumer(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
+            {
+                XTransformation = xTransformation;
+                YTransformation = yTransformation;
+            }
+
+            public XYZCollator<XData, YData, ZData> Result { get; private set; }
+
+            private XAxisTransformation XTransformation { get; }
+            private YAxisTransformation YTransformation { get; }
+
+            public void Consume<ZDataProvider, ZAxisScreenTransformation>(ZAxisScreenTransformation transformation)
+                where ZDataProvider : IDataProvider<ZData>
+                where ZAxisScreenTransformation : IAxisScreenTransformation<ZData, ZDataProvider>
+            {
+                var typed = new TypedCollator<XDataProvider, YDataProvider, ZDataProvider, XAxisTransformation, YAxisTransformation, ZAxisScreenTransformation>(XTransformation, YTransformation, transformation);
+                Result = new XYZCollator<XData, YData, ZData>(typed);
+            }
+        }
+
+        private interface ITypedCollator
+        {
+            void Consume(IXYZAxisScreenTransformationConsumer<XData, YData, ZData> consumer);
+        }
+
+        private class TypedCollator<XDataProvider, YDataProvider, ZDataProvider, XAxisTransformation, YAxisTransformation, ZAxisTransformation> : ITypedCollator
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+            where ZDataProvider : IDataProvider<ZData>
+            where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+            where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+            where ZAxisTransformation : IAxisScreenTransformation<ZData, ZDataProvider>
+        {
+            public TypedCollator(XAxisTransformation xTransformation, YAxisTransformation yTransformation, ZAxisTransformation zTransformation)
+            {
+                XTransformation = xTransformation;
+                YTransformation = yTransformation;
+                ZTransformation = zTransformation;
+            }
+
+            public XAxisTransformation XTransformation { get; }
+            public YAxisTransformation YTransformation { get; }
+            public ZAxisTransformation ZTransformation { get; }
+
+            public void Consume(IXYZAxisScreenTransformationConsumer<XData, YData, ZData> consumer)
+            {
+                consumer.Consume<XDataProvider, YDataProvider, ZDataProvider, XAxisTransformation, YAxisTransformation, ZAxisTransformation>(XTransformation, YTransformation, ZTransformation);
+            }
+        }
+
+        /// <summary>
+        /// Passes onto the given consumer.
+        /// </summary>
+        /// <param name="consumer"></param>
+        public void Consume(IXYZAxisScreenTransformationConsumer<XData, YData, ZData> consumer)
+        {
+            Typed.Consume(consumer);
         }
     }
 }

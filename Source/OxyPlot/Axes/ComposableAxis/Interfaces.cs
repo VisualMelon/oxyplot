@@ -5,6 +5,39 @@ using System.Text;
 namespace OxyPlot.Axes.ComposableAxis
 {
     /// <summary>
+    /// Maps samples to XY samples
+    /// </summary>
+    /// <typeparam name="TSample"></typeparam>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    public interface IXYSampleProvider<TSample, XData, YData>
+    {
+        /// <summary>
+        /// Extracts a <see cref="DataSample{XData, YData}"/> from a <typeparamref name="TSample"/>.
+        /// </summary>
+        /// <param name="sample"></param>
+        /// <returns></returns>
+        DataSample<XData, YData> Sample(TSample sample);
+    }
+
+    /// <summary>
+    /// Maps samples to XYZ samples
+    /// </summary>
+    /// <typeparam name="TSample"></typeparam>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    /// <typeparam name="ZData"></typeparam>
+    public interface IXYZSampleProvider<TSample, XData, YData, ZData>
+    {
+        /// <summary>
+        /// Extracts a <see cref="DataSample{XData, YData, ZData}"/> from a <typeparamref name="TSample"/>.
+        /// </summary>
+        /// <param name="sample"></param>
+        /// <returns></returns>
+        DataSample<XData, YData, ZData> Sample(TSample sample);
+    }
+
+    /// <summary>
     /// Represents something with shared view state.
     /// </summary>
     public interface ISharedViewState<TData>

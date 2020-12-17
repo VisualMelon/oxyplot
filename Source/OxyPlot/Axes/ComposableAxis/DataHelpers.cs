@@ -66,7 +66,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="optional"></param>
         /// <param name="defaultOptional"></param>
         /// <returns></returns>
-        public static TOptional Coerce<TValue, TOptional, TOptionalProvider>(this TOptionalProvider provider, TOptional optional, TOptional defaultOptional)
+        public static TOptional Coerce<TValue, TOptional, TOptionalProvider>(TOptionalProvider provider, TOptional optional, TOptional defaultOptional)
             where TOptionalProvider : IOptionalProvider<TValue, TOptional>
         {
             return provider.HasValue(optional) ? optional : defaultOptional;
