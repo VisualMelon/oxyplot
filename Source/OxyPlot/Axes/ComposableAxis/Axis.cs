@@ -501,7 +501,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Pans by the given factor.
         /// </summary>
         /// <param name="factor"></param>
-        public override void Pan(double factor)
+        public void Pan(double factor)
         {
             ViewInteractionRadius = ActualInteractionRadius;
             ViewInteractionCenter = ActualInteractionCenter + ActualInteractionRadius * factor * 2;
@@ -618,6 +618,12 @@ namespace OxyPlot.Axes.ComposableAxis
                 // we should not render
                 return;
             }
+        }
+
+        /// <inheritdoc/>
+        public override void Pan(ScreenPoint previousPoint, ScreenPoint newPoint)
+        {
+            // TODO: translate screen-space translation into interaction space translation
         }
     }
 }
