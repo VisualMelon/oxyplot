@@ -5,12 +5,275 @@ using System.Text;
 namespace OxyPlot.Axes.ComposableAxis
 {
     /// <summary>
+    /// Provides methods to help working with axis.
+    /// </summary>
+    public static class Helpers
+    {
+        /// <summary>
+        /// Computes the minimum and maximum X and Y values for the given samples.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="XData"></typeparam>
+        /// <typeparam name="YData"></typeparam>
+        /// <typeparam name="XDataProvider"></typeparam>
+        /// <typeparam name="YDataProvider"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="samples"></param>
+        /// <param name="minX"></param>
+        /// <param name="minY"></param>
+        /// <param name="maxX"></param>
+        /// <param name="maxY"></param>
+        /// <returns></returns>
+        public static bool TryFindMinMax<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, XDataProvider x, YDataProvider y, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+        {
+            minX = default(XData);
+            minY = default(YData);
+            maxX = default(XData);
+            maxY = default(YData);
+
+            bool first = true;
+
+            foreach (var sample in samples)
+            {
+                if (sampleProvider.TrySample(sample, out var xySample))
+                {
+                    if (first)
+                    {
+                        minX = maxX = xySample.X;
+                        minY = maxY = xySample.Y;
+                        first = false;
+                    }
+                    else
+                    {
+                        minX = x.Min(minX, xySample.X);
+                        maxX = x.Max(maxX, xySample.X);
+                        minY = y.Min(minY, xySample.Y);
+                        maxY = y.Max(maxY, xySample.Y);
+                    }
+                }
+            }
+
+            return !first;
+        }
+
+        /// <summary>
+        /// Computes the minimum and maximum X and Y values for the given samples.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="XData"></typeparam>
+        /// <typeparam name="YData"></typeparam>
+        /// <typeparam name="XDataProvider"></typeparam>
+        /// <typeparam name="YDataProvider"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="samples"></param>
+        /// <param name="minX"></param>
+        /// <param name="minY"></param>
+        /// <param name="maxX"></param>
+        /// <param name="maxY"></param>
+        /// <param name="xMonotonicity"></param>
+        /// <param name="yMonotonicity"></param>
+        /// <returns></returns>
+        public static bool TryFindMinMax<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, XDataProvider x, YDataProvider y, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+        {
+            var xh = new SequenceHelper<XData, XDataProvider>(x);
+            var yh = new SequenceHelper<YData, YDataProvider>(y);
+
+            foreach (var sample in samples)
+            {
+                if (sampleProvider.TrySample(sample, out var xySample))
+                {
+                    xh.Next(xySample.X);
+                    yh.Next(xySample.Y);
+                }
+            }
+
+            minX = xh.Minimum;
+            minY = yh.Minimum;
+            maxX = xh.Maximum;
+            maxY = yh.Maximum;
+            xMonotonicity = xh.Monotonicity;
+            yMonotonicity = yh.Monotonicity;
+
+            return !xh.IsEmpty;
+        }
+    }
+
+    /// <summary>
     /// Provides methods to help with rendering on axis.
     /// </summary>
     public static class RenderHelpers
     {
         /// <summary>
-        /// Transforms a Data sample to screen space.
+        /// Extracts a single contiguous line segment beginning with the element at the position of the enumerator when the method
+        /// is called. Invalid samples are ignored.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="XData"></typeparam>
+        /// <typeparam name="YData"></typeparam>
+        /// <typeparam name="XDataProvider"></typeparam>
+        /// <typeparam name="YDataProvider"></typeparam>
+        /// <typeparam name="XAxisTransformation"></typeparam>
+        /// <typeparam name="YAxisTransformation"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="samples">Points collection</param>
+        /// <param name="sampleIdx">Current sample index</param>
+        /// <param name="previousContiguousLineSegmentEndPoint">Initially set to null, but I will update I won't give a broken line if this is null</param>
+        /// <param name="previousContiguousLineSegmentEndPointWithinClipBounds">Where the previous end segment was within the clip bounds</param>
+        /// <param name="broken">place to put broken segment</param>
+        /// <param name="continuous">place to put contiguous segment</param>
+        /// <returns>
+        ///   <c>true</c> if line segments are extracted, <c>false</c> if reached end.
+        /// </returns>
+        public static bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(TSampleProvider sampleProvider, XAxisTransformation x, YAxisTransformation y, IReadOnlyList<TSample> samples, ref int sampleIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+            where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+            where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+        {
+            // Need to:
+            //  - reject invalid points, forming broken line segments as necessary
+            //  - reject points outside the axis bounds
+
+            TSample currentSample = default(TSample);
+            DataSample<XData, YData> currentXYSample = default(DataSample<XData, YData>);
+            bool hasValidPoint = false;
+
+            // Skip all undefined points
+            while (sampleIdx < samples.Count && !sampleProvider.TrySample(currentSample = samples[sampleIdx], out currentXYSample))
+            {
+                sampleIdx++;
+            }
+
+            if (!hasValidPoint)
+            {
+                // ran out of samples
+                return false;
+            }
+
+            var currentSampleWithinClipBounds = currentXYSample.WithinClipBounds<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(x, y);
+            var currentPoint = currentXYSample.Transform<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(x, y);
+
+            // Handle broken line segment if exists
+            // Requires that there is a previous segment, and someone is within the clip bounds
+            if (previousContiguousLineSegmentEndPoint.HasValue && (previousContiguousLineSegmentEndPointWithinClipBounds || currentSampleWithinClipBounds))
+            {
+                // TODO: we should check for discontenuity also, but can't with current API: should ref a TSample? rather than ScreenPoint?
+                broken.Add(previousContiguousLineSegmentEndPoint.Value);
+                broken.Add(currentPoint);
+            }
+            previousContiguousLineSegmentEndPoint = null;
+
+            TSample lastSample = default(TSample);
+            DataSample<XData, YData> lastXYSample = default(DataSample<XData, YData>);
+            ScreenPoint? lastPoint = default(ScreenPoint?);
+            bool lastSampleWithinClipBounds = default(bool);
+
+            bool haveLast = false;
+            bool firstSample = true;
+            bool addedSamples = false;
+            while (sampleIdx < samples.Count)
+            {
+                var currentSampleIsValid = sampleProvider.TrySample(currentSample = samples[sampleIdx], out currentXYSample);
+
+                if (!currentSampleIsValid)
+                {
+                    // we are invalid: skip current and break
+                    sampleIdx++;
+                    break;
+                }
+
+                currentSampleWithinClipBounds = currentXYSample.WithinClipBounds<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(x, y);
+                currentPoint = currentXYSample.Transform<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(x, y);
+
+                if (haveLast)
+                {
+                    if (x.IsDiscontinuous(lastXYSample.X, currentXYSample.X))
+                    {
+                        if (firstSample)
+                        {
+                            // just reset
+                            haveLast = false;
+                        }
+                        else
+                        {
+                            // this is a break in continuity: clear last point, and break
+                            lastPoint = null;
+                            break;
+                        }
+                    }
+                }
+
+                if (!currentSampleWithinClipBounds)
+                {
+                    if (firstSample)
+                    {
+                        // fine, we just advance
+                    }
+                    else if (haveLast && !lastSampleWithinClipBounds)
+                    {
+                        // two in a row out of bounds: break
+                        break;
+                    }
+                    else
+                    {
+                        // the previous guy was in-bounds, so we need to be added
+                        continuous.Add(currentPoint);
+                        addedSamples = true;
+                    }
+                }
+                else
+                {
+                    if (firstSample)
+                    {
+                        firstSample = false;
+                        if (haveLast)
+                        {
+                            // add the last point
+                            continuous.Add(lastPoint.Value);
+                        }
+                    }
+
+                    continuous.Add(currentPoint);
+                    addedSamples = true;
+                }
+
+                // advance
+                sampleIdx++;
+
+                lastSample = currentSample;
+                lastPoint = currentPoint;
+                lastXYSample = currentXYSample;
+                lastSampleWithinClipBounds = currentSampleWithinClipBounds;
+                haveLast = true;
+            }
+
+            if (addedSamples)
+            {
+                previousContiguousLineSegmentEndPoint = lastPoint;
+                previousContiguousLineSegmentEndPointWithinClipBounds = lastSampleWithinClipBounds;
+            }
+
+            return addedSamples;
+        }
+
+        /// <summary>
+        /// Transforms a single <see cref="DataSample{XData, YData}"/> to screen space.
         /// </summary>
         /// <typeparam name="XData"></typeparam>
         /// <typeparam name="YData"></typeparam>
@@ -29,6 +292,54 @@ namespace OxyPlot.Axes.ComposableAxis
             where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
         {
             return new ScreenPoint(x.Transform(sample.X).Value, y.Transform(sample.Y).Value);
+        }
+
+        /// <summary>
+        /// Determines whether a <see cref="DataSample{XData, YData}"/> is within the clip bounds.
+        /// </summary>
+        /// <typeparam name="XData"></typeparam>
+        /// <typeparam name="YData"></typeparam>
+        /// <typeparam name="XDataProvider"></typeparam>
+        /// <typeparam name="YDataProvider"></typeparam>
+        /// <typeparam name="XAxisTransformation"></typeparam>
+        /// <typeparam name="YAxisTransformation"></typeparam>
+        /// <param name="sample"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <returns>A screen point</returns>
+        public static bool WithinClipBounds<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(this DataSample<XData, YData> sample, XAxisTransformation x, YAxisTransformation y)
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+            where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+            where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+        {
+            return x.WithinClipBounds(sample.X) && y.WithinClipBounds(sample.Y);
+        }
+
+        /// <summary>
+        /// Transforms a list of <see cref="DataSample{XData, YData}"/> along two axes.
+        /// </summary>
+        /// <typeparam name="XData"></typeparam>
+        /// <typeparam name="YData"></typeparam>
+        /// <typeparam name="XDataProvider"></typeparam>
+        /// <typeparam name="YDataProvider"></typeparam>
+        /// <typeparam name="XAxisTransformation"></typeparam>
+        /// <typeparam name="YAxisTransformation"></typeparam>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="dataSamples"></param>
+        /// <param name="screenPoints">The output buffer. Invalid values indiciate discontenuities in the axis or data spaces.</param>
+        public static void TransformSamples<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(XAxisTransformation x, YAxisTransformation y, IReadOnlyList<DataSample<XData, YData>> dataSamples, IList<ScreenPoint> screenPoints)
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+            where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+            where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+        {
+            if (dataSamples.Count < 1)
+                return;
+
+            foreach (var s in dataSamples)
+                screenPoints.Add(s.Transform<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(x, y));
         }
 
         /// <summary>
@@ -96,7 +407,6 @@ namespace OxyPlot.Axes.ComposableAxis
             }
         }
 
-        // NOTE: this can't work as planned: we MUST perform interpolations in the data-space (i.e. need to ask for lerp(x0,x1,c) and lerp(y0,y1,c) for common c to achieve anything
         /// <summary>
         /// Interpolates between two screen points on two axis.
         /// </summary>

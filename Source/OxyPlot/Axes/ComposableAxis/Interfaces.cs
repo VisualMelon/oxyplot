@@ -18,6 +18,21 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="sample"></param>
         /// <returns></returns>
         DataSample<XData, YData> Sample(TSample sample);
+
+        /// <summary>
+        /// Trys to extract a sample from a sample.
+        /// </summary>
+        /// <param name="sample"></param>
+        /// <param name="result"></param>
+        /// <returns><c>true</c> if the sample was valid.</returns>
+        bool TrySample(TSample sample, out DataSample<XData, YData> result);
+
+        /// <summary>
+        /// Determines whether the given sample is an invalid sample.
+        /// </summary>
+        /// <param name="sample"></param>
+        /// <returns><c>true</c> if the sample is valid, otherwise <c>false</c>.</returns>
+        bool IsInvalid(TSample sample);
     }
 
     /// <summary>
@@ -82,6 +97,16 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="v"></param>
         /// <returns></returns>
         double Deinterpolate(TData v0, TData v1, TData v);
+
+        /// <summary>
+        /// Determines whether <paramref name="v"/> lies within the bounds defined by <paramref name="min"/> and <paramref name="max"/>.
+        /// </summary>
+        /// <param name="min">The minimum bound.</param>
+        /// <param name="max">The maximum bound</param>
+        /// <param name="v"></param>
+        /// <returns><c>true</c> if min &lt;= v and v &lt;= max, otherwise <c>false</c>.</returns>
+        /// <remarks>This is only included for performance reasons: it must be equivalent to using the implementation of <see cref="IComparer{TData}"/> for comparison.</remarks>
+        bool Includes(TData min, TData max, TData v);
     }
 
     /// <summary>
@@ -132,15 +157,9 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// Provides methods to transform between Data space and Screen space along an axis
     /// </summary>
-    /// <typeparam name="TData"></typeparam>
-    /// <typeparam name="TDataProvider"></typeparam>
-    public interface IAxisScreenTransformation<TData, TDataProvider> where TDataProvider : IDataProvider<TData>
+    /// <typeparam name="TData">The type of Data space</typeparam>
+    public interface IAxisScreenTransformation<TData>
     {
-        /// <summary>
-        /// Gets the <see cref="IDataPointProvider"/> for <typeparamref name="TData"/>.
-        /// </summary>
-        public TDataProvider Provider { get; }
-
         /// <summary>
         /// Gets a value indicating whether the transformation is non-discontinuous.
         /// </summary>
@@ -172,9 +191,40 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="b"></param>
         /// <returns><c>true</c> if there is a discontenuity between the two values.</returns>
         bool IsDiscontinuous(TData a, TData b);
+
+        /// <summary>
+        /// Gets the minimum clip value.
+        /// </summary>
+        public TData ClipMinimum { get; }
+
+        /// <summary>
+        /// Gets the maximum clip value.
+        /// </summary>
+        public TData ClipMaximum { get; }
+
+        /// <summary>
+        /// Determines whether the value <paramref name="v"/> is within the clip bounds.
+        /// </summary>
+        /// <param name="v"></param>
+        /// <returns><c>true</c> if the value is within the axis clip bounds.</returns>
+        public bool WithinClipBounds(TData v);
     }
 
-    // TODO: to be exposed by Axis (so it probably shouldn't expose the interaction information)
+    /// <summary>
+    /// Provides methods to transform between Data space and Screen space along an axis
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    /// <typeparam name="TDataProvider"></typeparam>
+    public interface IAxisScreenTransformation<TData, TDataProvider> : IAxisScreenTransformation<TData>
+        where TDataProvider : IDataProvider<TData>
+    {
+        /// <summary>
+        /// Gets the <see cref="IDataPointProvider"/> for <typeparamref name="TData"/>.
+        /// </summary>
+        public TDataProvider Provider { get; }
+    }
+
+    // TODO: to be exposed by Axis
     /// <summary>
     /// Represents a view over some data.
     /// </summary>
@@ -201,6 +251,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         public TData ClipMinimum { get; set; }
 
+        // TOOD: we do need to expose these (somewhere) so that interaction code can use them: do we need seperate actual/clip? (nobody cares about Actual except for the code that computes Clip, right?)
         /// <summary>
         /// The interaction maximum value.
         /// </summary>

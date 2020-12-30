@@ -37,6 +37,12 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
+        public bool Includes(double min, double max, double v)
+        {
+            return min <= v && v <= max;
+        }
+
+        /// <inheritdoc/>
         public double Interpolate(double v0, double v1, double c)
         {
             return v0 * (1 - c) + v1 * c;
@@ -184,10 +190,14 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <param name="dataTransformation"></param>
         /// <param name="viewInfo"></param>
-        public AxisScreenTransformation(TDataTransformation dataTransformation, ViewInfo viewInfo)
+        /// <param name="clipMinimum">The minimum bound of the clipping region.</param>
+        /// <param name="clipMaximum">The maximum bound of the clipping region.</param>
+        public AxisScreenTransformation(TDataTransformation dataTransformation, ViewInfo viewInfo, TData clipMinimum, TData clipMaximum)
         {
             DataTransformation = dataTransformation;
             ViewInfo = viewInfo;
+            ClipMinimum = clipMinimum;
+            ClipMaximum = clipMaximum;
         }
 
         /// <summary>
@@ -199,6 +209,18 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets the <see cref="ViewInfo"/>.
         /// </summary>
         private ViewInfo ViewInfo { get; }
+
+        /// <inheritdoc/>
+        public TData ClipMinimum { get; }
+
+        /// <inheritdoc/>
+        public TData ClipMaximum { get; }
+
+        /// <inheritdoc/>
+        public bool WithinClipBounds(TData v)
+        {
+            return Provider.Includes(ClipMinimum, ClipMaximum, v);
+        }
 
         /// <inheritdoc/>
         public TDataProvider Provider => DataTransformation.Provider;
@@ -260,6 +282,42 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Provides basic methods to help in X/Y space
+    /// </summary>
+    public interface IXYHelper<XData, YData>
+    {
+        /// <summary>
+        /// Finds the minimum and maximum X and Y values in the samples.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="samples"></param>
+        /// <param name="minX"></param>
+        /// <param name="minY"></param>
+        /// <param name="maxX"></param>
+        /// <param name="maxY"></param>
+        public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
+
+        /// <summary>
+        /// Finds the minimum and maximum X and Y values in the samples.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="samples"></param>
+        /// <param name="minX"></param>
+        /// <param name="minY"></param>
+        /// <param name="maxX"></param>
+        /// <param name="maxY"></param>
+        /// <param name="xMonotonicity"></param>
+        /// <param name="yMonotonicity"></param>
+        public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
+    }
+
+    /// <summary>
     /// Provides basic methods to render in X/Y space
     /// </summary>
     public interface IXYRenderHelper<XData, YData>
@@ -271,6 +329,73 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="minSegmentLength"></param>
         /// <param name="screenPoints"></param>
         void InterpolateLines(IReadOnlyList<DataSample<XData, YData>> dataSamples, double minSegmentLength, IList<ScreenPoint> screenPoints);
+
+        /// <summary>
+        /// Extracts a single contiguous line segment beginning with the element at the position of the enumerator when the method
+        /// is called. Invalid samples are ignored.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="samples">Points collection</param>
+        /// <param name="sampleIdx">Current sample index</param>
+        /// <param name="previousContiguousLineSegmentEndPoint">Initially set to null, but I will update I won't give a broken line if this is null</param>
+        /// <param name="previousContiguousLineSegmentEndPointWithinClipBounds">Where the previous end segment was within the clip bounds</param>
+        /// <param name="broken">Buffer for the broken segment</param>
+        /// <param name="continuous">Buffer for the continuous segment</param>
+        /// <returns>
+        ///   <c>true</c> if line segments are extracted, <c>false</c> if reached end.
+        /// </returns>
+        bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
+
+        /// <summary>
+        /// Transforms many <see cref="DataSample{XData, YData}"/>.
+        /// </summary>
+        /// <param name="xySamples"></param>
+        /// <param name="screenPoints"></param>
+        void TransformSamples(IReadOnlyList<DataSample<XData, YData>> xySamples, IList<ScreenPoint> screenPoints);
+
+        /// <summary>
+        /// Transforms a single <see cref="DataSample{XData, YData}"/>
+        /// </summary>
+        /// <param name="xySample"></param>
+        /// <returns></returns>
+        public ScreenPoint TransformSample(DataSample<XData, YData> xySample);
+    }
+
+    /// <summary>
+    /// Prepares instances of <see cref="IXYHelper{XData, YData}"/>.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    public class XYHelperPreparer<XData, YData>
+    {
+        private class Generator : IXYAxisScreenTransformationConsumer<XData, YData>
+        {
+            public void Consume<XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(XAxisScreenTransformation x, YAxisScreenTransformation y)
+                where XDataProvider : IDataProvider<XData>
+                where YDataProvider : IDataProvider<YData>
+                where XAxisScreenTransformation : IAxisScreenTransformation<XData, XDataProvider>
+                where YAxisScreenTransformation : IAxisScreenTransformation<YData, YDataProvider>
+            {
+                Result = new XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(x, y);
+            }
+
+            public IXYHelper<XData, YData> Result { get; private set; }
+        }
+
+        /// <summary>
+        /// Prepares an <see cref="IXYHelper{XData, YData}"/> from the given collator.
+        /// </summary>
+        /// <param name="collator"></param>
+        /// <returns></returns>
+        public static IXYHelper<XData, YData> Prepare(XYCollator<XData, YData> collator)
+        {
+            var generator = new Generator();
+            collator.Consume(generator);
+            return generator.Result;
+        }
     }
 
     /// <summary>
@@ -295,7 +420,7 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <summary>
-        /// Prepares an <see cref="IXYRenderHelper{XData, YData}"/> from the given collator.
+        /// Prepares an <see cref="IXYHelper{XData, YData}"/> from the given collator.
         /// </summary>
         /// <param name="collator"></param>
         /// <returns></returns>
@@ -308,6 +433,46 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Provides basic methods to help in X/Y space
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    /// <typeparam name="XDataProvider"></typeparam>
+    /// <typeparam name="YDataProvider"></typeparam>
+    public class XYHelper<XData, YData, XDataProvider, YDataProvider> : IXYHelper<XData, YData>
+        where XDataProvider : IDataProvider<XData>
+        where YDataProvider : IDataProvider<YData>
+    {
+        /// <summary>
+        /// Initialises an XYHelper.
+        /// </summary>
+        /// <param name="xProvider"></param>
+        /// <param name="yProvider"></param>
+        public XYHelper(XDataProvider xProvider, YDataProvider yProvider)
+        {
+            XProvider = xProvider;
+            YProvider = yProvider;
+        }
+
+        private XDataProvider XProvider { get; }
+        private YDataProvider YProvider { get; }
+
+        /// <inheritdoc/>
+        public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+        {
+            return Helpers.TryFindMinMax(sampleProvider, XProvider, YProvider, samples, out minX, out minY, out maxX, out maxY);
+        }
+
+        /// <inheritdoc/>
+        public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+        {
+            return Helpers.TryFindMinMax(sampleProvider, XProvider, YProvider, samples, out minX, out minY, out maxX, out maxY, out xMonotonicity, out yMonotonicity);
+        }
+    }
+
+    /// <summary>
     /// Provides basic methods to render in X/Y space
     /// </summary>
     /// <typeparam name="XData"></typeparam>
@@ -316,7 +481,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="YDataProvider"></typeparam>
     /// <typeparam name="XAxisTransformation"></typeparam>
     /// <typeparam name="YAxisTransformation"></typeparam>
-    public class XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYRenderHelper<XData, YData>
+    public class XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : XYHelper<XData, YData, XDataProvider, YDataProvider>, IXYRenderHelper<XData, YData>
         where XDataProvider : IDataProvider<XData>
         where YDataProvider : IDataProvider<YData>
         where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
@@ -328,6 +493,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="xTransformation"></param>
         /// <param name="yTransformation"></param>
         public XYRenderHelper(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
+            : base(xTransformation.Provider, yTransformation.Provider)
         {
             XTransformation = xTransformation;
             YTransformation = yTransformation;
@@ -337,9 +503,27 @@ namespace OxyPlot.Axes.ComposableAxis
         private YAxisTransformation YTransformation { get; }
 
         /// <inheritdoc/>
+        public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous) where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+        {
+            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(sampleProvider, XTransformation, YTransformation, samples, ref sampleIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
+        }
+
+        /// <inheritdoc/>
         public void InterpolateLines(IReadOnlyList<DataSample<XData, YData>> dataSamples, double minSegmentLength, IList<ScreenPoint> screenPoints)
         {
             RenderHelpers.InterpolateLines<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(XTransformation, YTransformation, dataSamples, minSegmentLength, screenPoints);
+        }
+
+        /// <inheritdoc/>
+        public void TransformSamples(IReadOnlyList<DataSample<XData, YData>> dataSamples, IList<ScreenPoint> screenPoints)
+        {
+            RenderHelpers.TransformSamples<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(XTransformation, YTransformation, dataSamples, screenPoints);
+        }
+
+        /// <inheritdoc/>
+        public ScreenPoint TransformSample(DataSample<XData, YData> sample)
+        {
+            return sample.Transform<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(XTransformation, YTransformation);
         }
     }
 
@@ -364,7 +548,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="xaxis"></param>
         /// <param name="yaxis"></param>
         /// <returns></returns>
-        public XYCollator<XData, YData> TryPrepare(IAxis xaxis, IAxis yaxis)
+        public static XYCollator<XData, YData> TryPrepare(IAxis xaxis, IAxis yaxis)
         {
             var tx = xaxis as IAxis<XData>;
             var ty = yaxis as IAxis<YData>;
@@ -383,7 +567,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="xaxis"></param>
         /// <param name="yaxis"></param>
         /// <returns></returns>
-        public XYCollator<XData, YData> Prepare(IAxis<XData> xaxis, IAxis<YData> yaxis)
+        public static XYCollator<XData, YData> Prepare(IAxis<XData> xaxis, IAxis<YData> yaxis)
         {
             var xconsumer = new XConsumer(xaxis, yaxis);
             return xconsumer.Result;

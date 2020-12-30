@@ -45,6 +45,25 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Consumes two axis-screen transformations.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    public interface IXYAxisProviderConsumer<XData, YData>
+    {
+        /// <summary>
+        /// Consumes two axis-screen transformations.
+        /// </summary>
+        /// <typeparam name="XDataProvider"></typeparam>
+        /// <typeparam name="YDataProvider"></typeparam>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        void Consume<XDataProvider, YDataProvider>(XDataProvider x, YDataProvider y)
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>;
+    }
+
+    /// <summary>
     /// Consumes three axis-screen transformations.
     /// </summary>
     /// <typeparam name="XData"></typeparam>
@@ -381,7 +400,15 @@ namespace OxyPlot.Axes.ComposableAxis
 
         private ViewInfo _viewInfo;
 
-        // TODO: absolute maximums
+        /// <summary>
+        /// The absolute minimum value to be shown (i.e. the minimum value that <see cref="ClipMinimum"/> will take).
+        /// </summary>
+        public TData AbsoluteMinimum { get; set; }
+
+        /// <summary>
+        /// The absolute maximum value to be shown (i.e. the maximum value that <see cref="ClipMinimum"/> will take).
+        /// </summary>
+        public TData AbsoluteMaximum { get; set; }
 
         /// <summary>
         /// The center, in Interaction space.
@@ -573,10 +600,10 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public void Consume(IAxisScreenTransformationConsumer<TData> consumer)
         {
-            consumer.Consume<TDataProvider, AxisScreenTransformation<TData, TDataProvider, TDataTransformation>>(new AxisScreenTransformation<TData, TDataProvider, TDataTransformation>(DataTransformation, ViewInfo));
+            consumer.Consume<TDataProvider, AxisScreenTransformation<TData, TDataProvider, TDataTransformation>>(new AxisScreenTransformation<TData, TDataProvider, TDataTransformation>(DataTransformation, ViewInfo, ClipMinimum, ClipMaximum));
         }
 
-        // NOTE: use plotBounds instead of PlotModel to make Sub-Plot support easier
+        // NOTE: use plotBounds instead of PlotModel to make Sub-Plot support easier later on
         /// <summary>
         /// Measures and lays the axis out on the given plot bounds.
         /// </summary>
@@ -612,7 +639,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="plotBounds"></param>
         public void Render(OxyRect plotBounds)
         {
-            // assumes we have been measured
+            // assumes we have been measured on these same plotBounds
             if (!(IsHorizontal || IsVertical))
             {
                 // we should not render
