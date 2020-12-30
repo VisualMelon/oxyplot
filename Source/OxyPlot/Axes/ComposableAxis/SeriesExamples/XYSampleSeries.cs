@@ -123,7 +123,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             ResolveAxes();
             var xyHelper = GetHelper();
 
-            HasMeaningfulDataRange = xyHelper.FindMinMax<TSample, TSampleProvider>(SampleProvider, Samples, out var minX, out var minY, out var maxX, out var maxY, out var xm, out var ym);
+            HasMeaningfulDataRange = xyHelper.FindMinMax(SampleProvider, Samples.AsReadOnlyList(), out var minX, out var minY, out var maxX, out var maxY, out var xm, out var ym);
             MinX = minX;
             MinY = minY;
             MaxX = maxX;
@@ -464,12 +464,12 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
 
             if (XMonotonicity.IsMonotone || YMonotonicity.IsMonotone)
             {
-                xyRenderHelper.FindWindow<TSample, TSampleProvider>(SampleProvider, Samples, new DataSample<XData, YData>(MinX, MinY), new DataSample<XData, YData>(MaxX, MaxY), XMonotonicity, YMonotonicity, out startIdx, out endIdx);
+                xyRenderHelper.FindWindow(SampleProvider, Samples.AsReadOnlyList(), new DataSample<XData, YData>(MinX, MinY), new DataSample<XData, YData>(MaxX, MaxY), XMonotonicity, YMonotonicity, out startIdx, out endIdx);
             }
 
             int sampleIdx = startIdx;
 
-            while (xyRenderHelper.ExtractNextContinuousLineSegment<TSample, TSampleProvider>(SampleProvider, Samples, ref sampleIdx, endIdx, ref lp, ref lpb, brokenBuffer, continuousBuffer))
+            while (xyRenderHelper.ExtractNextContinuousLineSegment<TSample, TSampleProvider>(SampleProvider, Samples.AsReadOnlyList(), ref sampleIdx, endIdx, ref lp, ref lpb, brokenBuffer, continuousBuffer))
             {
                 if (areBrokenLinesRendered)
                 {
