@@ -173,8 +173,8 @@ namespace OxyPlot.Axes.ComposableAxis
         public abstract double Scale { get; } // used for cartesian enforcement
 
         /// <summary>
-        /// The offset between Interaction Space and View Space: only here for compat.
-        /// <see cref="ViewInfo"/> is the new guy, at the moment.
+        /// The offset in Interaction Space: only here for compat.
+        /// <see cref="ViewInfo"/> is the new guy, at the moment: note that <see cref="ViewInfo.ScreenOffset"/> is in screenspace: the conversion is ScreenOffset = Offset/-Scale
         /// </summary>
         public abstract double Offset { get; } // the other half of the ViewInfo from Scale
         #endregion
@@ -706,7 +706,7 @@ namespace OxyPlot.Axes.ComposableAxis
         public override double Scale => ViewInfo.ScreenScale;
 
         /// <inheritdoc/>
-        public override double Offset => ViewInfo.ScreenOffset.Value;
+        public override double Offset => ViewInfo.ScreenOffset.Value / -Scale;
 
         /// <inheritdoc/>
         public override void UpdateActualMaxMin()

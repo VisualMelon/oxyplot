@@ -444,7 +444,7 @@ namespace OxyPlot.Axes
         }
 
         /// <inheritdoc/>
-        public override ViewInfo ViewInfo => new ViewInfo(new ScreenReal(Offset), Scale);
+        public override ViewInfo ViewInfo => new ViewInfo(new ScreenReal(Offset * -Scale), Scale);
 
         /// <summary>
         /// Gets or sets the string format used for formatting the axis values. The default value is <c>null</c>.
@@ -1340,6 +1340,11 @@ namespace OxyPlot.Axes
             {
                 this.ClipMaximum = this.ActualMaximum;
             }
+
+            // temp
+            this.ClipInteractionMinimum = new InteractionReal(this.ClipMinimum);
+            this.ClipInteractionMaximum = new InteractionReal(this.ClipMaximum);
+            //
 
             this.ActualMaximumAndMinimumChangedOverride();
         }
