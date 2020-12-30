@@ -315,12 +315,30 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="yMonotonicity"></param>
         public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
+
+        /// <summary>
+        /// Finds the start and end indexs of a window in some data.
+        /// Throws if the data is not monotonic.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="samples"></param>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <param name="xMonotonicity"></param>
+        /// <param name="yMonotonicity"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="endIndex"></param>
+        /// <returns></returns>
+        public bool FindWindow<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
     }
 
     /// <summary>
     /// Provides basic methods to render in X/Y space
     /// </summary>
-    public interface IXYRenderHelper<XData, YData>
+    public interface IXYRenderHelper<XData, YData> : IXYHelper<XData, YData>
     {
         /// <summary>
         /// Interpolates lines
@@ -339,6 +357,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="sampleProvider"></param>
         /// <param name="samples">Points collection</param>
         /// <param name="sampleIdx">Current sample index</param>
+        /// <param name="endIdx">End index</param>
         /// <param name="previousContiguousLineSegmentEndPoint">Initially set to null, but I will update I won't give a broken line if this is null</param>
         /// <param name="previousContiguousLineSegmentEndPointWithinClipBounds">Where the previous end segment was within the clip bounds</param>
         /// <param name="broken">Buffer for the broken segment</param>
@@ -346,7 +365,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <returns>
         ///   <c>true</c> if line segments are extracted, <c>false</c> if reached end.
         /// </returns>
-        bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+        bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
 
         /// <summary>
@@ -470,6 +489,13 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             return Helpers.TryFindMinMax(sampleProvider, XProvider, YProvider, samples, out minX, out minY, out maxX, out maxY, out xMonotonicity, out yMonotonicity);
         }
+
+        /// <inheritdoc/>
+        public bool FindWindow<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+        {
+            return Helpers.FindWindow(sampleProvider, XProvider, YProvider, samples, start, end, xMonotonicity, yMonotonicity, out startIndex, out endIndex);
+        }
     }
 
     /// <summary>
@@ -503,9 +529,9 @@ namespace OxyPlot.Axes.ComposableAxis
         private YAxisTransformation YTransformation { get; }
 
         /// <inheritdoc/>
-        public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous) where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+        public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous) where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         {
-            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(sampleProvider, XTransformation, YTransformation, samples, ref sampleIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
+            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(sampleProvider, XTransformation, YTransformation, samples, ref sampleIdx, endIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
         }
 
         /// <inheritdoc/>

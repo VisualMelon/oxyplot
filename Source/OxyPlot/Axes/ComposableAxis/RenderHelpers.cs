@@ -108,6 +108,191 @@ namespace OxyPlot.Axes.ComposableAxis
 
             return !xh.IsEmpty;
         }
+
+        /// <summary>
+        /// Finds a window in some monotonic data.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="XData"></typeparam>
+        /// <typeparam name="YData"></typeparam>
+        /// <typeparam name="XDataProvider"></typeparam>
+        /// <typeparam name="YDataProvider"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="xDataProvider"></param>
+        /// <param name="yDataProvider"></param>
+        /// <param name="samples"></param>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <param name="xMonotonicity"></param>
+        /// <param name="yMonotonicity"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="endIndex"></param>
+        /// <returns></returns>
+        public static bool FindWindow<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, XDataProvider xDataProvider, YDataProvider yDataProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+        {
+            int xsign = xMonotonicity.IsNonDecreasing && !xMonotonicity.IsConstant ? 1 : xMonotonicity.IsNonIncreasing ? -1 : 0;
+            int ysign = yMonotonicity.IsNonDecreasing && !xMonotonicity.IsConstant ? 1 : yMonotonicity.IsNonIncreasing ? -1 : 0;
+
+            if (xsign == 0 && ysign == 0)
+            {
+                startIndex = 0;
+                endIndex = samples.Count - 1;
+                throw new ArgumentException("Either the X or Y values must be monotonic");
+            }
+
+            bool startOk = FindWindowStart<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(sampleProvider, xDataProvider, yDataProvider, samples, start, xMonotonicity, yMonotonicity, out startIndex);
+            bool endOk = FindWindowEnd<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(sampleProvider, xDataProvider, yDataProvider, samples, end, xMonotonicity, yMonotonicity, out endIndex);
+
+            return startOk && endOk;
+        }
+
+        /// <summary>
+        /// Finds the start of a window in some monotonic data.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="XData"></typeparam>
+        /// <typeparam name="YData"></typeparam>
+        /// <typeparam name="XDataProvider"></typeparam>
+        /// <typeparam name="YDataProvider"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="xDataProvider"></param>
+        /// <param name="yDataProvider"></param>
+        /// <param name="samples"></param>
+        /// <param name="start"></param>
+        /// <param name="xMonotonicity"></param>
+        /// <param name="yMonotonicity"></param>
+        /// <param name="startIndex"></param>
+        /// <returns></returns>
+        public static bool FindWindowStart<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, XDataProvider xDataProvider, YDataProvider yDataProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+        {
+            int xsign = xMonotonicity.IsNonDecreasing && !xMonotonicity.IsConstant ? 1 : xMonotonicity.IsNonIncreasing ? -1 : 0;
+            int ysign = yMonotonicity.IsNonDecreasing && !xMonotonicity.IsConstant ? 1 : yMonotonicity.IsNonIncreasing ? -1 : 0;
+
+            if (xsign == 0 && ysign == 0)
+            {
+                startIndex = 0;
+                throw new ArgumentException("Either the X or Y values must be monotonic");
+            }
+
+            int l = 0;
+            int h = samples.Count - 1;
+
+            while (l != h)
+            {
+                int m = (h + l) / 2;
+
+                var i = m;
+                DataSample<XData, YData> candidate; // whatever is at index i
+
+                // now, the hideousness of dealing with NaNs
+                while (!sampleProvider.TrySample(samples[i], out candidate))
+                {
+                    // it was invalid, we'd better scan along a bit
+                    i++;
+
+                    if (i >= h)
+                    {
+                        // oh, we ran out this side... best collapse it 
+                        h = m - 1;
+                    }
+                }
+
+                int cx = xsign != 0 ? xDataProvider.Compare(start.X, candidate.X) : 0;
+                int cy = ysign != 0 ? yDataProvider.Compare(start.Y, candidate.Y) : 0;
+
+                if (cx >= 0 || cy >= 0)
+                {
+                    h = i - 1;
+                }
+                else
+                {
+                    l = m + 1;
+                }
+            }
+
+            startIndex = l;
+            return true;
+        }
+
+        /// <summary>
+        /// Finds the end of a window in some monotonic data.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="XData"></typeparam>
+        /// <typeparam name="YData"></typeparam>
+        /// <typeparam name="XDataProvider"></typeparam>
+        /// <typeparam name="YDataProvider"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="xDataProvider"></param>
+        /// <param name="yDataProvider"></param>
+        /// <param name="samples"></param>
+        /// <param name="end"></param>
+        /// <param name="xMonotonicity"></param>
+        /// <param name="yMonotonicity"></param>
+        /// <param name="endIndex"></param>
+        /// <returns></returns>
+        public static bool FindWindowEnd<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, XDataProvider xDataProvider, YDataProvider yDataProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int endIndex)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+        {
+            int xsign = xMonotonicity.IsNonDecreasing && !xMonotonicity.IsConstant ? 1 : xMonotonicity.IsNonIncreasing ? -1 : 0;
+            int ysign = yMonotonicity.IsNonDecreasing && !xMonotonicity.IsConstant ? 1 : yMonotonicity.IsNonIncreasing ? -1 : 0;
+
+            if (xsign == 0 && ysign == 0)
+            {
+                endIndex = samples.Count - 1;
+                throw new ArgumentException("Either the X or Y values must be monotonic and non-constant");
+            }
+
+            int l = 0;
+            int h = samples.Count - 1;
+
+            while (l != h)
+            {
+                int m = (h + l + 1) / 2;
+
+                var i = m;
+                DataSample<XData, YData> candidate; // whatever is at index i
+
+                // now, the hideousness of dealing with NaNs
+                while (!sampleProvider.TrySample(samples[i], out candidate))
+                {
+                    // it was invalid, we'd better scan along a bit
+                    i++;
+
+                    if (i >= h)
+                    {
+                        // oh, we ran out this side... best collapse it 
+                        h = m - 1;
+                    }
+                }
+
+                int cx = xsign != 0 ? xDataProvider.Compare(end.X, candidate.X) : 0;
+                int cy = ysign != 0 ? yDataProvider.Compare(end.Y, candidate.Y) : 0;
+
+                if (cx <= 0 || cy <= 0)
+                {
+                    l = m + 1;
+                }
+                else
+                {
+                    h = i - 1;
+                }
+            }
+
+            endIndex = h;
+            return true;
+        }
     }
 
     /// <summary>
@@ -132,6 +317,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="y"></param>
         /// <param name="samples">Points collection</param>
         /// <param name="sampleIdx">Current sample index</param>
+        /// <param name="endIdx">End end index</param>
         /// <param name="previousContiguousLineSegmentEndPoint">Initially set to null, but I will update I won't give a broken line if this is null</param>
         /// <param name="previousContiguousLineSegmentEndPointWithinClipBounds">Where the previous end segment was within the clip bounds</param>
         /// <param name="broken">place to put broken segment</param>
@@ -139,7 +325,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <returns>
         ///   <c>true</c> if line segments are extracted, <c>false</c> if reached end.
         /// </returns>
-        public static bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(TSampleProvider sampleProvider, XAxisTransformation x, YAxisTransformation y, IReadOnlyList<TSample> samples, ref int sampleIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+        public static bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(TSampleProvider sampleProvider, XAxisTransformation x, YAxisTransformation y, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
             where XDataProvider : IDataProvider<XData>
             where YDataProvider : IDataProvider<YData>
@@ -155,7 +341,7 @@ namespace OxyPlot.Axes.ComposableAxis
             bool hasValidPoint = false;
 
             // Skip all undefined points
-            while (sampleIdx < samples.Count && !sampleProvider.TrySample(currentSample = samples[sampleIdx], out currentXYSample))
+            while (sampleIdx <= endIdx && !sampleProvider.TrySample(currentSample = samples[sampleIdx], out currentXYSample))
             {
                 sampleIdx++;
             }
@@ -187,7 +373,7 @@ namespace OxyPlot.Axes.ComposableAxis
             bool haveLast = false;
             bool firstSample = true;
             bool addedSamples = false;
-            while (sampleIdx < samples.Count)
+            while (sampleIdx <= endIdx)
             {
                 var currentSampleIsValid = sampleProvider.TrySample(currentSample = samples[sampleIdx], out currentXYSample);
 

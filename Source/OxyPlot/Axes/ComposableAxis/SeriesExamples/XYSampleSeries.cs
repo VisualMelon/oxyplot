@@ -123,7 +123,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             ResolveAxes();
             var xyHelper = GetHelper();
 
-            HasMeaningfulDataRange = xyHelper.FindMinMax(SampleProvider, Samples, out var minX, out var minY, out var maxX, out var maxY, out var xm, out var ym);
+            HasMeaningfulDataRange = xyHelper.FindMinMax<TSample, TSampleProvider>(SampleProvider, Samples, out var minX, out var minY, out var maxX, out var maxY, out var xm, out var ym);
             MinX = minX;
             MinY = minY;
             MaxX = maxX;
@@ -446,8 +446,8 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// <inheritdoc/>
         public override void Render(IRenderContext rc)
         {
-            // no harm making sure...
             ResolveAxes();
+            var xyRenderHelper = GetRenderHelper();
 
             var areBrokenLinesRendered = this.BrokenLineThickness > 0 && this.BrokenLineStyle != LineStyle.None;
             var dashArray = areBrokenLinesRendered ? this.BrokenLineStyle.GetDashArray() : null;
@@ -456,15 +456,20 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             brokenBuffer = brokenBuffer ?? new List<ScreenPoint>();
             continuousBuffer = continuousBuffer ?? new List<ScreenPoint>();
 
-            var xyRenderHelper = GetRenderHelper();
+            int startIdx = 0;
+            int endIdx = Samples.Count - 1;
 
-            int sampleIdx = 0;
             ScreenPoint? lp = null;
             bool lpb = default(bool);
 
-            // TODO: monotonicity optimisations on X and/or Y
+            if (XMonotonicity.IsMonotone || YMonotonicity.IsMonotone)
+            {
+                xyRenderHelper.FindWindow<TSample, TSampleProvider>(SampleProvider, Samples, new DataSample<XData, YData>(MinX, MinY), new DataSample<XData, YData>(MaxX, MaxY), XMonotonicity, YMonotonicity, out startIdx, out endIdx);
+            }
 
-            while (xyRenderHelper.ExtractNextContinuousLineSegment<TSample, TSampleProvider>(SampleProvider, Samples, ref sampleIdx, ref lp, ref lpb, brokenBuffer, continuousBuffer))
+            int sampleIdx = startIdx;
+
+            while (xyRenderHelper.ExtractNextContinuousLineSegment<TSample, TSampleProvider>(SampleProvider, Samples, ref sampleIdx, endIdx, ref lp, ref lpb, brokenBuffer, continuousBuffer))
             {
                 if (areBrokenLinesRendered)
                 {
