@@ -464,7 +464,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
 
             // TODO: monotonicity optimisations on X and/or Y
 
-            while (xyRenderHelper.ExtractNextContinuousLineSegment(SampleProvider, Samples, ref sampleIdx, ref lp, ref lpb, brokenBuffer, continuousBuffer))
+            while (xyRenderHelper.ExtractNextContinuousLineSegment<TSample, TSampleProvider>(SampleProvider, Samples, ref sampleIdx, ref lp, ref lpb, brokenBuffer, continuousBuffer))
             {
                 if (areBrokenLinesRendered)
                 {
