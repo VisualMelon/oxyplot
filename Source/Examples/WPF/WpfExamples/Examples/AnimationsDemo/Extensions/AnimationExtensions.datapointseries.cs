@@ -11,6 +11,7 @@ namespace AnimationsDemo
     using System.Threading.Tasks;
 
     using OxyPlot;
+    using OxyPlot.Axes;
     using OxyPlot.Series;
 
     public static partial class AnimationExtensions
@@ -48,14 +49,14 @@ namespace AnimationsDemo
             var finalAnimationFrame = GetFinalAnimationFrame(series);
             animationFrames.Add(finalAnimationFrame);
 
-            var xAxis = plotModel.DefaultXAxis;
+            var xAxis = (Axis)plotModel.DefaultXAxis;
             var oldXAxisMinimum = xAxis.Minimum;
             var oldXAxisMaximum = xAxis.Maximum;
 
             xAxis.Minimum = xAxis.ActualMinimum;
             xAxis.Maximum = xAxis.ActualMaximum;
 
-            var yAxis = plotModel.DefaultYAxis;
+            var yAxis = (Axis)plotModel.DefaultYAxis;
             var oldYAxisMinimum = yAxis.Minimum;
             var oldYAxisMaximum = yAxis.Maximum;
 

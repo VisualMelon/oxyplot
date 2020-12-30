@@ -12,6 +12,7 @@ namespace AnimationsDemo
     using System.Threading.Tasks;
 
     using OxyPlot;
+    using OxyPlot.Axes;
     using OxyPlot.Series;
 
     public static partial class AnimationExtensions
@@ -54,7 +55,7 @@ namespace AnimationsDemo
             {
                 minimumValue = 0d;
 
-                var defaultYAxis = plotModel.DefaultYAxis;
+                var defaultYAxis = (Axis)plotModel.DefaultYAxis;
                 if (defaultYAxis != null)
                 {
                     if (defaultYAxis.Minimum > 0d)
