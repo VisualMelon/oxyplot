@@ -17,6 +17,7 @@ namespace OxyPlot
     using OxyPlot.Axes;
     using OxyPlot.Series;
     using OxyPlot.Legends;
+    using OxyPlot.Axes.ComposableAxis;
 
     /// <summary>
     /// Represents a plot.
@@ -217,11 +218,11 @@ namespace OxyPlot
         /// </summary>
         /// <param name="parallelAxes">The parallel axes.</param>
         /// <returns>The maximum value of the position tier??</returns>
-        private double AdjustAxesPositions(IEnumerable<Axis> parallelAxes)
+        private double AdjustAxesPositions(IEnumerable<AxisBase> parallelAxes)
         {
             double maxValueOfPositionTier = 0;
 
-            static double GetSize(Axis axis)
+            static double GetSize(AxisBase axis)
             {
                 return axis.Position switch
                 {
@@ -293,14 +294,14 @@ namespace OxyPlot
             foreach (var a in this.Axes.Where(a => a.IsAxisVisible && a.Layer == layer))
             {
                 rc.SetToolTip(a.ToolTip);
-                a.Render(rc, 0);
+                a.Render(rc, AxisRenderPass.Pass0);
             }
 
             // render pass 1
             foreach (var a in this.Axes.Where(a => a.IsAxisVisible && a.Layer == layer))
             {
                 rc.SetToolTip(a.ToolTip);
-                a.Render(rc, 1);
+                a.Render(rc, AxisRenderPass.Pass1);
             }
 
             rc.SetToolTip(null);

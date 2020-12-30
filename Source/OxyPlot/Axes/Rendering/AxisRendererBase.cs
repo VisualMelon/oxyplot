@@ -9,6 +9,7 @@
 
 namespace OxyPlot.Axes
 {
+    using OxyPlot.Axes.ComposableAxis;
     using System.Collections.Generic;
 
     /// <summary>
@@ -164,7 +165,7 @@ namespace OxyPlot.Axes
         /// </summary>
         /// <param name="axis">The axis.</param>
         /// <param name="pass">The pass.</param>
-        public virtual void Render(Axis axis, int pass)
+        public virtual void Render(Axis axis, AxisRenderPass pass)
         {
             if (axis == null)
             {

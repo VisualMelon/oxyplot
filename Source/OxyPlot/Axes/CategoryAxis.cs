@@ -129,7 +129,7 @@ namespace OxyPlot.Axes
         }
 
         /// <inheritdoc/>
-        internal override void UpdateActualMaxMin()
+        public override void UpdateActualMaxMin()
         {
             // Update the DataMinimum/DataMaximum from the number of categories
             this.Include(-0.5);

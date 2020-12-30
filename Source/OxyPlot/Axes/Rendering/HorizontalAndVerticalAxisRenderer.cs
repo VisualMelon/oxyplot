@@ -9,6 +9,7 @@
 
 namespace OxyPlot.Axes
 {
+    using OxyPlot.Axes.ComposableAxis;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -34,7 +35,7 @@ namespace OxyPlot.Axes
         /// </summary>
         /// <param name="axis">The axis.</param>
         /// <param name="pass">The pass.</param>
-        public override void Render(Axis axis, int pass)
+        public override void Render(Axis axis, AxisRenderPass pass)
         {
             base.Render(axis, pass);
 
@@ -73,7 +74,7 @@ namespace OxyPlot.Axes
                 var perpendicularAxis = axis.IsHorizontal() ? this.Plot.DefaultYAxis : this.Plot.DefaultXAxis;
 
                 // the axis should be positioned at the origin of the perpendicular axis
-                axisPosition = perpendicularAxis.Transform(0);
+                axisPosition = perpendicularAxis.ViewInfo.Transform(InteractionReal.Zero).Value;
 
                 var p0 = axis.IsHorizontal()
                     ? perpendicularAxis.ScreenMin.Y
@@ -155,12 +156,12 @@ namespace OxyPlot.Axes
                     break;
             }
 
-            if (pass == 0)
+            if (pass == AxisRenderPass.Pass0)
             {
                 this.RenderMinorItems(axis, axisPosition);
             }
 
-            if (pass == 1)
+            if (pass == AxisRenderPass.Pass1)
             {
                 this.RenderMajorItems(axis, axisPosition, titlePosition, drawAxisLine);
                 this.RenderAxisTitle(axis, titlePosition);
@@ -317,7 +318,7 @@ namespace OxyPlot.Axes
             var perpendicularAxis = axis.IsHorizontal() ? this.Plot.DefaultYAxis : this.Plot.DefaultXAxis;
             var dontRenderZero = axis.PositionAtZeroCrossing && perpendicularAxis.PositionAtZeroCrossing;
 
-            List<Axis> perpAxes = null;
+            List<AxisBase> perpAxes = null;
             if (cropGridlines)
             {
                 if (isHorizontal)
@@ -530,7 +531,7 @@ namespace OxyPlot.Axes
             var minorSegments = new List<ScreenPoint>();
             var minorTickSegments = new List<ScreenPoint>();
 
-            List<Axis> perpAxes = null;
+            List<AxisBase> perpAxes = null;
             if (cropGridlines)
             {
                 if (isHorizontal)
@@ -623,7 +624,7 @@ namespace OxyPlot.Axes
         /// <param name="plotAreaBottom">Plot area bottom position.</param>
         private void AddSegments(
             List<ScreenPoint> segments, 
-            List<Axis> perpAxes,
+            List<AxisBase> perpAxes,
             bool isHorizontal,
             bool cropGridlines,
             double transformedValue,
@@ -643,8 +644,8 @@ namespace OxyPlot.Axes
                 {
                     foreach (var perpAxis in perpAxes)
                     {
-                        segments.Add(new ScreenPoint(transformedValue, perpAxis.Transform(perpAxis.ClipMinimum)));
-                        segments.Add(new ScreenPoint(transformedValue, perpAxis.Transform(perpAxis.ClipMaximum)));
+                        segments.Add(new ScreenPoint(transformedValue, perpAxis.ViewInfo.Transform(perpAxis.ClipInteractionMinimum).Value));
+                        segments.Add(new ScreenPoint(transformedValue, perpAxis.ViewInfo.Transform(perpAxis.ClipInteractionMaximum).Value));
                     }
                 }
             }
@@ -659,8 +660,8 @@ namespace OxyPlot.Axes
                 {
                     foreach (var perpAxis in perpAxes)
                     {
-                        segments.Add(new ScreenPoint(perpAxis.Transform(perpAxis.ClipMinimum), transformedValue));
-                        segments.Add(new ScreenPoint(perpAxis.Transform(perpAxis.ClipMaximum), transformedValue));
+                        segments.Add(new ScreenPoint(perpAxis.ViewInfo.Transform(perpAxis.ClipInteractionMinimum).Value, transformedValue));
+                        segments.Add(new ScreenPoint(perpAxis.ViewInfo.Transform(perpAxis.ClipInteractionMaximum).Value, transformedValue));
                     }
                 }
             }

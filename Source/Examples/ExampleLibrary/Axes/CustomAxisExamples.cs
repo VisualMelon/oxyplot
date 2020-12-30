@@ -10,13 +10,14 @@ namespace ExampleLibrary
 
     using OxyPlot;
     using OxyPlot.Axes;
+    using OxyPlot.Axes.ComposableAxis;
 
     [Examples("Custom axes"), Tags("Axes")]
     public static class CustomAxisExamples
     {
         public class ArrowAxis : LinearAxis
         {
-            public override void Render(IRenderContext rc, int pass)
+            public override void Render(IRenderContext rc, AxisRenderPass pass)
             {
                 base.Render(rc, pass);
                 var points = new List<ScreenPoint>();

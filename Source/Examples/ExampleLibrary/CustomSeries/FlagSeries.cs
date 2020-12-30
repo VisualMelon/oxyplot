@@ -185,9 +185,9 @@ namespace ExampleLibrary
         /// </summary>
         protected override void EnsureAxes()
         {
-            this.XAxis = this.XAxisKey != null ?
+            this.XAxis = (Axis)( this.XAxisKey != null ?
                          this.PlotModel.GetAxis(this.XAxisKey) :
-                         this.PlotModel.DefaultXAxis;
+                         this.PlotModel.DefaultXAxis );
         }
 
         /// <summary>

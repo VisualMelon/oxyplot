@@ -9,6 +9,7 @@
 
 namespace OxyPlot.Axes
 {
+    using OxyPlot.Axes.ComposableAxis;
     using System;
     using System.Linq;
 
@@ -33,7 +34,7 @@ namespace OxyPlot.Axes
         /// <param name="axis">The axis.</param>
         /// <param name="pass">The render pass.</param>
         /// <exception cref="System.InvalidOperationException">Magnitude axis not defined.</exception>
-        public override void Render(Axis axis, int pass)
+        public override void Render(Axis axis, AxisRenderPass pass)
         {
             var angleAxis = (AngleAxis)axis;
 

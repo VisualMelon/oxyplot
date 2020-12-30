@@ -9,6 +9,7 @@
 
 namespace OxyPlot.Axes
 {
+    using OxyPlot.Axes.ComposableAxis;
     using System;
     using System.Collections.Generic;
 
@@ -44,7 +45,7 @@ namespace OxyPlot.Axes
         /// <param name="axis">The axis.</param>
         /// <param name="pass">The pass.</param>
         /// <exception cref="System.NullReferenceException">Angle axis should not be <c>null</c>.</exception>
-        public override void Render(Axis axis, int pass)
+        public override void Render(Axis axis, AxisRenderPass pass)
         {
             base.Render(axis, pass);
 
@@ -259,7 +260,7 @@ namespace OxyPlot.Axes
                 }
             }
 
-            if (pass == 1)
+            if (pass == AxisRenderPass.Pass1)
             {
                 using var _ = this.RenderContext.AutoResetClip(new OxyRect(axis.ScreenMin, axis.ScreenMax));
                 foreach (var tickValue in this.MajorLabelValues)

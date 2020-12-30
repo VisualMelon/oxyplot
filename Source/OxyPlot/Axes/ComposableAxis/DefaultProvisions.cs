@@ -165,6 +165,16 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <summary>
+        /// Scales the given distance in Interaction space to Screen space.
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public ScreenReal Scale(InteractionReal i)
+        {
+            return new ScreenReal(i.Value * ScreenScale);
+        }
+
+        /// <summary>
         /// Transforms a value in Screen space to Interaction space.
         /// </summary>
         /// <param name="s">A value in Screen space.</param>
@@ -172,6 +182,16 @@ namespace OxyPlot.Axes.ComposableAxis
         public InteractionReal InverseTransform(ScreenReal s)
         {
             return new InteractionReal((s.Value - ScreenOffset.Value) / ScreenScale);
+        }
+
+        /// <summary>
+        /// Scales the given distance in Screen space to Interaction space.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public InteractionReal InverseScale(ScreenReal s)
+        {
+            return new InteractionReal(s.Value * ScreenScale);
         }
     }
 
@@ -480,21 +500,21 @@ namespace OxyPlot.Axes.ComposableAxis
         public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         {
-            return Helpers.TryFindMinMax(sampleProvider, XProvider, YProvider, samples, out minX, out minY, out maxX, out maxY);
+            return XYHelpers.TryFindMinMax(sampleProvider, XProvider, YProvider, samples, out minX, out minY, out maxX, out maxY);
         }
 
         /// <inheritdoc/>
         public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         {
-            return Helpers.TryFindMinMax(sampleProvider, XProvider, YProvider, samples, out minX, out minY, out maxX, out maxY, out xMonotonicity, out yMonotonicity);
+            return XYHelpers.TryFindMinMax(sampleProvider, XProvider, YProvider, samples, out minX, out minY, out maxX, out maxY, out xMonotonicity, out yMonotonicity);
         }
 
         /// <inheritdoc/>
         public bool FindWindow<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         {
-            return Helpers.FindWindow(sampleProvider, XProvider, YProvider, samples, start, end, xMonotonicity, yMonotonicity, out startIndex, out endIndex);
+            return XYHelpers.FindWindow(sampleProvider, XProvider, YProvider, samples, start, end, xMonotonicity, yMonotonicity, out startIndex, out endIndex);
         }
     }
 

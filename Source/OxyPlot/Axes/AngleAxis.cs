@@ -9,6 +9,7 @@
 
 namespace OxyPlot.Axes
 {
+    using OxyPlot.Axes.ComposableAxis;
     using System;
     using System.Collections.Generic;
 
@@ -88,7 +89,7 @@ namespace OxyPlot.Axes
         /// </summary>
         /// <param name="rc">The render context.</param>
         /// <param name="pass">The pass.</param>
-        public override void Render(IRenderContext rc, int pass)
+        public override void Render(IRenderContext rc, AxisRenderPass pass)
         {
             var r = new AngleAxisRenderer(rc, this.PlotModel);
             r.Render(this, pass);

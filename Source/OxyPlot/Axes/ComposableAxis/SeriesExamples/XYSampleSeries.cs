@@ -130,6 +130,8 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             MaxY = maxY;
             XMonotonicity = xm;
             YMonotonicity = ym;
+
+            // TODO: use DataRange<XData> instead of MinX/MinY: it already has a concept of empty, so we can ditch HasMeaningfulDataRange
         }
 
         /// <summary>

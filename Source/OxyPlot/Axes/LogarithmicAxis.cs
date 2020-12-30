@@ -546,15 +546,8 @@ namespace OxyPlot.Axes
             }
         }
 
-        /// <summary>
-        /// Updates the <see cref="Axis.ActualMaximum" /> and <see cref="Axis.ActualMinimum" /> values.
-        /// </summary>
-        /// <remarks>
-        /// If the user has zoomed/panned the axis, the internal ViewMaximum/ViewMinimum
-        /// values will be used. If Maximum or Minimum have been set, these values will be used. Otherwise the maximum and minimum values
-        /// of the series will be used, including the 'padding'.
-        /// </remarks>
-        internal override void UpdateActualMaxMin()
+        /// <inheritdoc/>
+        public override void UpdateActualMaxMin()
         {
             if (this.PowerPadding)
             {

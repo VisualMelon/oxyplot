@@ -7,7 +7,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// Provides methods to help working with axis.
     /// </summary>
-    public static class Helpers
+    public static class XYHelpers
     {
         /// <summary>
         /// Computes the minimum and maximum X and Y values for the given samples.

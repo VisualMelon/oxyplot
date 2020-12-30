@@ -16,6 +16,7 @@ namespace OxyPlot
 
     using OxyPlot.Annotations;
     using OxyPlot.Axes;
+    using OxyPlot.Axes.ComposableAxis;
     using OxyPlot.Legends;
     using OxyPlot.Series;
 
@@ -94,7 +95,7 @@ namespace OxyPlot
         /// </summary>
         public PlotModel()
         {
-            this.Axes = new ElementCollection<Axis>(this);
+            this.Axes = new ElementCollection<AxisBase>(this);
             this.Series = new ElementCollection<Series.Series>(this);
             this.Annotations = new ElementCollection<Annotation>(this);
             this.Legends = new ElementCollection<LegendBase>(this);
@@ -220,7 +221,7 @@ namespace OxyPlot
         /// Gets the axes.
         /// </summary>
         /// <value>The axes.</value>
-        public ElementCollection<Axis> Axes { get; private set; }
+        public ElementCollection<AxisBase> Axes { get; private set; }
 
         /// <summary>
         /// Gets or sets the legends.
@@ -463,13 +464,13 @@ namespace OxyPlot
         /// Gets the default X axis.
         /// </summary>
         /// <value>The default X axis.</value>
-        public Axis DefaultXAxis { get; private set; }
+        public AxisBase DefaultXAxis { get; private set; }
 
         /// <summary>
         /// Gets the default Y axis.
         /// </summary>
         /// <value>The default Y axis.</value>
-        public Axis DefaultYAxis { get; private set; }
+        public AxisBase DefaultYAxis { get; private set; }
 
         /// <summary>
         /// Gets the default color axis.
@@ -540,7 +541,7 @@ namespace OxyPlot
         /// <param name="pt">The point.</param>
         /// <param name="xaxis">The x-axis.</param>
         /// <param name="yaxis">The y-axis.</param>
-        public void GetAxesFromPoint(ScreenPoint pt, out Axis xaxis, out Axis yaxis)
+        public void GetAxesFromPoint(ScreenPoint pt, out AxisBase xaxis, out AxisBase yaxis)
         {
             xaxis = yaxis = null;
 
@@ -595,18 +596,21 @@ namespace OxyPlot
                     continue;
                 }
 
-                double x = double.NaN;
+                InteractionReal x;
                 if (axis.IsHorizontal())
                 {
-                    x = axis.InverseTransform(pt.X);
+                    x = axis.ViewInfo.InverseTransform(new ScreenReal(pt.X));
                 }
-
-                if (axis.IsVertical())
+                else if (axis.IsVertical())
                 {
-                    x = axis.InverseTransform(pt.Y);
+                    x = axis.ViewInfo.InverseTransform(new ScreenReal(pt.Y));
+                }
+                else
+                {
+                    continue; // can't interact with other types of Axis
                 }
 
-                if (x >= axis.ClipMinimum && x <= axis.ClipMaximum)
+                if (x >= axis.ClipInteractionMinimum && x <= axis.ClipInteractionMaximum)
                 {
                     if (position == null)
                     {
@@ -826,7 +830,7 @@ namespace OxyPlot
         /// <param name="key">The axis key.</param>
         /// <returns>The axis that corresponds with the key.</returns>
         /// <exception cref="System.InvalidOperationException">Cannot find axis with the specified key.</exception>
-        public Axis GetAxis(string key)
+        public AxisBase GetAxis(string key)
         {
             if (key == null)
             {
@@ -847,7 +851,7 @@ namespace OxyPlot
         /// <param name="key">The axis key.</param>
         /// <param name="defaultAxis">The default axis.</param>
         /// <returns>defaultAxis if key is empty or does not exist; otherwise, the axis that corresponds with the key.</returns>
-        public Axis GetAxisOrDefault(string key, Axis defaultAxis)
+        public AxisBase GetAxisOrDefault(string key, AxisBase defaultAxis)
         {
             if (key != null)
             {
@@ -878,7 +882,7 @@ namespace OxyPlot
         {
             foreach (var a in this.Axes)
             {
-                a.Pan(a.IsHorizontal() ? dx : dy);
+                a.Pan(new ScreenReal(a.IsHorizontal() ? dx : dy));
             }
         }
 

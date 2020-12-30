@@ -72,8 +72,8 @@ namespace OxyPlot.Annotations
         /// </summary>
         public void EnsureAxes()
         {
-            this.XAxis = this.XAxisKey != null ? this.PlotModel.GetAxis(this.XAxisKey) : this.PlotModel.DefaultXAxis;
-            this.YAxis = this.YAxisKey != null ? this.PlotModel.GetAxis(this.YAxisKey) : this.PlotModel.DefaultYAxis;
+            this.XAxis = (Axis)( this.XAxisKey != null ? this.PlotModel.GetAxis(this.XAxisKey) : this.PlotModel.DefaultXAxis ); // TODO: ... not sure... we need to re-write every single component so that they are typed... so this code won't survive... for now it can assume untyped axes
+            this.YAxis = (Axis)(this.YAxisKey != null ? this.PlotModel.GetAxis(this.YAxisKey) : this.PlotModel.DefaultYAxis ); // ... or (much better): it could assume IAxis<double> (note: that's why I need everything in AxisBase in IAxis... I knew there was a reason for IAxis)
         }
 
         /// <summary>

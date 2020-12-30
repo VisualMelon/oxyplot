@@ -5,6 +5,24 @@ using System.Text;
 namespace OxyPlot.Axes.ComposableAxis
 {
     /// <summary>
+    /// For some reason axes render in passes: these need to be well defined
+    /// </summary>
+    public enum AxisRenderPass : int
+    {
+        /// <summary>
+        /// TODO: Not sure what this is yet
+        /// Seems to be for minor items
+        /// </summary>
+        Pass0 = 0,
+
+        /// <summary>
+        /// TODO: Not sure what this is yet either
+        /// Seems to be for major items and titles and sich
+        /// </summary>
+        Pass1 = 1
+    }
+
+    /// <summary>
     /// Consumes an axis-screen transformation.
     /// </summary>
     /// <typeparam name="TData"></typeparam>
@@ -93,13 +111,79 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     // TODO: will need seperate interfaces for color axis consumers?
-    // -> yes, because this is the context in which all serise will render (and who knows what else)
+    // -> yes, because this is the context in which all series will render (and who knows what else)
+
+    /// <summary>
+    /// TODO: work out where to put this stuff...
+    /// It should be in AxisBase, probably, but for now it will have to sit in the generic axis.
+    /// </summary>
+    public interface IComposableAxisStuffThatIsCurrentlyCausingProblemsWithRespectToCompatabilityWithExistingAxisImplementsAndAsSuchCannotAppearInIAxisAtThisTime
+    {
+        /// <summary>
+        /// Gets the View information.
+        /// </summary>
+        ViewInfo ViewInfo { get; }
+
+        /// <summary>
+        /// Zooms the axis at the specified point thing thing point thing point.
+        /// </summary>
+        /// <param name="staticPoint">The screen point to zoom at.</param>
+        /// <param name="factor">The zoom factor.</param>
+        void ZoomAt(ScreenPoint staticPoint, double factor);
+    }
 
     /// <summary>
     /// Base class for axes.
     /// </summary>
     public abstract class AxisBase : PlotElement, IAxis
     {
+        /// <summary>
+        /// Initializes an instance of the <see cref="AxisBase"/> class.
+        /// </summary>
+        protected AxisBase()
+        {
+            // defaults
+            // TODO: C&P from Axis.cs, and remove anything that doesn't exist
+            this.PositionAtZeroCrossing = false;
+
+            this.MinimumPadding = 0.01;
+            this.MaximumPadding = 0.01;
+            this.MinimumDataMargin = ScreenReal.Zero;
+            this.MaximumDataMargin = ScreenReal.Zero;
+            this.MinimumMargin = ScreenReal.Zero;
+            this.MaximumMargin = ScreenReal.Zero;
+        }
+
+        #region Things I definitely want to purge
+        /// <summary>
+        /// Determines whether this is an X/T axis.
+        /// </summary>
+        /// <returns></returns>
+        public abstract bool IsXyAxis();
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the axis should be positioned at the zero-crossing of the related axis. The default value is <c>false</c>.
+        /// </summary>
+        public bool PositionAtZeroCrossing { get; set; }
+
+        /// <summary>
+        /// The scale between Interaction Space and View Space: only here for compat.
+        /// <see cref="ViewInfo"/> is the new guy, at the moment.
+        /// </summary>
+        public abstract double Scale { get; } // used for cartesian enforcement
+
+        /// <summary>
+        /// The offset between Interaction Space and View Space: only here for compat.
+        /// <see cref="ViewInfo"/> is the new guy, at the moment.
+        /// </summary>
+        public abstract double Offset { get; } // the other half of the ViewInfo from Scale
+        #endregion
+
+        /// <summary>
+        /// The Scale and Offset, with some meaningful behaviour bolted on for good measure.
+        /// </summary>
+        public abstract ViewInfo ViewInfo { get; }
+
         /// <summary>
         /// Gets or sets the key of the axis. This can be used to specify an axis if you have defined multiple axes in a plot. The default value is <c>null</c>.
         /// </summary>
@@ -116,11 +200,6 @@ namespace OxyPlot.Axes.ComposableAxis
         public AxisPosition Position { get; set; }
 
         /// <summary>
-        /// Gets the view info
-        /// </summary>
-        public abstract ViewInfo ViewInfo { get; }
-
-        /// <summary>
         /// Gets or sets the screen coordinate of the maximum end of the axis.
         /// </summary>
         public ScreenPoint ScreenMax { get; protected set; }
@@ -129,6 +208,16 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets or sets the screen coordinate of the minimum end of the axis.
         /// </summary>
         public ScreenPoint ScreenMin { get; protected set; }
+
+        /// <summary>
+        /// The clip minimum, in Interaction space. Maps to the ActualMinimum in data space.
+        /// </summary>
+        public InteractionReal ClipInteractionMinimum { get; set; }
+
+        /// <summary>
+        /// The clip maximum, in Interaction space. Maps to the ActualMaximum in data space.
+        /// </summary>
+        public InteractionReal ClipInteractionMaximum { get; set; }
 
         /// <summary>
         /// Gets or sets the start position of the axis on the plot area. The default value is <c>0</c>.
@@ -148,49 +237,162 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Determines whether the axis is horizontal.
         /// </summary>
         /// <returns><c>true</c> if the axis is horizontal; otherwise, <c>false</c> .</returns>
-        public bool IsHorizontal => this.Position == AxisPosition.Top || this.Position == AxisPosition.Bottom;
+        public bool IsHorizontal() => this.Position == AxisPosition.Top || this.Position == AxisPosition.Bottom;
 
         /// <summary>
         /// Determines whether the axis is vertical.
         /// </summary>
         /// <returns><c>true</c> if the axis is horizontal; otherwise, <c>false</c> .</returns>
-        public bool IsVertical => this.Position == AxisPosition.Left || this.Position == AxisPosition.Right;
+        public bool IsVertical() => this.Position == AxisPosition.Left || this.Position == AxisPosition.Right;
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Resets the user's modification (zooming/panning) to minimum and maximum of this axis.
+        /// </summary>
         public abstract void Reset();
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Zooms the axis with the specified zoom factor at the center of the axis.
+        /// </summary>
+        /// <param name="factor">The zoom factor.</param>
         public abstract void ZoomAtCenter(double factor);
 
-        /// <inheritdoc/>
-        public abstract void ZoomAt(ScreenPoint staticPoint, double factor);
+        /// <summary>
+        /// Zoom to the specified scale.
+        /// </summary>
+        /// <param name="newScale">The new scale.</param>
+        public abstract void Zoom(double newScale);
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Pans the specified axis.
+        /// </summary>
+        /// <param name="previousPoint">The previous point (screen coordinates).</param>
+        /// <param name="newPoint">The current point (screen coordinates).</param>
         public abstract void Pan(ScreenPoint previousPoint, ScreenPoint newPoint);
 
-        /// <inheritdoc/>
-        public bool IsAxisVisible { get; set; }
-    }
+        /// <summary>
+        /// Pans the specified axis.
+        /// </summary>
+        /// <param name="screenOffsetDelta">How much to move along.</param>
+        public abstract void Pan(ScreenReal screenOffsetDelta);
 
-    /// <summary>
-    /// All the stuff needed for compat that is too weakly typed.
-    /// </summary>
-    public interface IOldAxisStuffIWouldPreferDidNotExist
-    {
+        /// <summary>
+        /// Gets or sets a value indicating whether this axis is visible. The default value is <c>true</c>.
+        /// </summary>
+        public bool IsAxisVisible { get; set; }
+
+        /// <summary>
+        /// Gets or sets the desired margins such that the axis text ticks will not be clipped.
+        /// The actual margins may be smaller or larger than the desired margins if they are set manually.
+        /// </summary>
+        public OxyThickness DesiredMargin { get; protected set; }
+
+        /// <summary>
+        /// Gets or sets the position tier max shift.
+        /// </summary>
+        internal double PositionTierMaxShift { get; set; }
+
+        /// <summary>
+        /// Gets or sets the position tier min shift.
+        /// </summary>
+        internal double PositionTierMinShift { get; set; }
+
+        /// <summary>
+        /// Gets or sets the size of the position tier.
+        /// </summary>
+        internal double PositionTierSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the position tier which defines in which tier the axis is displayed. The default value is <c>0</c>.
+        /// </summary>
+        /// <remarks>The bigger the value the further afar is the axis from the graph.</remarks>
+        public int PositionTier { get; set; }
+
+        /// <summary>
+        /// Gets or sets the 'padding' fraction of the minimum value. The default value is <c>0.01</c>.
+        /// </summary>
+        /// <remarks>A value of 0.01 gives 1% more space on the minimum end of the axis. This property is not used if an explicit minimum is set.</remarks>
+        public double MinimumPadding { get; set; }
+
+        /// <summary>
+        /// Gets or sets the screen-space data margin at the minimum. The default value is <c>0</c>.
+        /// </summary>
+        /// <value>The number of device independent units to included between the clip and actual minima.</value>
+        public ScreenReal MinimumDataMargin { get; set; }
+
+        /// <summary>
+        /// Gets or sets the screen-space margin at the minimum. The default value is <c>0</c>.
+        /// </summary>
+        /// <value>The number of device independent units to be left empty between the axis the <see cref="ComposableAxis.AxisBase.StartPosition"/>.</value>
+        public ScreenReal MinimumMargin { get; set; }
+
+        /// <summary>
+        /// Gets or sets the 'padding' fraction of the maximum value. The default value is <c>0.01</c>.
+        /// </summary>
+        /// <remarks>A value of 0.01 gives 1% more space on the maximum end of the axis. This property is not used if an explicit maximum is set.</remarks>
+        public double MaximumPadding { get; set; }
+
+        /// <summary>
+        /// Gets or sets the screen-space data margin at the maximum. The default value is <c>0</c>.
+        /// </summary>
+        /// <value>The number of device independent units to included between the clip and actual maxima.</value>
+        public ScreenReal MaximumDataMargin { get; set; }
+
+        /// <summary>
+        /// Gets or sets the screen-space margin at the maximum. The default value is <c>0</c>.
+        /// </summary>
+        /// <value>The number of device independent units to be left empty between the axis the <see cref="ComposableAxis.AxisBase.StartPosition"/>.</value>
+        public ScreenReal MaximumMargin { get; set; }
+
+        /// <summary>
+        /// Updates the scale and offset properties of the transform from the specified boundary rectangle.
+        /// </summary>
+        /// <param name="bounds">The bounds.</param>
+        internal abstract void UpdateTransform(OxyRect bounds); // what do I do with this one!? Why is everything internal?!
+
+        /// <summary>
+        /// Updates the actual minor and major step intervals.
+        /// </summary>
+        /// <param name="plotArea">The plot area rectangle.</param>
+        internal abstract void UpdateIntervals(OxyRect plotArea);
+
+        /// <summary>
+        /// Measures the size of the axis and updates <see cref="AxisBase.DesiredMargin"/> accordingly. This takes into account the axis title as well as tick labels
+        /// potentially exceeding the axis range.
+        /// </summary>
+        /// <param name="rc">The render context.</param>
+        public abstract void Measure(IRenderContext rc);
+
+        /// <summary>
+        /// Renders the axis on the specified render context.
+        /// </summary>
+        /// <param name="rc">The render context.</param>
+        /// <param name="pass">The pass.</param>
+        public abstract void Render(IRenderContext rc, AxisRenderPass pass);
+
+        /// <inheritdoc/>
+        public abstract void ResetDataMaxMin();
+
+        /// <summary>
+        /// Updates the actual minimum and maximum values.
+        /// </summary>
+        /// <remarks>If the user has zoomed/panned the axis, the internal ViewMaximum/ViewMinimum
+        /// values will be used. If Maximum or Minimum have been set, these values will be used. Otherwise the maximum and minimum values
+        /// of the series will be used, including the 'padding'.</remarks>
+        public abstract void UpdateActualMaxMin();
     }
 
     /// <summary>
     /// An axis.
     /// </summary>
-    public interface IAxis : IOldAxisStuffIWouldPreferDidNotExist
+    public interface IAxis
     {
         /// <summary>
-        /// Gets the Key.
+        /// Gets or sets the key of the axis. This can be used to specify an axis if you have defined multiple axes in a plot. The default value is <c>null</c>.
         /// </summary>
         string Key { get; set; }
 
         /// <summary>
-        /// Gets the Position.
+        /// Gets or sets the position of the axis. The default value is <see cref="AxisPosition.Left"/>.
         /// </summary>
         AxisPosition Position { get; set; }
 
@@ -206,11 +408,6 @@ namespace OxyPlot.Axes.ComposableAxis
         double EndPosition { get; set; }
 
         /// <summary>
-        /// Gets the View information.
-        /// </summary>
-        ViewInfo ViewInfo { get; }
-
-        /// <summary>
         /// Resets the axis view.
         /// </summary>
         void Reset();
@@ -222,23 +419,27 @@ namespace OxyPlot.Axes.ComposableAxis
         void ZoomAtCenter(double factor);
 
         /// <summary>
-        /// Zooms by the given factor, maintaining the position of given screen-space point.
+        /// Zoom to the specified scale.
         /// </summary>
-        /// <param name="staticPoint"></param>
-        /// <param name="factor"></param>
-        void ZoomAt(ScreenPoint staticPoint, double factor);
+        /// <param name="newScale">The new scale.</param>
+        void Zoom(double newScale);
 
         /// <summary>
         /// Pans the axis.
         /// </summary>
         /// <param name="previousPoint"></param>
         /// <param name="newPoint"></param>
-        public abstract void Pan(ScreenPoint previousPoint, ScreenPoint newPoint);
+        void Pan(ScreenPoint previousPoint, ScreenPoint newPoint);
 
         /// <summary>
         /// Gets a value indicating whether the axis is visible.
         /// </summary>
         bool IsAxisVisible { get; }
+
+        /// <summary>
+        /// Resets the data minimum and maximum values.
+        /// </summary>
+        void ResetDataMaxMin();
     }
 
     /// <summary>
@@ -278,36 +479,6 @@ namespace OxyPlot.Axes.ComposableAxis
         /// The logical maximum value.
         /// </summary>
         TData ActualMaximum { get; set; }
-
-        /// <summary>
-        /// The data margin an the minimum.
-        /// </summary>
-        ScreenReal MinimumDataMargin { get; set; }
-
-        /// <summary>
-        /// The data margin at the maximum.
-        /// </summary>
-        ScreenReal MaximumDataMargin { get; set; }
-
-        /// <summary>
-        /// The margin an the minimum.
-        /// </summary>
-        ScreenReal MinimumMargin { get; set; }
-
-        /// <summary>
-        /// The margin at the maximum.
-        /// </summary>
-        ScreenReal MaximumMargin { get; set; }
-
-        /// <summary>
-        /// The padding an the minimum.
-        /// </summary>
-        double MinimumPadding { get; set; }
-
-        /// <summary>
-        /// The padding at the maximum.
-        /// </summary>
-        double MaximumPadding { get; set; }
     }
 
     /// <summary>
@@ -318,11 +489,14 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="TDataTransformation"></typeparam>
     /// <typeparam name="TDataOptional"></typeparam>
     /// <typeparam name="TDataOptionalProvider"></typeparam>
-    public class HorizontalVerticalAxis<TData, TDataProvider, TDataTransformation, TDataOptional, TDataOptionalProvider> : AxisBase, IAxis<TData>
+    public class HorizontalVerticalAxis<TData, TDataProvider, TDataTransformation, TDataOptional, TDataOptionalProvider> : AxisBase, IAxis<TData>, IComposableAxisStuffThatIsCurrentlyCausingProblemsWithRespectToCompatabilityWithExistingAxisImplementsAndAsSuchCannotAppearInIAxisAtThisTime
         where TDataProvider : IDataProvider<TData>
         where TDataTransformation : IDataTransformation<TData, TDataProvider>
         where TDataOptionalProvider : IOptionalProvider<TData, TDataOptional>
     {
+        /// <inheritdoc/>
+        public override bool IsXyAxis() => true;
+
         /// <summary>
         /// The <typeparamref name="TDataTransformation"/>.
         /// </summary>
@@ -376,29 +550,19 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
-        public ScreenReal MinimumDataMargin { get; set; }
+        public override void ResetDataMaxMin()
+        {
+            DataRange = Range<TData>.Empty;
+        }
 
-        /// <inheritdoc/>
-        public ScreenReal MaximumDataMargin { get; set; }
-
-        /// <inheritdoc/>
-        public ScreenReal MinimumMargin { get; set; }
-
-        /// <inheritdoc/>
-        public ScreenReal MaximumMargin { get; set; }
-
-        /// <inheritdoc/>
-        public double MinimumPadding { get; set; }
-
-        /// <inheritdoc/>
-        public double MaximumPadding { get; set; }
-        
         /// <summary>
         /// Gets a value indicating whether the axis is reversed.
         /// </summary>
         public bool IsReversed => StartPosition > EndPosition;
 
         private ViewInfo _viewInfo;
+
+        private OxyRect PlotBounds { get; set; }
 
         /// <summary>
         /// The absolute minimum value to be shown (i.e. the minimum value that <see cref="ClipMinimum"/> will take).
@@ -439,16 +603,6 @@ namespace OxyPlot.Axes.ComposableAxis
         /// The actual maximum, in Interaction space. Maps to <see cref="ActualMaximum"/>.
         /// </summary>
         private InteractionReal ActualInteractionMaximum => ActualInteractionCenter + ActualInteractionRadius;
-
-        /// <summary>
-        /// The clip minimum, in Interaction space. Maps to <see cref="ClipMinimum"/>.
-        /// </summary>
-        private InteractionReal ClipInteractionMinimum { get; set; }
-
-        /// <summary>
-        /// The clip maximum, in Interaction space. Maps to <see cref="ClipMaximum"/>.
-        /// </summary>
-        private InteractionReal ClipInteractionMaximum { get; set; }
 
         /// <summary>
         /// The Screen space range.
@@ -498,9 +652,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <param name="staticPoint"></param>
         /// <param name="factor"></param>
-        public override void ZoomAt(ScreenPoint staticPoint, double factor)
+        public void ZoomAt(ScreenPoint staticPoint, double factor)
         {
-            var ip = ViewInfo.InverseTransform(new ScreenReal(IsHorizontal ? staticPoint.X : staticPoint.Y));
+            var ip = ViewInfo.InverseTransform(new ScreenReal(IsHorizontal() ? staticPoint.X : staticPoint.Y));
 
             ViewInteractionRadius = ActualInteractionRadius * factor;
             ViewInteractionCenter = (ip - ActualInteractionCenter) * factor - ip;
@@ -525,6 +679,15 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <summary>
+        /// Zoom to the specified scale.
+        /// </summary>
+        /// <param name="newScale">The new scale.</param>
+        public override void Zoom(double newScale)
+        {
+            throw new Exception("No idea what this does. Scale, what is that? I've never heard of it: is that a thing?");
+        }
+
+        /// <summary>
         /// Pans by the given factor.
         /// </summary>
         /// <param name="factor"></param>
@@ -538,6 +701,19 @@ namespace OxyPlot.Axes.ComposableAxis
 
         /// <inheritdoc/>
         public override ViewInfo ViewInfo => _viewInfo;
+
+        /// <inheritdoc/>
+        public override double Scale => ViewInfo.ScreenScale;
+
+        /// <inheritdoc/>
+        public override double Offset => ViewInfo.ScreenOffset.Value;
+
+        /// <inheritdoc/>
+        public override void UpdateActualMaxMin()
+        {
+            // Not sure what this is meant to do... so let's just call RefreshView
+            RefreshView();
+        }
 
         /// <summary>
         /// Update the <see cref="ViewInfo"/> and other properties derived from the Actual Interaction Min/Max and the Screen Min/Max.
@@ -594,7 +770,6 @@ namespace OxyPlot.Axes.ComposableAxis
             ActualMaximum = DataTransformation.InverseTransform(ActualInteractionMaximum);
             ClipMinimum = DataTransformation.InverseTransform(ClipInteractionMinimum);
             ClipMaximum = DataTransformation.InverseTransform(ClipInteractionMaximum);
-
         }
 
         /// <inheritdoc/>
@@ -603,33 +778,74 @@ namespace OxyPlot.Axes.ComposableAxis
             consumer.Consume<TDataProvider, AxisScreenTransformation<TData, TDataProvider, TDataTransformation>>(new AxisScreenTransformation<TData, TDataProvider, TDataTransformation>(DataTransformation, ViewInfo, ClipMinimum, ClipMaximum));
         }
 
-        // NOTE: use plotBounds instead of PlotModel to make Sub-Plot support easier later on
-        /// <summary>
-        /// Measures and lays the axis out on the given plot bounds.
-        /// </summary>
-        /// <param name="plotBounds"></param>
-        public void MeasureAndLayout(OxyRect plotBounds)
+        internal override void UpdateIntervals(OxyRect plotArea)
         {
+            // the plan is to abstract this away entirely... so let's do nothing for now
+        }
+
+        /// <inheritdoc/>
+        internal override void UpdateTransform(OxyRect bounds) // WHY INTERNAL WHY
+        {
+            PlotBounds = bounds;
+
             ScreenReal screenMinimum;
             ScreenReal screenMaximum;
 
-            if (IsHorizontal)
+            if (IsHorizontal())
             {
-                screenMinimum = new ScreenReal(IsReversed ? plotBounds.Left : plotBounds.Right) + MinimumMargin;
-                screenMaximum = new ScreenReal(IsReversed ? plotBounds.Right : plotBounds.Left) - MinimumMargin;
+                screenMinimum = new ScreenReal(IsReversed ? bounds.Left : bounds.Right) + MinimumMargin;
+                screenMaximum = new ScreenReal(IsReversed ? bounds.Right : bounds.Left) - MinimumMargin;
+
+                ScreenMin = new ScreenPoint(screenMinimum.Value, bounds.Top);
+                ScreenMax = new ScreenPoint(screenMaximum.Value, bounds.Bottom);
             }
-            else if (IsVertical)
+            else if (IsVertical())
             {
-                screenMinimum = new ScreenReal(IsReversed ? plotBounds.Bottom : plotBounds.Top) + MinimumMargin;
-                screenMaximum = new ScreenReal(IsReversed ? plotBounds.Top : plotBounds.Bottom) - MinimumMargin;
+                screenMinimum = new ScreenReal(IsReversed ? bounds.Bottom : bounds.Top) + MinimumMargin;
+                screenMaximum = new ScreenReal(IsReversed ? bounds.Top : bounds.Bottom) - MinimumMargin;
+
+                ScreenMin = new ScreenPoint(bounds.Left, screenMinimum.Value);
+                ScreenMax = new ScreenPoint(bounds.Right, screenMaximum.Value);
             }
             else
             {
-                // we should not render
+                // we should not render... so let's bail now and hope for the best
                 return;
             }
 
             ScreenRange = new Range<ScreenReal>(screenMinimum, screenMaximum);
+
+            RefreshView(); // why is this not just here?
+        }
+
+        /// <summary>
+        /// Measures the size of the axis and updates <see cref="AxisBase.DesiredMargin"/> accordingly. This takes into account the axis title as well as tick labels
+        /// potentially exceeding the axis range.
+        /// </summary>
+        /// <param name="rc">The render context.</param>
+        public override void Measure(IRenderContext rc)
+        {
+            var plotBounds = PlotBounds;
+
+            if (this.Position == AxisPosition.None)
+            {
+                this.DesiredMargin = new OxyThickness(0);
+                return;
+            }
+
+            // TODO: see Axis.Measure for more information on what should be here.
+        }
+
+        /// <inheritdoc/>
+        public override void Render(IRenderContext rc, AxisRenderPass pass)
+        {
+            // TODO: we want to abstract out rendering, just like ticks and all that... for now lets draw some big rectangles to show we know what we're doing
+
+            if (pass == AxisRenderPass.Pass0)
+            {
+                rc.DrawRectangle(PlotBounds, OxyColors.Red, new OxyThickness(1), EdgeRenderingMode.Automatic);
+                rc.DrawRectangle(new OxyRect(ScreenMin, ScreenMax), OxyColors.Blue, new OxyThickness(1), EdgeRenderingMode.Automatic);
+            }
         }
 
         // NOTE: use plotBounds instead of PlotModel to make Sub-Plot support easier
@@ -640,7 +856,7 @@ namespace OxyPlot.Axes.ComposableAxis
         public void Render(OxyRect plotBounds)
         {
             // assumes we have been measured on these same plotBounds
-            if (!(IsHorizontal || IsVertical))
+            if (!(IsHorizontal() || IsVertical()))
             {
                 // we should not render
                 return;
@@ -651,6 +867,14 @@ namespace OxyPlot.Axes.ComposableAxis
         public override void Pan(ScreenPoint previousPoint, ScreenPoint newPoint)
         {
             // TODO: translate screen-space translation into interaction space translation
+        }
+
+        /// <inheritdoc/>
+        public override void Pan(ScreenReal screenOffsetDelta)
+        {
+            ViewInteractionCenter = ActualInteractionCenter + ViewInfo.InverseScale(screenOffsetDelta);
+
+            RefreshView();
         }
     }
 }

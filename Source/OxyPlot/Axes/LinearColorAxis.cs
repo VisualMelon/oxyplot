@@ -9,6 +9,7 @@
 
 namespace OxyPlot.Axes
 {
+    using OxyPlot.Axes.ComposableAxis;
     using System;
     using System.Collections.Generic;
 
@@ -156,7 +157,7 @@ namespace OxyPlot.Axes
         /// </summary>
         /// <param name="rc">The render context.</param>
         /// <param name="pass">The render pass.</param>
-        public override void Render(IRenderContext rc, int pass)
+        public override void Render(IRenderContext rc, AxisRenderPass pass)
         {
             if (this.Position == AxisPosition.None)
             {

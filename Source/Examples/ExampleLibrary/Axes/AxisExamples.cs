@@ -17,6 +17,7 @@ namespace ExampleLibrary
     using OxyPlot.Axes;
     using OxyPlot.Series;
     using OxyPlot.Legends;
+    using OxyPlot.Axes.ComposableAxis;
 
     /// <summary>
     /// Provides examples for general axis properties.
@@ -1428,8 +1429,8 @@ namespace ExampleLibrary
                 Position = AxisPosition.Left,
                 MinimumPadding = 0,
                 MaximumPadding = 0,
-                MinimumDataMargin = 20,
-                MaximumDataMargin = 20,
+                MinimumDataMargin = new ScreenReal(20),
+                MaximumDataMargin = new ScreenReal(20),
                 Minimum = 0,
                 TickStyle = TickStyle.Inside
             });
@@ -1438,8 +1439,8 @@ namespace ExampleLibrary
                 Position = AxisPosition.Bottom,
                 MinimumPadding = 0,
                 MaximumPadding = 0,
-                MinimumDataMargin = 20,
-                MaximumDataMargin = 20,
+                MinimumDataMargin = new ScreenReal(20),
+                MaximumDataMargin = new ScreenReal(20),
                 TickStyle = TickStyle.Inside
             });
             plot.Series.Add(ShowCases.CreateNormalDistributionSeries(-5, 5, 0, 0.2));
@@ -1464,8 +1465,8 @@ namespace ExampleLibrary
                 Position = AxisPosition.Left,
                 MinimumPadding = 0,
                 MaximumPadding = 0,
-                MinimumDataMargin = 20,
-                MaximumDataMargin = 20,
+                MinimumDataMargin = new ScreenReal(20),
+                MaximumDataMargin = new ScreenReal(20),
                 Minimum = 0,
                 TickStyle = TickStyle.Crossing,
                 AxislineStyle = LineStyle.Solid,
@@ -1476,8 +1477,8 @@ namespace ExampleLibrary
                 Position = AxisPosition.Bottom,
                 MinimumPadding = 0,
                 MaximumPadding = 0,
-                MinimumDataMargin = 20,
-                MaximumDataMargin = 20,
+                MinimumDataMargin = new ScreenReal(20),
+                MaximumDataMargin = new ScreenReal(20),
                 TickStyle = TickStyle.Crossing,
                 AxislineStyle = LineStyle.Solid,
                 PositionAtZeroCrossing = true
@@ -1503,8 +1504,8 @@ namespace ExampleLibrary
                 Position = AxisPosition.Bottom,
                 MinimumPadding = 0,
                 MaximumPadding = 0,
-                MinimumDataMargin = 20,
-                MaximumDataMargin = 20,
+                MinimumDataMargin = new ScreenReal(20),
+                MaximumDataMargin = new ScreenReal(20),
                 TickStyle = TickStyle.Inside
             });
 
@@ -1513,8 +1514,8 @@ namespace ExampleLibrary
                 Position = AxisPosition.Left,
                 MinimumPadding = 0,
                 MaximumPadding = 0,
-                MinimumDataMargin = 20,
-                MaximumDataMargin = 20,
+                MinimumDataMargin = new ScreenReal(20),
+                MaximumDataMargin = new ScreenReal(20),
                 TickStyle = TickStyle.Inside
             });
 
@@ -1555,8 +1556,8 @@ namespace ExampleLibrary
                 MinorGridlineStyle = LineStyle.Solid,
                 MinimumPadding = 0,
                 MaximumPadding = 0,
-                MinimumDataMargin = 0,
-                MaximumDataMargin = 20,
+                MinimumDataMargin = new ScreenReal(0),
+                MaximumDataMargin = new ScreenReal(20),
             });
 
             model.Series.Add(new FunctionSeries(t => t, t => t, 0, Math.PI * 6, 0.01));
@@ -1589,8 +1590,8 @@ namespace ExampleLibrary
                     Position = AxisPosition.Left,
                     StartPosition = i / (double)n,
                     EndPosition = (i + 1) / (double)n,
-                    MinimumMargin = i / (double)n * gap,
-                    MaximumMargin = (n - i - 1) / (double)n * gap,
+                    MinimumMargin = new ScreenReal(i / (double)n * gap),
+                    MaximumMargin = new ScreenReal((n - i - 1) / (double)n * gap),
                     AxislineStyle = LineStyle.Solid,
                     Key = $"Y{i}"
                 }); ;
@@ -1615,16 +1616,16 @@ namespace ExampleLibrary
                 Position = AxisPosition.Left,
                 MinimumPadding = 0,
                 MaximumPadding = 0,
-                MinimumMargin = 20,
-                MaximumMargin = 20,
+                MinimumMargin = new ScreenReal(20),
+                MaximumMargin = new ScreenReal(20),
             });
             plot.Axes.Add(new LinearAxis
             {
                 Position = AxisPosition.Bottom,
                 MinimumPadding = 0,
                 MaximumPadding = 0,
-                MinimumMargin = 20,
-                MaximumMargin = 20,
+                MinimumMargin = new ScreenReal(20),
+                MaximumMargin = new ScreenReal(20),
             });
 
             var rnd = new Random(1);
@@ -1673,8 +1674,8 @@ namespace ExampleLibrary
                 MinorGridlineStyle = LineStyle.Solid,
                 MinimumPadding = 0,
                 MaximumPadding = 0,
-                MinimumMargin = 0,
-                MaximumMargin = 100,
+                MinimumMargin = new ScreenReal(0),
+                MaximumMargin = new ScreenReal(100),
             });
 
             model.Series.Add(new FunctionSeries(t => t, t => t, 0, Math.PI * 6, 0.01));
@@ -1695,10 +1696,10 @@ namespace ExampleLibrary
                 Position = AxisPosition.Bottom,
                 MinimumPadding = 0.1,
                 MaximumPadding = 0.1,
-                MinimumDataMargin = 20,
-                MaximumDataMargin = 20,
-                MinimumMargin = 30,
-                MaximumMargin = 30,
+                MinimumDataMargin = new ScreenReal(20),
+                MaximumDataMargin = new ScreenReal(20),
+                MinimumMargin = new ScreenReal(30),
+                MaximumMargin = new ScreenReal(30),
                 MajorGridlineStyle = LineStyle.Solid,
                 MinorGridlineStyle = LineStyle.Dash,
                 CropGridlines = true,
@@ -1711,10 +1712,10 @@ namespace ExampleLibrary
                 Position = AxisPosition.Left,
                 MinimumPadding = 0.1,
                 MaximumPadding = 0.1,
-                MinimumDataMargin = 20,
-                MaximumDataMargin = 20,
-                MinimumMargin = 30,
-                MaximumMargin = 30,
+                MinimumDataMargin = new ScreenReal(20),
+                MaximumDataMargin = new ScreenReal(20),
+                MinimumMargin = new ScreenReal(30),
+                MaximumMargin = new ScreenReal(30),
                 MajorGridlineStyle = LineStyle.Solid,
                 MinorGridlineStyle = LineStyle.Dash,
                 CropGridlines = true,
@@ -1750,10 +1751,10 @@ namespace ExampleLibrary
                 Position = AxisPosition.Bottom,
                 MinimumPadding = 0.1,
                 MaximumPadding = 0.05,
-                MinimumDataMargin = 20,
-                MaximumDataMargin = 10,
-                MinimumMargin = 30,
-                MaximumMargin = 15,
+                MinimumDataMargin = new ScreenReal(20),
+                MaximumDataMargin = new ScreenReal(10),
+                MinimumMargin = new ScreenReal(30),
+                MaximumMargin = new ScreenReal(15),
                 MajorGridlineStyle = LineStyle.Solid,
                 MinorGridlineStyle = LineStyle.Dash,
                 CropGridlines = true,
@@ -1766,10 +1767,10 @@ namespace ExampleLibrary
                 Position = AxisPosition.Left,
                 MinimumPadding = 0.2,
                 MaximumPadding = 0.1,
-                MinimumDataMargin = 40,
-                MaximumDataMargin = 20,
-                MinimumMargin = 60,
-                MaximumMargin = 30,
+                MinimumDataMargin = new ScreenReal(40),
+                MaximumDataMargin = new ScreenReal(20),
+                MinimumMargin = new ScreenReal(60),
+                MaximumMargin = new ScreenReal(30),
                 MajorGridlineStyle = LineStyle.Solid,
                 MinorGridlineStyle = LineStyle.Dash,
                 CropGridlines = true,
@@ -1809,7 +1810,7 @@ namespace ExampleLibrary
                 {
                     if (axis.IsHorizontal())
                     {
-                        var h = axis;
+                        var h = (Axis)axis;
 
                         rc.DrawLine(h.Transform(h.ClipMinimum), 0.0, h.Transform(h.ClipMinimum), plot.Height, new OxyPen(OxyColors.Blue, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
                         rc.DrawLine(h.Transform(h.ClipMaximum), 0.0, h.Transform(h.ClipMaximum), plot.Height, new OxyPen(OxyColors.Blue, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
@@ -1822,7 +1823,7 @@ namespace ExampleLibrary
                     }
                     else
                     {
-                        var v = axis;
+                        var v = (Axis)axis;
 
                         rc.DrawLine(0.0, v.Transform(v.ClipMinimum), plot.Width, v.Transform(v.ClipMinimum), new OxyPen(OxyColors.Blue, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
                         rc.DrawLine(0.0, v.Transform(v.ClipMaximum), plot.Width, v.Transform(v.ClipMaximum), new OxyPen(OxyColors.Blue, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);

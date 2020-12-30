@@ -480,6 +480,38 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             return !(left == right);
         }
+
+        /// <summary>
+        /// Compares two <see cref="InteractionReal"/> values.
+        /// </summary>
+        public static bool operator >(InteractionReal left, InteractionReal right)
+        {
+            return left.Value > right.Value;
+        }
+
+        /// <summary>
+        /// Compares two <see cref="InteractionReal"/> values.
+        /// </summary>
+        public static bool operator <(InteractionReal left, InteractionReal right)
+        {
+            return left.Value < right.Value;
+        }
+
+        /// <summary>
+        /// Compares two <see cref="InteractionReal"/> values.
+        /// </summary>
+        public static bool operator >=(InteractionReal left, InteractionReal right)
+        {
+            return left.Value >= right.Value;
+        }
+
+        /// <summary>
+        /// Compares two <see cref="InteractionReal"/> values.
+        /// </summary>
+        public static bool operator <=(InteractionReal left, InteractionReal right)
+        {
+            return left.Value <= right.Value;
+        }
     }
 
     /// <summary>
@@ -585,6 +617,38 @@ namespace OxyPlot.Axes.ComposableAxis
         public static bool operator !=(ScreenReal left, ScreenReal right)
         {
             return !(left == right);
+        }
+
+        /// <summary>
+        /// Compares two <see cref="ScreenReal"/> values.
+        /// </summary>
+        public static bool operator >(ScreenReal left, ScreenReal right)
+        {
+            return left.Value > right.Value;
+        }
+
+        /// <summary>
+        /// Compares two <see cref="ScreenReal"/> values.
+        /// </summary>
+        public static bool operator <(ScreenReal left, ScreenReal right)
+        {
+            return left.Value < right.Value;
+        }
+
+        /// <summary>
+        /// Compares two <see cref="ScreenReal"/> values.
+        /// </summary>
+        public static bool operator >=(ScreenReal left, ScreenReal right)
+        {
+            return left.Value >= right.Value;
+        }
+
+        /// <summary>
+        /// Compares two <see cref="ScreenReal"/> values.
+        /// </summary>
+        public static bool operator <=(ScreenReal left, ScreenReal right)
+        {
+            return left.Value <= right.Value;
         }
     }
 

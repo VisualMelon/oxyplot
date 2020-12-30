@@ -9,6 +9,7 @@
 
 namespace OxyPlot.Axes
 {
+    using OxyPlot.Axes.ComposableAxis;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -34,7 +35,7 @@ namespace OxyPlot.Axes
         /// <param name="axis">The axis.</param>
         /// <param name="pass">The pass.</param>
         /// <exception cref="System.NullReferenceException">Angle axis should not be <c>null</c>.</exception>
-        public override void Render(Axis axis, int pass)
+        public override void Render(Axis axis, AxisRenderPass pass)
         {
             base.Render(axis, pass);
 
@@ -47,7 +48,7 @@ namespace OxyPlot.Axes
 
             angleAxis.UpdateActualMaxMin();
 
-            if (pass == 0 && this.ExtraPen != null)
+            if (pass == AxisRenderPass.Pass0 && this.ExtraPen != null)
             {
                 var extraTicks = axis.ExtraGridlines;
                 if (extraTicks != null)
@@ -59,7 +60,7 @@ namespace OxyPlot.Axes
                 }
             }
 
-            if (pass == 0 && this.MinorPen != null)
+            if (pass == AxisRenderPass.Pass0 && this.MinorPen != null)
             {
                 foreach (var tickValue in this.MinorTickValues)
                 {
@@ -67,7 +68,7 @@ namespace OxyPlot.Axes
                 }
             }
 
-            if (pass == 0 && this.MajorPen != null)
+            if (pass == AxisRenderPass.Pass0 && this.MajorPen != null)
             {
                 foreach (var tickValue in this.MajorTickValues)
                 {
@@ -75,7 +76,7 @@ namespace OxyPlot.Axes
                 }
             }
 
-            if (pass == 1)
+            if (pass == AxisRenderPass.Pass1)
             {
                 foreach (var tickValue in this.MajorTickValues)
                 {

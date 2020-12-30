@@ -9,6 +9,7 @@
 
 namespace OxyPlot.Axes
 {
+    using OxyPlot.Axes.ComposableAxis;
     using System;
 
     /// <summary>
@@ -73,7 +74,7 @@ namespace OxyPlot.Axes
         /// </summary>
         /// <param name="rc">The render context.</param>
         /// <param name="pass">The rendering pass.</param>
-        public override void Render(IRenderContext rc, int pass)
+        public override void Render(IRenderContext rc, AxisRenderPass pass)
         {
             var r = new MagnitudeAxisRenderer(rc, this.PlotModel);
             r.Render(this, pass);
@@ -127,24 +128,24 @@ namespace OxyPlot.Axes
 
             double marginSign = this.IsReversed ? -1.0 : 1.0;
 
-            if (this.MinimumMargin > 0)
+            if (this.MinimumMargin.Value > 0)
             {
-                a0 += this.MinimumMargin * marginSign;
+                a0 += this.MinimumMargin.Value * marginSign;
             }
 
-            if (this.MaximumMargin > 0)
+            if (this.MaximumMargin.Value > 0)
             {
-                a1 -= this.MaximumMargin * marginSign;
+                a1 -= this.MaximumMargin.Value * marginSign;
             }
 
-            if (this.MinimumDataMargin > 0)
+            if (this.MinimumDataMargin.Value > 0)
             {
-                a0 += this.MinimumDataMargin * marginSign;
+                a0 += this.MinimumDataMargin.Value * marginSign;
             }
 
-            if (this.MaximumDataMargin > 0)
+            if (this.MaximumDataMargin.Value > 0)
             {
-                a1 -= this.MaximumDataMargin * marginSign;
+                a1 -= this.MaximumDataMargin.Value * marginSign;
             }
 
             if (this.ActualMaximum - this.ActualMinimum < double.Epsilon)
@@ -178,7 +179,7 @@ namespace OxyPlot.Axes
 
             this.SetTransform(newScale, newOffset);
 
-            if (this.MinimumDataMargin > 0)
+            if (this.MinimumDataMargin.Value > 0)
             {
                 this.ClipMinimum = this.InverseTransform(0.0);
             }
@@ -187,7 +188,7 @@ namespace OxyPlot.Axes
                 this.ClipMinimum = this.ActualMinimum;
             }
 
-            if (this.MaximumDataMargin > 0)
+            if (this.MaximumDataMargin.Value > 0)
             {
                 this.ClipMaximum = this.InverseTransform(r * 0.5);
             }

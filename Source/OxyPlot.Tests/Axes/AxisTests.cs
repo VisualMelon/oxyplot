@@ -15,6 +15,7 @@ namespace OxyPlot.Tests
     using NUnit.Framework;
 
     using OxyPlot.Axes;
+    using OxyPlot.Axes.ComposableAxis;
     using OxyPlot.Series;
 
     /// <summary>
@@ -404,8 +405,8 @@ namespace OxyPlot.Tests
             var plot = new PlotModel { Title = "Simple plot" };
             plot.Axes.Add(new LinearAxis { Maximum = 0, Minimum = 0 });
             ((IPlotModel)plot).Update(true);
-            Assert.AreEqual(100, plot.Axes[0].ActualMaximum);
-            Assert.AreEqual(0, plot.Axes[0].ActualMinimum);
+            Assert.AreEqual(100, ((Axis)plot.Axes[0]).ActualMaximum);
+            Assert.AreEqual(0, ((Axis)plot.Axes[0]).ActualMinimum);
         }
 
         [Test]
@@ -414,8 +415,8 @@ namespace OxyPlot.Tests
             var plot = new PlotModel { Title = "Simple plot" };
             plot.Axes.Add(new LogarithmicAxis { Maximum = 1, Minimum = 1 });
             ((IPlotModel)plot).Update(true);
-            Assert.AreEqual(100, plot.Axes[0].ActualMaximum);
-            Assert.AreEqual(1, plot.Axes[0].ActualMinimum);
+            Assert.AreEqual(100, ((Axis)plot.Axes[0]).ActualMaximum);
+            Assert.AreEqual(1, ((Axis)plot.Axes[0]).ActualMinimum);
         }
 
         [Test]
@@ -424,8 +425,8 @@ namespace OxyPlot.Tests
             var plot = new PlotModel { Title = "Simple plot" };
             plot.Axes.Add(new LogarithmicAxis { Maximum = 1, Minimum = 0 });
             ((IPlotModel)plot).Update(true);
-            Assert.AreEqual(100, plot.Axes[0].ActualMaximum);
-            Assert.AreEqual(1, plot.Axes[0].ActualMinimum);
+            Assert.AreEqual(100, ((Axis)plot.Axes[0]).ActualMaximum);
+            Assert.AreEqual(1, ((Axis)plot.Axes[0]).ActualMinimum);
         }
 
         /// <summary>
@@ -547,9 +548,9 @@ namespace OxyPlot.Tests
             double dataCenter = (dataMax + dataMin) / 2;
 
             // Center should be the between data min and max
-            Assert.AreEqual(dataCenter, (plot.Axes[0].ActualMaximum + plot.Axes[0].ActualMinimum) / 2, 1e-5, "center");
-            Assert.AreEqual(dataCenter - 0.5, plot.Axes[0].ActualMinimum, 1e-5, "minimum");
-            Assert.AreEqual(dataCenter + 0.5, plot.Axes[0].ActualMaximum, 1e-5, "maximum");
+            Assert.AreEqual(dataCenter, (((Axis)plot.Axes[0]).ActualMaximum + ((Axis)plot.Axes[0]).ActualMinimum) / 2, 1e-5, "center");
+            Assert.AreEqual(dataCenter - 0.5, ((Axis)plot.Axes[0]).ActualMinimum, 1e-5, "minimum");
+            Assert.AreEqual(dataCenter + 0.5, ((Axis)plot.Axes[0]).ActualMaximum, 1e-5, "maximum");
         }
 
         /// <summary>
@@ -579,9 +580,9 @@ namespace OxyPlot.Tests
             ((IPlotModel)plot).Update(true);
 
             // Center should be the between AbsoluteMaximum and the (AboluteMaximum - MinimumRange)
-            Assert.AreEqual(yaxis.AbsoluteMaximum, plot.Axes[0].ActualMaximum, 0, "absolute maximum");
-            Assert.AreEqual(yaxis.AbsoluteMaximum - (yaxis.MinimumRange / 2), (plot.Axes[0].ActualMaximum + plot.Axes[0].ActualMinimum) / 2, 1e-5, "center");
-            Assert.AreEqual(yaxis.AbsoluteMaximum - yaxis.MinimumRange, plot.Axes[0].ActualMinimum, 1e-5, "minimum");
+            Assert.AreEqual(yaxis.AbsoluteMaximum, ((Axis)plot.Axes[0]).ActualMaximum, 0, "absolute maximum");
+            Assert.AreEqual(yaxis.AbsoluteMaximum - (yaxis.MinimumRange / 2), (((Axis)plot.Axes[0]).ActualMaximum + ((Axis)plot.Axes[0]).ActualMinimum) / 2, 1e-5, "center");
+            Assert.AreEqual(yaxis.AbsoluteMaximum - yaxis.MinimumRange, ((Axis)plot.Axes[0]).ActualMinimum, 1e-5, "minimum");
         }
 
         /// <summary>
@@ -611,9 +612,9 @@ namespace OxyPlot.Tests
             ((IPlotModel)plot).Update(true);
 
             // Center should be the between AbsoluteMinimum and the (AboluteMinimum + MinimumRange)
-            Assert.AreEqual(yaxis.AbsoluteMinimum, plot.Axes[0].ActualMinimum, 0, "absolute minimum");
-            Assert.AreEqual(yaxis.AbsoluteMinimum + (yaxis.MinimumRange / 2), (plot.Axes[0].ActualMaximum + plot.Axes[0].ActualMinimum) / 2, 1e-5, "center");
-            Assert.AreEqual(yaxis.AbsoluteMinimum + yaxis.MinimumRange, plot.Axes[0].ActualMaximum, 1e-5, "maximum");
+            Assert.AreEqual(yaxis.AbsoluteMinimum, ((Axis)plot.Axes[0]).ActualMinimum, 0, "absolute minimum");
+            Assert.AreEqual(yaxis.AbsoluteMinimum + (yaxis.MinimumRange / 2), (((Axis)plot.Axes[0]).ActualMaximum + ((Axis)plot.Axes[0]).ActualMinimum) / 2, 1e-5, "center");
+            Assert.AreEqual(yaxis.AbsoluteMinimum + yaxis.MinimumRange, ((Axis)plot.Axes[0]).ActualMaximum, 1e-5, "maximum");
         }
 
         /// <summary>
@@ -646,9 +647,9 @@ namespace OxyPlot.Tests
             double dataCenter = (dataMax + dataMin) / 2;
 
             // Center should be the between data min and max
-            Assert.AreEqual(dataCenter, (plot.Axes[0].ActualMaximum + plot.Axes[0].ActualMinimum) / 2, 1e-5, "center");
-            Assert.AreEqual(dataCenter - 0.05, plot.Axes[0].ActualMinimum, 1e-5, "minimum");
-            Assert.AreEqual(dataCenter + 0.05, plot.Axes[0].ActualMaximum, 1e-5, "maximum");
+            Assert.AreEqual(dataCenter, (((Axis)plot.Axes[0]).ActualMaximum + ((Axis)plot.Axes[0]).ActualMinimum) / 2, 1e-5, "center");
+            Assert.AreEqual(dataCenter - 0.05, ((Axis)plot.Axes[0]).ActualMinimum, 1e-5, "minimum");
+            Assert.AreEqual(dataCenter + 0.05, ((Axis)plot.Axes[0]).ActualMaximum, 1e-5, "maximum");
         }
 
         /// <summary>
@@ -678,9 +679,9 @@ namespace OxyPlot.Tests
             ((IPlotModel)plot).Update(true);
 
             // Range is between AbsoluteMaximum and the (AboluteMaximum - MaximumRange)
-            Assert.AreEqual(yaxis.AbsoluteMaximum, plot.Axes[0].ActualMaximum, 0, "absolute maximum");
-            Assert.AreEqual(yaxis.AbsoluteMaximum - (yaxis.MaximumRange / 2), (plot.Axes[0].ActualMaximum + plot.Axes[0].ActualMinimum) / 2, 1e-6, "center");
-            Assert.AreEqual(yaxis.AbsoluteMaximum - yaxis.MaximumRange, plot.Axes[0].ActualMinimum, 1e-6, "minimum");
+            Assert.AreEqual(yaxis.AbsoluteMaximum, ((Axis)plot.Axes[0]).ActualMaximum, 0, "absolute maximum");
+            Assert.AreEqual(yaxis.AbsoluteMaximum - (yaxis.MaximumRange / 2), (((Axis)plot.Axes[0]).ActualMaximum + ((Axis)plot.Axes[0]).ActualMinimum) / 2, 1e-6, "center");
+            Assert.AreEqual(yaxis.AbsoluteMaximum - yaxis.MaximumRange, ((Axis)plot.Axes[0]).ActualMinimum, 1e-6, "minimum");
         }
 
         /// <summary>
@@ -710,9 +711,9 @@ namespace OxyPlot.Tests
             ((IPlotModel)plot).Update(true);
 
             // Range is between AbsoluteMinimum and the (AboluteMinimum + MaximumRange)
-            Assert.AreEqual(yaxis.AbsoluteMinimum, plot.Axes[0].ActualMinimum, 0, "absolute minimum");
-            Assert.AreEqual(yaxis.AbsoluteMinimum + (yaxis.MaximumRange / 2), (plot.Axes[0].ActualMaximum + plot.Axes[0].ActualMinimum) / 2, 1e-6, "center");
-            Assert.AreEqual(yaxis.AbsoluteMinimum + yaxis.MaximumRange, plot.Axes[0].ActualMaximum, 1e-6, "maximum");
+            Assert.AreEqual(yaxis.AbsoluteMinimum, ((Axis)plot.Axes[0]).ActualMinimum, 0, "absolute minimum");
+            Assert.AreEqual(yaxis.AbsoluteMinimum + (yaxis.MaximumRange / 2), (((Axis)plot.Axes[0]).ActualMaximum + ((Axis)plot.Axes[0]).ActualMinimum) / 2, 1e-6, "center");
+            Assert.AreEqual(yaxis.AbsoluteMinimum + yaxis.MaximumRange, ((Axis)plot.Axes[0]).ActualMaximum, 1e-6, "maximum");
         }
 
         [Test]
@@ -743,7 +744,7 @@ namespace OxyPlot.Tests
             ((IPlotModel)plot).Update(false);
 
             // Changing the axis type should not cause the data minimum to be invalid.
-            Assert.AreEqual(0.004, plot.Axes[0].DataMinimum);
+            Assert.AreEqual(0.004, ((Axis)plot.Axes[0]).DataMinimum);
         }
 
         /// <summary>
@@ -786,8 +787,8 @@ namespace OxyPlot.Tests
                 Position = AxisPosition.Left,
                 Minimum = 0,
                 Maximum = 10,
-                MinimumMargin = 0,
-                MaximumMargin = 0,
+                MinimumMargin = new ScreenReal(0),
+                MaximumMargin = new ScreenReal(0),
             };
 
             plot.Axes.Add(yaxis);
@@ -813,8 +814,8 @@ namespace OxyPlot.Tests
                 Position = AxisPosition.Left,
                 Minimum = 0,
                 Maximum = 10,
-                MinimumDataMargin = 0,
-                MaximumDataMargin = 0,
+                MinimumDataMargin = new ScreenReal(0),
+                MaximumDataMargin = new ScreenReal(0),
             };
 
             plot.Axes.Add(yaxis);
@@ -837,8 +838,8 @@ namespace OxyPlot.Tests
                 Position = AxisPosition.Left,
                 Minimum = 0,
                 Maximum = 10,
-                MinimumMargin = 20,
-                MaximumMargin = 30,
+                MinimumMargin = new ScreenReal(20),
+                MaximumMargin = new ScreenReal(30),
             };
 
             plot.Axes.Add(yaxis);
@@ -861,8 +862,8 @@ namespace OxyPlot.Tests
                 Position = AxisPosition.Left,
                 Minimum = 0,
                 Maximum = 10,
-                MinimumDataMargin = 15,
-                MaximumDataMargin = 10,
+                MinimumDataMargin = new ScreenReal(15),
+                MaximumDataMargin = new ScreenReal(10),
             };
 
             plot.Axes.Add(yaxis);
@@ -888,10 +889,10 @@ namespace OxyPlot.Tests
                 Position = AxisPosition.Left,
                 Minimum = 0,
                 Maximum = 10,
-                MinimumMargin = 5,
-                MaximumMargin = 5,
-                MinimumDataMargin = 10,
-                MaximumDataMargin = 10,
+                MinimumMargin = new ScreenReal(5),
+                MaximumMargin = new ScreenReal(5),
+                MinimumDataMargin = new ScreenReal(10),
+                MaximumDataMargin = new ScreenReal(10),
             };
 
             plot.Axes.Add(yaxis);

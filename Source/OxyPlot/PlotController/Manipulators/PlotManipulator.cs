@@ -10,6 +10,7 @@
 namespace OxyPlot
 {
     using OxyPlot.Axes;
+    using OxyPlot.Axes.ComposableAxis;
 
     /// <summary>
     /// Provides an abstract base class for plot manipulators.
@@ -72,8 +73,8 @@ namespace OxyPlot
         /// <param name="position">The position.</param>
         protected void AssignAxes(ScreenPoint position)
         {
-            Axis xaxis;
-            Axis yaxis;
+            AxisBase xaxis;
+            AxisBase yaxis;
             if (this.PlotView.ActualModel != null)
             {
                 this.PlotView.ActualModel.GetAxesFromPoint(position, out xaxis, out yaxis);
@@ -84,8 +85,8 @@ namespace OxyPlot
                 yaxis = null;
             }
 
-            this.XAxis = xaxis;
-            this.YAxis = yaxis;
+            this.XAxis = (Axis) xaxis;
+            this.YAxis = (Axis) yaxis;
         }
     }
 }
