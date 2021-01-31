@@ -69,13 +69,13 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public double InverseTransform(InteractionReal x)
         {
-            return Math.Exp(x.Value);
+            return x.Value;
         }
 
         /// <inheritdoc/>
         public InteractionReal Transform(double data)
         {
-            return new InteractionReal(Math.Log(data));
+            return new InteractionReal(data);
         }
 
         /// <inheritdoc/>
@@ -111,13 +111,13 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public double InverseTransform(InteractionReal x)
         {
-            return x.Value;
+            return Math.Exp(x.Value);
         }
 
         /// <inheritdoc/>
         public InteractionReal Transform(double data)
         {
-            return new InteractionReal(data);
+            return new InteractionReal(Math.Log(data));
         }
 
         /// <inheritdoc/>
@@ -883,6 +883,39 @@ namespace OxyPlot.Axes.ComposableAxis
         public void Consume(IXYZAxisScreenTransformationConsumer<XData, YData, ZData> consumer)
         {
             Typed.Consume(consumer);
+        }
+    }
+
+    /// <summary>
+    /// Providers a mapping from <see cref="DataPoint"/> to a <see cref="DataSample{XData, YData}"/> of doubles.
+    /// </summary>
+    public struct DataPointXYSampleProvider : IXYSampleProvider<DataPoint, double, double>
+    {
+        /// <inheritdoc/>
+        public bool IsInvalid(DataPoint sample)
+        {
+            return !sample.IsDefined();
+        }
+
+        /// <inheritdoc/>
+        public DataSample<double, double> Sample(DataPoint sample)
+        {
+            return new DataSample<double, double>(sample.X, sample.Y);
+        }
+
+        /// <inheritdoc/>
+        public bool TrySample(DataPoint sample, out DataSample<double, double> result)
+        {
+            if (sample.IsDefined())
+            {
+                result = new DataSample<double, double>(sample.X, sample.Y);
+                return true;
+            }
+            else
+            {
+                result = default;
+                return false;
+            }
         }
     }
 }

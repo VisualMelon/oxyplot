@@ -10,32 +10,32 @@ namespace OxyPlot.Axes.ComposableAxis
     public enum BandPosition
     {
         /// <summary>
-        /// Inline
+        /// Inline band, positioned along the axis.
         /// </summary>
         Inline,
 
         /// <summary>
-        /// Side
+        /// Side band, positioned off the plot area.
         /// </summary>
         Side,
 
         /// <summary>
-        /// Near
+        /// Side-Near band, positioned off the plot area, above any Side bands.
         /// </summary>
-        Near,
+        SideNear,
 
         /// <summary>
-        /// Far
+        /// Side-Far band, positioned off the plot area, below any Side bands.
         /// </summary>
-        Far,
+        SideFar,
 
         /// <summary>
-        /// InlineNear
+        /// Inline-Near band, positioned off the plot area, above any Inline bands.
         /// </summary>
         InlineNear,
 
         /// <summary>
-        /// InlineFar
+        /// Inline-Far band, positioned off the plot area, below any Inline bands.
         /// </summary>
         InlineFar
     }
@@ -74,6 +74,16 @@ namespace OxyPlot.Axes.ComposableAxis
     public struct BandLocation
     {
         /// <summary>
+        /// Initialises an instance of the <see cref="BandLocation"/> struct.
+        /// </summary>
+        public BandLocation(ScreenPoint reference, ScreenVector parallel, ScreenVector normal)
+        {
+            Reference = reference;
+            Parallel = parallel;
+            Normal = normal;
+        }
+
+        /// <summary>
         /// The reference point on the left of the band.
         /// </summary>
         public ScreenPoint Reference { get; }
@@ -87,6 +97,26 @@ namespace OxyPlot.Axes.ComposableAxis
         /// A unit vector normal to the <see cref="Parallel"/>.
         /// </summary>
         public ScreenVector Normal { get; }
+
+        /// <summary>
+        /// Gets the nominal rotation of the <see cref="BandLocation"/> in radians.
+        /// </summary>
+        public double Rotation => Math.Atan2(Parallel.Y, Parallel.X);
+
+        /// <summary>
+        /// Gets the nominal rotation of the <see cref="BandLocation"/> in degrees.
+        /// </summary>
+        public double RotationDegrees => Rotation * 180 / Math.PI;
+
+        /// <summary>
+        /// Gets the nominal width of the <see cref="BandLocation"/>.
+        /// </summary>
+        public double Width => Parallel.Length;
+
+        /// <summary>
+        /// Gets a value indicating whether the BandLocation is axis aligned.
+        /// </summary>
+        public bool IsAxisAligned => Normal.X == 0 || Normal.Y == 0;
     }
 
     /// <summary>
@@ -128,6 +158,26 @@ namespace OxyPlot.Axes.ComposableAxis
         /// The bottom excess.
         /// </summary>
         public double Bottom { get; }
+
+        /// <summary>
+        /// Returns <see cref="BandExcesses"/> which bounds two other <see cref="BandExcesses"/>.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static BandExcesses Max(BandExcesses a, BandExcesses b)
+        {
+            return new BandExcesses(Math.Max(a.Left, b.Left), Math.Max(a.Top, b.Top), Math.Max(a.Right, b.Right), Math.Max(a.Bottom, b.Bottom));
+        }
+
+        /// <summary>
+        /// Clamps each value to a minimum of zero.
+        /// </summary>
+        /// <returns></returns>
+        public BandExcesses ClampToZero()
+        {
+            return new BandExcesses(Math.Max(this.Left, 0), Math.Max(this.Top, 0), Math.Max(this.Right, 0), Math.Max(this.Bottom, 0));
+        }
     }
 
     /// <summary>
@@ -266,14 +316,76 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// A band that provides rendering capabilities to an axis
+    /// </summary>
+    public interface IBand
+    {
+        /// <summary>
+        /// Gets a value indicating whether the band should be rendered.
+        /// </summary>
+        /// <remarks>
+        /// May be updated by <see cref="Update"/>
+        /// </remarks>
+        bool IsBandVisible { get; }
+
+        /// <summary>
+        /// Gets the position of the band.
+        /// </summary>
+        BandPosition BandPosition { get; }
+
+        /// <summary>
+        /// Gets the tier of the band.
+        /// </summary>
+        int BandTier { get; }
+
+        /// <summary>
+        /// Gets the Band Excessess
+        /// </summary>
+        /// <remarks>
+        /// Updated by <see cref="Measure(IRenderContext, double)"/>.
+        /// </remarks>
+        BandExcesses Excesses { get; }
+
+        /// <summary>
+        /// Associates the given axis with this band.
+        /// </summary>
+        /// <param name="axis"></param>
+        void AssociateAxis(AxisBase axis);
+
+        /// <summary>
+        /// Updates the visibility and other state of the band.
+        /// </summary>
+        void Update();
+
+        /// <summary>
+        /// Measures the band, setting the <see cref="Excesses"/> accordingly.
+        /// </summary>
+        /// <param name="renderContext">The render context.</param>
+        /// <param name="width">The ideal of the band.</param>
+        void Measure(IRenderContext renderContext, double width);
+
+        /// <summary>
+        /// Renders the band.
+        /// </summary>
+        /// <param name="renderContext">The render context.</param>
+        /// <param name="location">The location where the band should be rendered</param>
+        void Render(IRenderContext renderContext, BandLocation location);
+    }
+
+    /// <summary>
     /// Represents a band of axis annotations.
     /// </summary>
-    public abstract class BandBase
+    public abstract class BandBase : IBand
     {
+        /// <summary>
+        /// Gets a value indicating whether the band should be rendered.
+        /// </summary>
+        public bool IsBandVisible { get; set; }
+
         /// <summary>
         /// Gets or sets the position of the band.
         /// </summary>
-        public BandPosition BandPoisition { get; set; }
+        public BandPosition BandPosition { get; set; }
 
         /// <summary>
         /// Gets or sets the tier of the band.
@@ -286,17 +398,120 @@ namespace OxyPlot.Axes.ComposableAxis
         public BandExcesses Excesses { get; protected set; }
 
         /// <summary>
-        /// Measures the band, setting the <see cref="Excesses"/> accordingly.
+        /// The axis associated with this band.
         /// </summary>
-        /// <param name="renderContext"></param>
-        public abstract void Measure(IRenderContext renderContext);
+        /// <remarks>
+        /// Updated by <see cref="AssociateAxis(AxisBase)"/>
+        /// </remarks>
+        protected AxisBase Axis { get; private set; }
 
-        /// <summary>
-        /// Renders the band.
-        /// </summary>
-        /// <param name="renderContext"></param>
-        /// <param name="location"></param>
+        /// <inheritdoc/>
+        public virtual void AssociateAxis(AxisBase axis)
+        {
+            Axis = axis;
+        }
+
+        /// <inheritdoc/>
+        public abstract void Update();
+
+        /// <inheritdoc/>
+        public abstract void Measure(IRenderContext renderContext, double width);
+
+        /// <inheritdoc/>
         public abstract void Render(IRenderContext renderContext, BandLocation location);
+    }
+
+    /// <summary>
+    /// Represents a typed band of axis annotations.
+    /// </summary>
+    public abstract class BandBase<TData> : BandBase
+    {
+        /// <summary>
+        /// The axis associated with this band.
+        /// </summary>
+        /// <remarks>
+        /// Updated by <see cref="AssociateAxis(AxisBase)"/>
+        /// </remarks>
+        new protected IAxis<TData> Axis { get; private set; }
+
+        /// <inheritdoc/>
+        public override void AssociateAxis(AxisBase axis)
+        {
+            base.AssociateAxis(axis);
+
+            if (axis is IAxis<TData> typed)
+            {
+                Axis = typed;
+            }
+            else
+            {
+                throw new InvalidOperationException($"{this.GetType().Name} cannot be associated with an axis of type {axis.GetType().Name}. The axis must implement {typeof(IAxis<TData>).Name}.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// A band that renders the axis title.
+    /// </summary>
+    public class TitleBand : BandBase
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TitleBand" /> class.
+        /// </summary>
+        public TitleBand()
+        {
+            this.BandPosition = BandPosition.Inline;
+            this.BandTier = 1;
+            this.IsBandVisible = true;
+        }
+
+        /// <inheritdoc/>
+        public override void Update()
+        {
+        }
+
+        /// <inheritdoc/>
+        public override void Measure(IRenderContext renderContext, double width)
+        {
+            var titleTextSize = renderContext.MeasureText(Axis.ActualTitle, Axis.ActualTitleFont, Axis.ActualTitleFontSize, Axis.ActualTitleFontWeight);
+
+            if (titleTextSize.Height > 0)
+            {
+                var top = Axis.AxisTitleDistance + titleTextSize.Height;
+                double middle = width * Axis.TitlePosition;
+
+                var left = middle - titleTextSize.Width / 2;
+                var right = middle - titleTextSize.Width / 2;
+
+                Excesses = new BandExcesses(-left, top, right - width, 0);
+            }
+            else
+            {
+                Excesses = new BandExcesses(0.0, 0.0, 0.0, 0.0);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void Render(IRenderContext renderContext, BandLocation location)
+        {
+            renderContext.DrawMarker(location.Reference, MarkerType.Circle, null, 4, OxyColors.Transparent, OxyColors.Green, 1, EdgeRenderingMode.Automatic);
+
+            var titleTextSize = renderContext.MeasureText(Axis.ActualTitle, Axis.ActualTitleFont, Axis.ActualTitleFontSize, Axis.ActualTitleFontWeight);
+
+            if (titleTextSize.Height > 0)
+            {
+                var offset = location.Reference
+                    + location.Parallel * Axis.TitlePosition
+                    + location.Normal * (Axis.AxisTitleDistance + titleTextSize.Height / 2);
+
+                var rot = location.RotationDegrees;
+                if (rot < -90 || rot > 90)
+                    rot = 0;
+                
+                renderContext.DrawMarker(offset, MarkerType.Circle, null, 4, OxyColors.Transparent, OxyColors.Green, 1, EdgeRenderingMode.Automatic);
+                renderContext.DrawText(offset, Axis.ActualTitle, Axis.ActualTitleColor, Axis.ActualTitleFont, Axis.ActualTitleFontSize, Axis.ActualTitleFontWeight, rot, HorizontalAlignment.Center, VerticalAlignment.Middle, null);
+            }
+        }
     }
 
     /// <summary>

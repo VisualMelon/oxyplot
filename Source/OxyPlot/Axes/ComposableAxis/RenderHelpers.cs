@@ -338,7 +338,6 @@ namespace OxyPlot.Axes.ComposableAxis
 
             TSample currentSample = default(TSample);
             DataSample<XData, YData> currentXYSample = default(DataSample<XData, YData>);
-            bool hasValidPoint = false;
 
             // Skip all undefined points
             while (sampleIdx <= endIdx && !sampleProvider.TrySample(currentSample = samples[sampleIdx], out currentXYSample))
@@ -346,7 +345,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 sampleIdx++;
             }
 
-            if (!hasValidPoint)
+            if (sampleIdx >= endIdx)
             {
                 // ran out of samples
                 return false;

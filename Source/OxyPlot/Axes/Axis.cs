@@ -196,23 +196,6 @@ namespace OxyPlot.Axes
         public string ActualStringFormat { get; protected set; }
 
         /// <summary>
-        /// Gets the actual title of the axis.
-        /// </summary>
-        /// <remarks>If the <see cref="Unit" /> property is set, the <see cref="TitleFormatString" /> property is used to format the actual title.</remarks>
-        public string ActualTitle
-        {
-            get
-            {
-                if (this.Unit != null)
-                {
-                    return string.Format(this.TitleFormatString, this.Title, this.Unit);
-                }
-
-                return this.Title;
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the orientation angle (degrees) for the axis labels. The default value is <c>0</c>.
         /// </summary>
         public double Angle { get; set; }
@@ -221,11 +204,6 @@ namespace OxyPlot.Axes
         /// Gets or sets the distance from the end of the tick lines to the labels. The default value is <c>4</c>.
         /// </summary>
         public double AxisTickToLabelDistance { get; set; }
-
-        /// <summary>
-        /// Gets or sets the minimum distance from the axis labels to the axis title. The default value is <c>4</c>.
-        /// </summary>
-        public double AxisTitleDistance { get; set; }
 
         /// <summary>
         /// Gets or sets the distance between the plot area and the axis. The default value is <c>0</c>.
@@ -246,11 +224,6 @@ namespace OxyPlot.Axes
         /// Gets or sets the thickness of the axis line. The default value is <c>1</c>.
         /// </summary>
         public double AxislineThickness { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether to clip the axis title. The default value is <c>true</c>.
-        /// </summary>
-        public bool ClipTitle { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to crop gridlines with perpendicular axes Start/EndPositions. The default value is <c>false</c>.
@@ -462,56 +435,6 @@ namespace OxyPlot.Axes
         public OxyColor TicklineColor { get; set; }
 
         /// <summary>
-        /// Gets or sets the title of the axis. The default value is <c>null</c>.
-        /// </summary>
-        public string Title { get; set; }
-
-        /// <summary>
-        /// Gets or sets the length of the title clipping rectangle (fraction of the available length of the axis). The default value is <c>0.9</c>.
-        /// </summary>
-        public double TitleClippingLength { get; set; }
-
-        /// <summary>
-        /// Gets or sets the color of the title. The default value is <see cref="OxyColors.Automatic"/>.
-        /// </summary>
-        /// <remarks>If the value is <c>null</c>, the <see cref="PlotModel.TextColor" /> will be used.</remarks>
-        public OxyColor TitleColor { get; set; }
-
-        /// <summary>
-        /// Gets or sets the title font. The default value is <c>null</c>.
-        /// </summary>
-        public string TitleFont { get; set; }
-
-        /// <summary>
-        /// Gets or sets the size of the title font. The default value is <c>double.NaN</c>.
-        /// </summary>
-        public double TitleFontSize { get; set; }
-
-        /// <summary>
-        /// Gets or sets the weight of the title font. The default value is <see cref="FontWeights.Normal"/>.
-        /// </summary>
-        public double TitleFontWeight { get; set; }
-
-        /// <summary>
-        /// Gets or sets the format string used for formatting the title and unit when <see cref="Unit" /> is defined.
-        /// The default value is "{0} [{1}]", where {0} refers to the <see cref="Title" /> and {1} refers to the <see cref="Unit" />.
-        /// </summary>
-        /// <remarks>If <see cref="Unit" /> is <c>null</c>, the actual title is defined by <see cref="Title" /> only.</remarks>
-        public string TitleFormatString { get; set; }
-
-        /// <summary>
-        /// Gets or sets the position of the title. The default value is <c>0.5</c>.
-        /// </summary>
-        /// <remarks>The position is defined by a fraction in the range <c>0</c> to <c>1</c>.</remarks>
-        public double TitlePosition { get; set; }
-
-        /// <summary>
-        /// Gets or sets the unit of the axis. The default value is <c>null</c>.
-        /// </summary>
-        /// <remarks>The <see cref="TitleFormatString" /> is used to format the title including this unit.</remarks>
-        public string Unit { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether to use superscript exponential format. The default value is <c>false</c>.
         /// </summary>
         /// <remarks>
@@ -519,50 +442,6 @@ namespace OxyPlot.Axes
         /// If <see cref="StringFormat" /> is <c>null</c>, 1.0E+03 will be converted to 10^{3}, otherwise it will use the format string for the mantissa.
         /// </remarks>
         public bool UseSuperExponentialFormat { get; set; }
-
-        /// <summary>
-        /// Gets the actual color of the title.
-        /// </summary>
-        protected internal OxyColor ActualTitleColor
-        {
-            get
-            {
-                return this.TitleColor.GetActualColor(this.PlotModel.TextColor);
-            }
-        }
-
-        /// <summary>
-        /// Gets the actual title font.
-        /// </summary>
-        protected internal string ActualTitleFont
-        {
-            get
-            {
-                return this.TitleFont ?? this.PlotModel.DefaultFont;
-            }
-        }
-
-        /// <summary>
-        /// Gets the actual size of the title font.
-        /// </summary>
-        protected internal double ActualTitleFontSize
-        {
-            get
-            {
-                return !double.IsNaN(this.TitleFontSize) ? this.TitleFontSize : this.ActualFontSize;
-            }
-        }
-
-        /// <summary>
-        /// Gets the actual title font weight.
-        /// </summary>
-        protected internal double ActualTitleFontWeight
-        {
-            get
-            {
-                return !double.IsNaN(this.TitleFontWeight) ? this.TitleFontWeight : this.ActualFontWeight;
-            }
-        }
 
         /// <summary>
         /// Gets or sets the current view's maximum. This value is used when the user zooms or pans.

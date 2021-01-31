@@ -9,20 +9,8 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
     /// <summary>
     /// Represents a series that works on samples?
     /// </summary>
-    public abstract class SampleSeries : PlotElement
+    public abstract class SampleSeries : Series.Series
     {
-        /// <summary>
-        /// Renders the series on the specified render context.
-        /// </summary>
-        /// <param name="rc">The rendering context.</param>
-        public abstract void Render(IRenderContext rc);
-
-        /// <summary>
-        /// Renders the legend symbol on the specified render context.
-        /// </summary>
-        /// <param name="rc">The rendering context.</param>
-        /// <param name="legendBox">The legend rectangle.</param>
-        public abstract void RenderLegend(IRenderContext rc, OxyRect legendBox);
     }
 
     /// <summary>
@@ -35,6 +23,16 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
     public abstract class XYSampleSeries<TSample, XData, YData, TSampleProvider> : SampleSeries
         where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
     {
+        /// <summary>
+        /// Initializes an instance of the <see cref="AxisBase"/> class.
+        /// </summary>
+        protected XYSampleSeries(TSampleProvider sampleProvider)
+        {
+            this.SampleProvider = sampleProvider;
+            Samples = new List<TSample>();
+            CanTrackerInterpolatePoints = false;
+        }
+
         /// <summary>
         /// The samples to be used by this series.
         /// </summary>
@@ -120,6 +118,9 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// </summary>
         public void UpdateMinAndMax()
         {
+            if (Samples.Count == 0)
+                return; // bail before we crash
+
             ResolveAxes();
             var xyHelper = GetHelper();
 
@@ -161,6 +162,48 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         protected IXYRenderHelper<XData, YData> GetRenderHelper()
         {
             return XYRenderHelperPreparer<XData, YData>.Prepare(Collator);
+        }
+
+        /// <inheritdoc/>
+        protected internal override bool AreAxesRequired()
+        {
+            return true;
+        }
+
+        /// <inheritdoc/>
+        protected internal override void EnsureAxes()
+        {
+            // TODO: inline?
+            ResolveAxes();
+        }
+
+        /// <inheritdoc/>
+        protected internal override bool IsUsing(Axis axis)
+        {
+            return this.XAxis == axis || this.YAxis == axis;
+        }
+
+        /// <inheritdoc/>
+        protected internal override void UpdateAxisMaxMin()
+        {
+            this.XAxis.Include(this.MinX);
+            this.XAxis.Include(this.MaxX);
+            this.YAxis.Include(this.MinY);
+            this.YAxis.Include(this.MaxY);
+        }
+
+        /// <inheritdoc/>
+        protected internal override void UpdateData()
+        {
+            // We don't have an ItemSource, so we have nothing to do here
+            // If we do add an ItemSource (e.g. for convience, that maps to an XYSample`2) then we update the actual samples collection here
+        }
+
+        /// <inheritdoc/>
+        protected internal override void UpdateMaxMin()
+        {
+            // TODO: inline?
+            this.UpdateMinAndMax();
         }
     }
 
@@ -222,7 +265,8 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// <summary>
         /// Initializes a new instance of the <see cref="LineSeries{TSample, XData, YData, TSampleProvider}" /> class.
         /// </summary>
-        public LineSeries()
+        public LineSeries(TSampleProvider sampleProvider)
+            : base(sampleProvider)
         {
             this.defaultColor = OxyColors.Undefined;
             this.defaultMarkerFill = OxyColors.Undefined;
@@ -448,6 +492,9 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// <inheritdoc/>
         public override void Render(IRenderContext rc)
         {
+            if (Samples.Count == 0)
+                return; // bail before we crash
+
             ResolveAxes();
             var xyRenderHelper = GetRenderHelper();
 
@@ -585,6 +632,20 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         {
             var points = new[] { new ScreenPoint(legendBox.Left, legendBox.Center.Y), new ScreenPoint(legendBox.Right, legendBox.Center.Y) };
             rc.DrawLine(points, Color, StrokeThickness, EdgeRenderingMode, ActualDashArray, LineJoin);
+        }
+
+        /// <inheritdoc/>
+        protected internal override void SetDefaultValues()
+        {
+            if (this.Color.IsAutomatic())
+            {
+                this.defaultColor = this.PlotModel.GetDefaultColor();
+            }
+
+            if (this.LineStyle == LineStyle.Automatic)
+            {
+                this.defaultLineStyle = this.PlotModel.GetDefaultLineStyle();
+            }
         }
     }
 }
