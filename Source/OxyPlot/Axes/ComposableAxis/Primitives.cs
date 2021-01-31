@@ -274,7 +274,7 @@ namespace OxyPlot.Axes.ComposableAxis
 
                 next += candidate;
             }
-            while (next < candidate);
+            while (next < maximum);
         }
     }
 
@@ -522,8 +522,11 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// Initializes a new instance of the <see cref="TitleBand" /> class.
         /// </summary>
-        public TickBand()
+        public TickBand(ITickLocator<TData> tickLocator, ISpacingOptions<TData> spacingOptions)
         {
+            this.TickLocator = tickLocator;
+            this.SpacingOptions = spacingOptions;
+
             this.BandPosition = BandPosition.Inline;
             this.BandTier = 0;
             this.IsBandVisible = true;
@@ -552,21 +555,17 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public override void Measure(IRenderContext renderContext, double width)
         {
-            // TODO: interrogate Axis to implement margins properly
-            Excesses = new BandExcesses(0.0, 1.0, 0.0, 0.0);
+            // TODO: refit when we change ITickRenderHelper to take a BandLocation
+            var renderHelper = TickRenderHelper<TData>.PrepareHorizontalVertial(Axis);
+            Excesses = renderHelper.MeasureTicks(renderContext, Ticks.AsReadOnlyList(), TickStyle.Outside, 5, 1, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, ((AxisBase)Axis).AxisTickToLabelDistance);
         }
 
         /// <inheritdoc/>
         public override void Render(IRenderContext renderContext, BandLocation location)
         {
-            // TODO: interrogate HorizontalVerticalAxisRenderer to implement rendering properly
-            
-
-
-            foreach (var tick in Ticks)
-            {
-                
-            }
+            // TODO: refit when we change ITickRenderHelper to take a BandLocation
+            var renderHelper = TickRenderHelper<TData>.PrepareHorizontalVertial(Axis);
+            renderHelper.RenderTicks(renderContext, Ticks.AsReadOnlyList(), TickStyle.Outside, 5, 1, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, ((AxisBase)Axis).AxisTickToLabelDistance);
         }
 
         /// <inheritdoc/>

@@ -154,6 +154,9 @@ namespace OxyPlot.Axes.ComposableAxis
             this.MinimumMargin = ScreenReal.Zero;
             this.MaximumMargin = ScreenReal.Zero;
 
+            this.StartPosition = 0;
+            this.EndPosition = 1;
+
             this.IsAxisVisible = true;
             this.Layer = AxisLayer.BelowSeries;
 
@@ -238,6 +241,16 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets or sets the minimum distance from the axis labels to the axis title. The default value is <c>4</c>.
         /// </summary>
         public double AxisTitleDistance { get; set; }
+
+        /// <summary>
+        /// Gets or sets the orientation angle (degrees) for the axis labels. The default value is <c>0</c>.
+        /// </summary>
+        public double Angle { get; set; }
+
+        /// <summary>
+        /// Gets or sets the distance from the end of the tick lines to the labels. The default value is <c>4</c>.
+        /// </summary>
+        public double AxisTickToLabelDistance { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to clip the axis title. The default value is <c>true</c>.
@@ -925,7 +938,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 return; // we cannot
             }
 
-            var reverse = (this.IsVertical() != IsReversed);
+            var reverse = IsReversed;
             var reverseSign = reverse ? -1.0 : 1.0;
 
             var actualScreenWidth = screenWidth - MinimumDataMargin - MaximumDataMargin;
@@ -960,21 +973,23 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             PlotBounds = bounds;
 
+            static double lerp(double x0, double x1, double c) => x1 * c + x0 * (1 - c);
+
             ScreenReal screenMinimum;
             ScreenReal screenMaximum;
 
             if (IsHorizontal())
             {
-                screenMinimum = new ScreenReal(IsReversed ? bounds.Right - MinimumMargin.Value : bounds.Left + MinimumMargin.Value);
-                screenMaximum = new ScreenReal(IsReversed ? bounds.Left + MaximumMargin.Value : bounds.Right - MaximumMargin.Value);
+                screenMinimum = new ScreenReal(IsReversed ? lerp(bounds.Left, bounds.Right, this.StartPosition) - MinimumMargin.Value : lerp(bounds.Left, bounds.Right, this.StartPosition) + MinimumMargin.Value);
+                screenMaximum = new ScreenReal(IsReversed ? lerp(bounds.Left, bounds.Right, this.EndPosition) + MaximumMargin.Value : lerp(bounds.Left, bounds.Right, this.EndPosition) - MaximumMargin.Value);
 
                 ScreenMin = new ScreenPoint(screenMinimum.Value, bounds.Top);
                 ScreenMax = new ScreenPoint(screenMaximum.Value, bounds.Bottom);
             }
             else if (IsVertical())
             {
-                screenMinimum = new ScreenReal(IsReversed ? bounds.Bottom - MinimumMargin.Value : bounds.Top + MinimumMargin.Value);
-                screenMaximum = new ScreenReal(IsReversed ? bounds.Top + MaximumMargin.Value : bounds.Bottom - MinimumMargin.Value);
+                screenMinimum = new ScreenReal(IsReversed ? lerp(bounds.Bottom, bounds.Top, this.StartPosition) - MinimumMargin.Value : lerp(bounds.Bottom, bounds.Top, this.StartPosition) + MinimumMargin.Value);
+                screenMaximum = new ScreenReal(IsReversed ? lerp(bounds.Bottom, bounds.Top, this.EndPosition) + MaximumMargin.Value : lerp(bounds.Bottom, bounds.Top, this.EndPosition) - MinimumMargin.Value);
 
                 ScreenMin = new ScreenPoint(bounds.Left, screenMinimum.Value);
                 ScreenMax = new ScreenPoint(bounds.Right, screenMaximum.Value);
@@ -1023,7 +1038,7 @@ namespace OxyPlot.Axes.ComposableAxis
             }
 
             // margins are determined by the bands
-            var inlineAndSideWidth = Math.Abs((max - min).Value);
+            inlineAndSideWidth = Math.Abs((max - min).Value);
             inlineExcesses = Measure(rc, BandPosition.Inline, inlineAndSideWidth);
             sideExcesses = Measure(rc, BandPosition.Side, inlineAndSideWidth);
 
@@ -1036,8 +1051,51 @@ namespace OxyPlot.Axes.ComposableAxis
             sideNearExcesses = Measure(rc, BandPosition.SideNear, sideTotalHeight);
             sideFarExcesses = Measure(rc, BandPosition.SideFar, sideTotalHeight);
 
-            // NOTE NOTE: hereon is all wrong... we can only know the transforms once we are in Render: this means we can't use the inline concept... that's a bit annoying...
+            var topMargin = inlineExcesses.Values.Sum(e => e.Top + e.Bottom)
+                + sideExcesses.Values.Sum(e => e.Top + e.Bottom);
+            var leftMargin = Math.Max(inlineExcesses.Count == 0 ? 0 : inlineExcesses.Values.Max(e => e.Left),
+                sideExcesses.Count == 0 ? 0 : sideExcesses.Values.Max(e => e.Left));
+            var rightMargin = Math.Max(inlineExcesses.Count == 0 ? 0 : inlineExcesses.Values.Max(e => e.Right),
+                sideExcesses.Count == 0 ? 0 : sideExcesses.Values.Max(e => e.Right));
 
+            var nearHeight = Math.Max(inlineNearExcesses.Values.Sum(e => e.Top + e.Bottom),
+                sideNearExcesses.Values.Sum(e => e.Top + e.Bottom));
+            var farHeight = Math.Max(inlineFarExcesses.Values.Sum(e => e.Top + e.Bottom),
+                sideFarExcesses.Values.Sum(e => e.Top + e.Bottom));
+
+            // now we know how big everything is, we need to position it, starting with the inline/side
+            var topRight = this.Position switch
+            {
+                AxisPosition.Left => false,
+                AxisPosition.Top => true,
+                AxisPosition.Right => true,
+                AxisPosition.Bottom => false,
+                _ => throw new NotImplementedException()
+            };
+
+            if (topRight)
+            {
+                leftMargin += nearHeight;
+                rightMargin += farHeight;
+            }
+            else
+            {
+                rightMargin += nearHeight;
+                leftMargin += farHeight;
+            }
+
+            this.DesiredMargin = this.Position switch
+            {
+                AxisPosition.Left => new OxyThickness(topMargin, rightMargin, 0.0, leftMargin),
+                AxisPosition.Top => new OxyThickness(leftMargin, topMargin, rightMargin, 0.0),
+                AxisPosition.Right => new OxyThickness(0.0, leftMargin, topMargin, rightMargin),
+                AxisPosition.Bottom => new OxyThickness(rightMargin, 0.0, leftMargin, topMargin),
+                _ => throw new NotImplementedException(),
+            };
+        }
+
+        private void LayoutBands()
+        {
             // now we know how big everything is, we need to position it, starting with the inline/side
             var topRight = this.Position switch
             {
@@ -1108,81 +1166,10 @@ namespace OxyPlot.Axes.ComposableAxis
 
             inlineLocations = Layout(inlineExcesses, this.Position, reference(inlineOffset.Value), inlineAndSideWidth);
             sideLocations = Layout(sideExcesses, this.Position, reference(sideOffset.Value), inlineAndSideWidth);
-            // NOTE NOTE: end of necessarily wrong stuff
-
-            // NOTE: this doesn't account of the inlineOffset etc. which can't be known at this point anyway
-            var topMargin = inlineExcesses.Values.Sum(e => e.Top + e.Bottom)
-                + sideExcesses.Values.Sum(e => e.Top + e.Bottom);
-            var leftMargin = Math.Max(inlineExcesses.Count == 0 ? 0 : inlineExcesses.Values.Max(e => e.Left),
-                sideExcesses.Count == 0 ? 0 : sideExcesses.Values.Max(e => e.Left));
-            var rightMargin = Math.Max(inlineExcesses.Count == 0 ? 0 : inlineExcesses.Values.Max(e => e.Right),
-                sideExcesses.Count == 0 ? 0 : sideExcesses.Values.Max(e => e.Right));
-
-            var nearHeight = Math.Max(inlineNearExcesses.Values.Sum(e => e.Top + e.Bottom),
-                sideNearExcesses.Values.Sum(e => e.Top + e.Bottom));
-            var farHeight = Math.Max(inlineFarExcesses.Values.Sum(e => e.Top + e.Bottom),
-                sideFarExcesses.Values.Sum(e => e.Top + e.Bottom));
-            
-
-            if (topRight)
-            {
-                leftMargin += nearHeight;
-                rightMargin += farHeight;
-            }
-            else
-            {
-                rightMargin += nearHeight;
-                leftMargin += farHeight;
-            }
-
-            this.DesiredMargin = this.Position switch
-            {
-                AxisPosition.Left => new OxyThickness(topMargin, rightMargin, 0.0, leftMargin),
-                AxisPosition.Top => new OxyThickness(leftMargin, topMargin, rightMargin, 0.0),
-                AxisPosition.Right => new OxyThickness(0.0, leftMargin, topMargin, rightMargin),
-                AxisPosition.Bottom => new OxyThickness(rightMargin, 0.0, leftMargin, topMargin),
-                _ => throw new NotImplementedException(),
-            };
-
-            // TODO: see Axis.Measure for more information on what should be here.
-        }
-
-        private Dictionary<int, BandLocation> Layout(Dictionary<int, BandExcesses> excesses, AxisPosition position, ScreenPoint minReference, double width)
-        {
-            var unitPerpendicular = this.Position switch
-            {
-                AxisPosition.Left => new ScreenVector(0, -1),
-                AxisPosition.Top => new ScreenVector(1, 0),
-                AxisPosition.Right => new ScreenVector(0, 1),
-                AxisPosition.Bottom => new ScreenVector(-1, 0),
-                _ => throw new NotImplementedException(),
-            };
-
-            var unitNormal = this.Position switch
-            {
-                AxisPosition.Left => new ScreenVector(-1, 0),
-                AxisPosition.Top => new ScreenVector(0, -1),
-                AxisPosition.Right => new ScreenVector(1, 0),
-                AxisPosition.Bottom => new ScreenVector(0, 1),
-                _ => throw new NotImplementedException(),
-            };
-
-            var tiers = excesses.Keys.OrderBy(x => x).ToArray();
-
-            var locations = new Dictionary<int, BandLocation>();
-
-            foreach (var tier in tiers)
-            {
-                var e = excesses[tier];
-                minReference += unitNormal * e.Bottom;
-                locations.Add(tier, new BandLocation(minReference, unitPerpendicular * width, unitNormal));
-                minReference += unitNormal * e.Top;
-            }
-
-            return locations;
         }
 
         // layout state
+        private double inlineAndSideWidth;
         private Dictionary<int, BandExcesses> inlineExcesses;
         private Dictionary<int, BandExcesses> sideExcesses;
         private double inlineTotalHeight;
@@ -1229,6 +1216,41 @@ namespace OxyPlot.Axes.ComposableAxis
             return res;
         }
 
+        private Dictionary<int, BandLocation> Layout(Dictionary<int, BandExcesses> excesses, AxisPosition position, ScreenPoint minReference, double width)
+        {
+            var unitPerpendicular = this.Position switch
+            {
+                AxisPosition.Left => new ScreenVector(0, -1),
+                AxisPosition.Top => new ScreenVector(1, 0),
+                AxisPosition.Right => new ScreenVector(0, 1),
+                AxisPosition.Bottom => new ScreenVector(-1, 0),
+                _ => throw new NotImplementedException(),
+            };
+
+            var unitNormal = this.Position switch
+            {
+                AxisPosition.Left => new ScreenVector(-1, 0),
+                AxisPosition.Top => new ScreenVector(0, -1),
+                AxisPosition.Right => new ScreenVector(1, 0),
+                AxisPosition.Bottom => new ScreenVector(0, 1),
+                _ => throw new NotImplementedException(),
+            };
+
+            var tiers = excesses.Keys.OrderBy(x => x).ToArray();
+
+            var locations = new Dictionary<int, BandLocation>();
+
+            foreach (var tier in tiers)
+            {
+                var e = excesses[tier];
+                minReference += unitNormal * e.Bottom;
+                locations.Add(tier, new BandLocation(minReference, unitPerpendicular * width, unitNormal));
+                minReference += unitNormal * e.Top;
+            }
+
+            return locations;
+        }
+
         /// <summary>
         /// A list of bands used by this <see cref="HorizontalVerticalAxis{TData, TDataProvider, TDataTransformation, TDataOptional, TDataOptionalProvider}"/>.
         /// </summary>
@@ -1243,22 +1265,25 @@ namespace OxyPlot.Axes.ComposableAxis
                 rc.DrawRectangle(PlotBounds.Deflate(new OxyThickness(1)), OxyColors.Red, new OxyThickness(1), EdgeRenderingMode.Automatic);
                 rc.DrawRectangle(new OxyRect(ScreenMin, ScreenMax).Deflate(new OxyThickness(2)), OxyColors.Blue, new OxyThickness(1), EdgeRenderingMode.Automatic);
 
-                // TODO: layout bands (pull this out of Measure into a method and call it here)
+                LayoutBands();
+                RenderBands(rc);
+            }
+        }
 
-                // render bands
-                foreach (var band in Bands)
+        private void RenderBands(IRenderContext rc)
+        {
+            foreach (var band in Bands)
+            {
+                var table = band.BandPosition switch
                 {
-                    var table = band.BandPosition switch
-                    {
-                        BandPosition.Inline => inlineLocations,
-                        BandPosition.Side => sideLocations,
-                        _ => throw new NotImplementedException(),
-                    };
+                    BandPosition.Inline => inlineLocations,
+                    BandPosition.Side => sideLocations,
+                    _ => throw new NotImplementedException(),
+                };
 
-                    var location = table[band.BandTier];
+                var location = table[band.BandTier];
 
-                    band.Render(rc, location);
-                }
+                band.Render(rc, location);
             }
         }
 

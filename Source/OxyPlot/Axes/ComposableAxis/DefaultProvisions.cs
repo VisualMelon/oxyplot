@@ -400,7 +400,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <param name="xySample"></param>
         /// <returns></returns>
-        public ScreenPoint TransformSample(DataSample<XData, YData> xySample);
+        ScreenPoint TransformSample(DataSample<XData, YData> xySample);
     }
 
     /// <summary>
@@ -1071,6 +1071,21 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="TData"></typeparam>
     public class SpacingOptions<TData> : ISpacingOptions<TData>
     {
+        /// <summary>
+        /// Initialises an instance of the <see cref="SpacingOptions{TData}"/> class.
+        /// </summary>
+        /// <param name="maximumTickCount"></param>
+        /// <param name="minimumTickCount"></param>
+        /// <param name="maximumStep"></param>
+        /// <param name="minimumStep"></param>
+        public SpacingOptions(int maximumTickCount, int minimumTickCount, TData maximumStep, TData minimumStep)
+        {
+            MaximumTickCount = maximumTickCount;
+            MinimumTickCount = minimumTickCount;
+            MaximumStep = maximumStep;
+            MinimumStep = minimumStep;
+        }
+
         /// <inheritdoc/>
         public int MaximumTickCount { get; set; }
 
@@ -1082,8 +1097,284 @@ namespace OxyPlot.Axes.ComposableAxis
 
         /// <inheritdoc/>
         public TData MinimumStep { get; set; }
+    }
+
+    /// <summary>
+    /// Provides basic methods to render ticks
+    /// </summary>
+    public interface ITickRenderHelper<TData>
+    {
+        // TODO: the idea is that these render onto a band... so why do I not just provide a bank to the methods?
+        // TODO: provide a bank to the methods; remove the non-vectorized hideousness and compute a ScreenReal offset for the reference point, so that we can translate the same computed values as normal
+
+        /// <summary>
+        /// Renders a whole load of ticks.
+        /// </summary>
+        /// <param name="renderContext"></param>
+        /// <param name="ticks"></param>
+        /// <param name="tickStyle"></param>
+        /// <param name="tickLength"></param>
+        /// <param name="strokeThickness"></param>
+        /// <param name="color"></param>
+        /// <param name="labelFont"></param>
+        /// <param name="labelFontSize"></param>
+        /// <param name="labelFontWeight"></param>
+        /// <param name="labelColor"></param>
+        /// <param name="labelAngle"></param>
+        /// <param name="AxisTickToLabelDistance"></param>
+        void RenderTicks(IRenderContext renderContext, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance);
+
+        /// <summary>
+        /// Measures the excesses of a whole load of ticks.
+        /// </summary>
+        /// <param name="renderContext"></param>
+        /// <param name="ticks"></param>
+        /// <param name="tickStyle"></param>
+        /// <param name="tickLength"></param>
+        /// <param name="strokeThickness"></param>
+        /// <param name="color"></param>
+        /// <param name="labelFont"></param>
+        /// <param name="labelFontSize"></param>
+        /// <param name="labelFontWeight"></param>
+        /// <param name="labelColor"></param>
+        /// <param name="labelAngle"></param>
+        /// <param name="AxisTickToLabelDistance"></param>
+        BandExcesses MeasureTicks(IRenderContext renderContext, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance);
+    }
+
+    /// <summary>
+    /// Provides methods to help render ticks on horizontal and vertical axes.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    /// <typeparam name="TDataProvider"></typeparam>
+    /// <typeparam name="TAxisScreenTransformation"></typeparam>
+    public class HorizontalVerticalAxisRenderHelper<TData, TDataProvider, TAxisScreenTransformation> : ITickRenderHelper<TData>
+        where TDataProvider : IDataProvider<TData>
+        where TAxisScreenTransformation : IAxisScreenTransformation<TData, TDataProvider>
+    {
+        /// <summary>
+        /// Initialises an instance of the <see cref="HorizontalVerticalAxisRenderHelper{TData, TDataProvider, TAxisScreenTransformation}"/> class.
+        /// </summary>
+        /// <param name="axisScreenTransformation"></param>
+        /// <param name="axisPosition"></param>
+        /// <param name="theOtherCoordinate"></param>
+        public HorizontalVerticalAxisRenderHelper(TAxisScreenTransformation axisScreenTransformation, AxisPosition axisPosition, ScreenReal theOtherCoordinate)
+        {
+            AxisScreenTransformation = axisScreenTransformation;
+            AxisPosition = axisPosition;
+            TheOtherCoordinate = theOtherCoordinate;
+        }
+
+        /// <summary>
+        /// Whether the axis is vertical
+        /// </summary>
+        public bool IsVertical => AxisPosition == AxisPosition.Left || AxisPosition == AxisPosition.Right;
+
+        /// <summary>
+        /// The axis transformation.
+        /// </summary>
+        public TAxisScreenTransformation AxisScreenTransformation { get; }
+
+        /// <summary>
+        /// The axis position.
+        /// </summary>
+        public AxisPosition AxisPosition { get; }
+
+        /// <summary>
+        /// The other coordinate in the pair.
+        /// </summary>
+        /// <remarks>
+        /// If <see cref="IsVertical"/> is <c>true</c>, then this is the horizontal coordinate.
+        /// If <see cref="IsVertical"/> is <c>false</c>, then this is the vertical coordinate.
+        /// </remarks>
+        public ScreenReal TheOtherCoordinate { get; }
+
+        /// <summary>
+        /// Transforms the given value onto the axis line.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ScreenPoint Transform(TData value)
+        {
+            var s = AxisScreenTransformation.Transform(value);
+
+            if (IsVertical)
+            {
+                return new ScreenPoint(TheOtherCoordinate.Value, s.Value);
+            }
+            else
+            {
+                return new ScreenPoint(s.Value, TheOtherCoordinate.Value);
+            }
+        }
 
         /// <inheritdoc/>
-        public int MinimumCount { get; set; }
+        public void RenderTicks(IRenderContext renderContext, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance)
+        {
+            var vnominal = AxisPosition switch
+            {
+                AxisPosition.Left => new ScreenVector(-1, 0),
+                AxisPosition.Top => new ScreenVector(0, -1),
+                AxisPosition.Right => new ScreenVector(1, 0),
+                AxisPosition.Bottom => new ScreenVector(0, 1),
+                _ => throw new NotImplementedException(),
+            };
+
+            var textHAlign = AxisPosition switch
+            {
+                AxisPosition.Left => HorizontalAlignment.Right,
+                AxisPosition.Top => HorizontalAlignment.Center,
+                AxisPosition.Right => HorizontalAlignment.Left,
+                AxisPosition.Bottom => HorizontalAlignment.Center,
+                _ => throw new NotImplementedException(),
+            };
+
+            var textVAlign = AxisPosition switch
+            {
+                AxisPosition.Left => VerticalAlignment.Middle,
+                AxisPosition.Top => VerticalAlignment.Bottom,
+                AxisPosition.Right => VerticalAlignment.Middle,
+                AxisPosition.Bottom => VerticalAlignment.Top,
+                _ => throw new NotImplementedException(),
+            };
+
+            var v0 = tickStyle == TickStyle.Crossing || tickStyle == TickStyle.Outside ? vnominal * tickLength : new ScreenVector(0, 0);
+            var v1 = tickStyle == TickStyle.Crossing || tickStyle == TickStyle.Inside ? vnominal * -tickLength : new ScreenVector(0, 0);
+            var vt = vnominal * (AxisTickToLabelDistance + tickLength);
+
+            var pen = new OxyPen(color, strokeThickness);
+
+            foreach (var tick in ticks)
+            {
+                var s = this.Transform(tick.Value);
+
+                var s0 = s + v0;
+                var s1 = s + v1;
+
+                renderContext.DrawLine(s0.X, s0.Y, s1.X, s1.Y, pen, EdgeRenderingMode.Automatic);
+
+                if (!string.IsNullOrWhiteSpace(tick.Label))
+                {
+                    var st = s + vt;
+
+                    renderContext.DrawText(st, tick.Label, labelColor, labelFont, labelFontSize, labelFontWeight, labelAngle, textHAlign, textVAlign);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public BandExcesses MeasureTicks(IRenderContext renderContext, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance)
+        {
+            var top = tickStyle == TickStyle.Crossing || tickStyle == TickStyle.Outside ? tickLength : 0;
+            var bottom = tickStyle == TickStyle.Crossing || tickStyle == TickStyle.Inside ? tickLength : 0;
+            var left = 0.0;
+            var right = 0.0;
+
+            var clip0 = AxisScreenTransformation.Transform(AxisScreenTransformation.ClipMinimum);
+            var clip1 = AxisScreenTransformation.Transform(AxisScreenTransformation.ClipMaximum);
+
+            var vnominal = AxisPosition switch
+            {
+                AxisPosition.Left => new ScreenVector(-1, 0),
+                AxisPosition.Top => new ScreenVector(0, -1),
+                AxisPosition.Right => new ScreenVector(1, 0),
+                AxisPosition.Bottom => new ScreenVector(0, 1),
+                _ => throw new NotImplementedException(),
+            };
+
+            var textHAlign = AxisPosition switch
+            {
+                AxisPosition.Left => HorizontalAlignment.Right,
+                AxisPosition.Top => HorizontalAlignment.Center,
+                AxisPosition.Right => HorizontalAlignment.Left,
+                AxisPosition.Bottom => HorizontalAlignment.Center,
+                _ => throw new NotImplementedException(),
+            };
+
+            var textVAlign = AxisPosition switch
+            {
+                AxisPosition.Left => VerticalAlignment.Middle,
+                AxisPosition.Top => VerticalAlignment.Bottom,
+                AxisPosition.Right => VerticalAlignment.Middle,
+                AxisPosition.Bottom => VerticalAlignment.Top,
+                _ => throw new NotImplementedException(),
+            };
+
+            var vt = vnominal * (AxisTickToLabelDistance + tickLength);
+
+            foreach (var tick in ticks)
+            {
+
+                if (!string.IsNullOrWhiteSpace(tick.Label))
+                {
+                    var s = this.Transform(tick.Value);
+                    var st = s + vt;
+
+                    var labelSize = renderContext.MeasureText(tick.Label, labelFont, labelFontSize, labelFontWeight, labelAngle);
+
+                    // just fudge it for now
+                    if (IsVertical)
+                    {
+                        top = Math.Max(top, labelSize.Width + AxisTickToLabelDistance + tickLength);
+                    }
+                    else
+                    {
+                        top = Math.Max(top, labelSize.Height + AxisTickToLabelDistance + tickLength);
+                    }
+                }
+            }
+
+            // TODO: this probably doesn't work for reversed axes
+
+            return new BandExcesses(left, top, right, bottom);
+        }
+    }
+
+    /// <summary>
+    /// Prepares instances of <see cref="ITickRenderHelper{TData}"/>.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    public static class TickRenderHelper<TData>
+    {
+        private class Generator : IAxisScreenTransformationConsumer<TData>
+        {
+            public Generator(AxisPosition axisPosition, ScreenReal theOtherCoordinate)
+            {
+                AxisPosition = axisPosition;
+                TheOtherCoordinate = theOtherCoordinate;
+            }
+
+            public void Consume<TDataProvider, TAxisScreenTransformation>(TAxisScreenTransformation transformation)
+                where TDataProvider : IDataProvider<TData>
+                where TAxisScreenTransformation : IAxisScreenTransformation<TData, TDataProvider>
+            {
+                Result = new HorizontalVerticalAxisRenderHelper<TData, TDataProvider, TAxisScreenTransformation>(transformation, AxisPosition, TheOtherCoordinate);
+            }
+
+            public ITickRenderHelper<TData> Result { get; private set; }
+            public AxisPosition AxisPosition { get; }
+            public ScreenReal TheOtherCoordinate { get; }
+        }
+
+        /// <summary>
+        /// Prepares a <see cref="ITickRenderHelper{TData}"/> for a horizontal or vertical axis.
+        /// </summary>
+        /// <param name="axis"></param>
+        /// <returns></returns>
+        public static ITickRenderHelper<TData> PrepareHorizontalVertial(IAxis<TData> axis)
+        {
+            var s = axis.Position switch
+            {
+                AxisPosition.Left => axis.ScreenMin.X,
+                AxisPosition.Top => axis.ScreenMin.Y,
+                AxisPosition.Right => axis.ScreenMax.X,
+                AxisPosition.Bottom => axis.ScreenMax.Y,
+                _ => throw new NotImplementedException(),
+            };
+
+            var generator = new Generator(axis.Position, new ScreenReal(s));
+            axis.Consume(generator);
+            return generator.Result;
+        }
     }
 }

@@ -196,16 +196,6 @@ namespace OxyPlot.Axes
         public string ActualStringFormat { get; protected set; }
 
         /// <summary>
-        /// Gets or sets the orientation angle (degrees) for the axis labels. The default value is <c>0</c>.
-        /// </summary>
-        public double Angle { get; set; }
-
-        /// <summary>
-        /// Gets or sets the distance from the end of the tick lines to the labels. The default value is <c>4</c>.
-        /// </summary>
-        public double AxisTickToLabelDistance { get; set; }
-
-        /// <summary>
         /// Gets or sets the distance between the plot area and the axis. The default value is <c>0</c>.
         /// </summary>
         public double AxisDistance { get; set; }

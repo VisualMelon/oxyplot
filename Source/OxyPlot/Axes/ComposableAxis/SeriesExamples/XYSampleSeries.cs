@@ -150,7 +150,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// Gets an <see cref="IXYHelper{XData, YData}"/> for the current axis, which does not depend on the view state.
         /// </summary>
         /// <returns></returns>
-        protected IXYHelper<XData, YData> GetHelper()
+        protected virtual IXYHelper<XData, YData> GetHelper()
         {
             var transpose = XAxis.Position == AxisPosition.Left || XAxis.Position == AxisPosition.Right;
             return XYHelperPreparer<XData, YData>.PrepareHorizontalVertial(Collator, transpose);
@@ -160,7 +160,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// Gets an <see cref="IXYHelper{XData, YData}"/> for the current axis view state.
         /// </summary>
         /// <returns></returns>
-        protected IXYRenderHelper<XData, YData> GetRenderHelper()
+        protected virtual IXYRenderHelper<XData, YData> GetRenderHelper()
         {
             var transpose = XAxis.Position == AxisPosition.Left || XAxis.Position == AxisPosition.Right;
             return XYRenderHelperPreparer<XData, YData>.PrepareHorizontalVertial(Collator, transpose);

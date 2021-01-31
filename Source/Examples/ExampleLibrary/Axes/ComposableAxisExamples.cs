@@ -37,7 +37,12 @@ namespace ExampleLibrary
                 Maximum = 10,
                 Title = "X Axis",
                 Key = "X",
+                StartPosition = 0.8,
+                EndPosition = 0.2,
             };
+
+            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            xaxis.Bands.Add(xticks);
 
             plot.Axes.Add(xaxis);
 
@@ -49,6 +54,9 @@ namespace ExampleLibrary
                 Title = "Y Axis",
                 Key = "Y",
             };
+
+            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            yaxis.Bands.Add(yticks);
 
             plot.Axes.Add(yaxis);
 

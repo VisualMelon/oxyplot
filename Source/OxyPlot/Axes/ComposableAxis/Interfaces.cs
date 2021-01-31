@@ -370,11 +370,6 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets the minimum allowed step.
         /// </summary>
         public TData MinimumStep { get; }
-
-        /// <summary>
-        /// Gets the minimum allowed number of steps.
-        /// </summary>
-        public int MinimumCount { get; }
     }
 
     /// <summary>
