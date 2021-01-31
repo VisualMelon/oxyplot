@@ -412,13 +412,29 @@ namespace OxyPlot.Axes.ComposableAxis
     {
         private class Generator : IXYAxisScreenTransformationConsumer<XData, YData>
         {
+            public Generator(bool transpose)
+            {
+                Transpose = transpose;
+            }
+
+            public bool Transpose { get; }
+
             public void Consume<XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(XAxisScreenTransformation x, YAxisScreenTransformation y)
                 where XDataProvider : IDataProvider<XData>
                 where YDataProvider : IDataProvider<YData>
                 where XAxisScreenTransformation : IAxisScreenTransformation<XData, XDataProvider>
                 where YAxisScreenTransformation : IAxisScreenTransformation<YData, YDataProvider>
             {
-                Result = new XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(x, y);
+                if (Transpose)
+                {
+                    var xyTransformation = new TransposedHorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(x, y);
+                    Result = new XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation, TransposedHorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>>(xyTransformation);
+                }
+                else
+                {
+                    var xyTransformation = new HorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(x, y);
+                    Result = new XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation, HorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>>(xyTransformation);
+                }
             }
 
             public IXYHelper<XData, YData> Result { get; private set; }
@@ -428,10 +444,11 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Prepares an <see cref="IXYHelper{XData, YData}"/> from the given collator.
         /// </summary>
         /// <param name="collator"></param>
+        /// <param name="transpose"></param>
         /// <returns></returns>
-        public static IXYHelper<XData, YData> Prepare(XYCollator<XData, YData> collator)
+        public static IXYHelper<XData, YData> PrepareHorizontalVertial(XYCollator<XData, YData> collator, bool transpose)
         {
-            var generator = new Generator();
+            var generator = new Generator(transpose);
             collator.Consume(generator);
             return generator.Result;
         }
@@ -446,13 +463,29 @@ namespace OxyPlot.Axes.ComposableAxis
     {
         private class Generator : IXYAxisScreenTransformationConsumer<XData, YData>
         {
+            public Generator(bool transpose)
+            {
+                Transpose = transpose;
+            }
+
+            public bool Transpose { get; }
+
             public void Consume<XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(XAxisScreenTransformation x, YAxisScreenTransformation y)
                 where XDataProvider : IDataProvider<XData>
                 where YDataProvider : IDataProvider<YData>
                 where XAxisScreenTransformation : IAxisScreenTransformation<XData, XDataProvider>
                 where YAxisScreenTransformation : IAxisScreenTransformation<YData, YDataProvider>
             {
-                Result = new XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(x, y);
+                if (Transpose)
+                {
+                    var xyTransformation = new TransposedHorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(x, y);
+                    Result = new XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation, TransposedHorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>>(xyTransformation);
+                }
+                else
+                {
+                    var xyTransformation = new HorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(x, y);
+                    Result = new XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation, HorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>>(xyTransformation);
+                }
             }
 
             public IXYRenderHelper<XData, YData> Result { get; private set; }
@@ -462,10 +495,11 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Prepares an <see cref="IXYHelper{XData, YData}"/> from the given collator.
         /// </summary>
         /// <param name="collator"></param>
+        /// <param name="transpose"></param>
         /// <returns></returns>
-        public static IXYRenderHelper<XData, YData> Prepare(XYCollator<XData, YData> collator)
+        public static IXYRenderHelper<XData, YData> PrepareHorizontalVertial(XYCollator<XData, YData> collator, bool transpose)
         {
-            var generator = new Generator();
+            var generator = new Generator(transpose);
             collator.Consume(generator);
             return generator.Result;
         }
@@ -519,6 +553,116 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Provides an implemention of <see cref="IXYAxisTransformation{XData, YData}"/> for a horizontal X axis, and a vertical Y axis.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    /// <typeparam name="XDataProvider"></typeparam>
+    /// <typeparam name="YDataProvider"></typeparam>
+    /// <typeparam name="XAxisTransformation"></typeparam>
+    /// <typeparam name="YAxisTransformation"></typeparam>
+    public struct HorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
+        where XDataProvider : IDataProvider<XData>
+        where YDataProvider : IDataProvider<YData>
+        where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+        where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+    {
+        /// <summary>
+        /// Initialises and instance of the <see cref="HorizontalVertialXYTransformation{XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation}"/> struct.
+        /// </summary>
+        /// <param name="xTransformation"></param>
+        /// <param name="yTransformation"></param>
+        public HorizontalVertialXYTransformation(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
+        {
+            XTransformation = xTransformation;
+            YTransformation = yTransformation;
+        }
+
+        /// <summary>
+        /// The x transformation.
+        /// </summary>
+        public XAxisTransformation XTransformation { get; }
+
+        /// <summary>
+        /// The y transformation.
+        /// </summary>
+        public YAxisTransformation YTransformation { get; }
+
+        /// <inheritdoc/>
+        public DataSample<XData, YData> InverseTransform(ScreenPoint screenPoint)
+        {
+            return new DataSample<XData, YData>(XTransformation.InverseTransform(new ScreenReal(screenPoint.X)), YTransformation.InverseTransform(new ScreenReal(screenPoint.Y)));
+        }
+
+        /// <inheritdoc/>
+        public ScreenPoint Transform(DataSample<XData, YData> sample)
+        {
+            return new ScreenPoint(XTransformation.Transform(sample.X).Value, YTransformation.Transform(sample.Y).Value);
+        }
+
+        /// <inheritdoc/>
+        public bool WithinClipBounds(DataSample<XData, YData> sample)
+        {
+            return XTransformation.WithinClipBounds(sample.X) && YTransformation.WithinClipBounds(sample.Y);
+        }
+    }
+
+    /// <summary>
+    /// Provides an implemention of <see cref="IXYAxisTransformation{XData, YData}"/> for a vertical X axis, and a horizontal Y axis.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    /// <typeparam name="XDataProvider"></typeparam>
+    /// <typeparam name="YDataProvider"></typeparam>
+    /// <typeparam name="XAxisTransformation"></typeparam>
+    /// <typeparam name="YAxisTransformation"></typeparam>
+    public struct TransposedHorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
+        where XDataProvider : IDataProvider<XData>
+        where YDataProvider : IDataProvider<YData>
+        where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+        where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+    {
+        /// <summary>
+        /// Initialises and instance of the <see cref="HorizontalVertialXYTransformation{XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation}"/> struct.
+        /// </summary>
+        /// <param name="xTransformation"></param>
+        /// <param name="yTransformation"></param>
+        public TransposedHorizontalVertialXYTransformation(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
+        {
+            XTransformation = xTransformation;
+            YTransformation = yTransformation;
+        }
+
+        /// <summary>
+        /// The x transformation.
+        /// </summary>
+        public XAxisTransformation XTransformation { get; }
+
+        /// <summary>
+        /// The y transformation.
+        /// </summary>
+        public YAxisTransformation YTransformation { get; }
+
+        /// <inheritdoc/>
+        public DataSample<XData, YData> InverseTransform(ScreenPoint screenPoint)
+        {
+            return new DataSample<XData, YData>(XTransformation.InverseTransform(new ScreenReal(screenPoint.Y)), YTransformation.InverseTransform(new ScreenReal(screenPoint.X)));
+        }
+
+        /// <inheritdoc/>
+        public ScreenPoint Transform(DataSample<XData, YData> sample)
+        {
+            return new ScreenPoint(YTransformation.Transform(sample.Y).Value, XTransformation.Transform(sample.X).Value);
+        }
+
+        /// <inheritdoc/>
+        public bool WithinClipBounds(DataSample<XData, YData> sample)
+        {
+            return XTransformation.WithinClipBounds(sample.X) && YTransformation.WithinClipBounds(sample.Y);
+        }
+    }
+
+    /// <summary>
     /// Provides basic methods to render in X/Y space
     /// </summary>
     /// <typeparam name="XData"></typeparam>
@@ -527,49 +671,51 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="YDataProvider"></typeparam>
     /// <typeparam name="XAxisTransformation"></typeparam>
     /// <typeparam name="YAxisTransformation"></typeparam>
-    public class XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : XYHelper<XData, YData, XDataProvider, YDataProvider>, IXYRenderHelper<XData, YData>
+    /// <typeparam name="XYAxisTransformation"></typeparam>
+    public class XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation> : XYHelper<XData, YData, XDataProvider, YDataProvider>, IXYRenderHelper<XData, YData>
         where XDataProvider : IDataProvider<XData>
         where YDataProvider : IDataProvider<YData>
         where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
         where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+        where XYAxisTransformation : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
     {
         /// <summary>
         /// Initialises an XYRenderHelper.
         /// </summary>
-        /// <param name="xTransformation"></param>
-        /// <param name="yTransformation"></param>
-        public XYRenderHelper(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
-            : base(xTransformation.Provider, yTransformation.Provider)
+        /// <param name="xyTransformation"></param>
+        public XYRenderHelper(XYAxisTransformation xyTransformation)
+            : base(xyTransformation.XTransformation.Provider, xyTransformation.YTransformation.Provider)
         {
-            XTransformation = xTransformation;
-            YTransformation = yTransformation;
+            XYTransformation = xyTransformation;
         }
 
-        private XAxisTransformation XTransformation { get; }
-        private YAxisTransformation YTransformation { get; }
+        private XYAxisTransformation XYTransformation { get; }
+
+        private XAxisTransformation XTransformation => XYTransformation.XTransformation;
+        private YAxisTransformation YTransformation => XYTransformation.YTransformation;
 
         /// <inheritdoc/>
         public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous) where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         {
-            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(sampleProvider, XTransformation, YTransformation, samples, ref sampleIdx, endIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
+            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(sampleProvider, XYTransformation, samples, ref sampleIdx, endIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
         }
 
         /// <inheritdoc/>
         public void InterpolateLines(IReadOnlyList<DataSample<XData, YData>> dataSamples, double minSegmentLength, IList<ScreenPoint> screenPoints)
         {
-            RenderHelpers.InterpolateLines<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(XTransformation, YTransformation, dataSamples, minSegmentLength, screenPoints);
+            RenderHelpers.InterpolateLines<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(XYTransformation, dataSamples, minSegmentLength, screenPoints);
         }
 
         /// <inheritdoc/>
         public void TransformSamples(IReadOnlyList<DataSample<XData, YData>> dataSamples, IList<ScreenPoint> screenPoints)
         {
-            RenderHelpers.TransformSamples<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(XTransformation, YTransformation, dataSamples, screenPoints);
+            RenderHelpers.TransformSamples<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(XYTransformation, dataSamples, screenPoints);
         }
 
         /// <inheritdoc/>
         public ScreenPoint TransformSample(DataSample<XData, YData> sample)
         {
-            return sample.Transform<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>(XTransformation, YTransformation);
+            return XYTransformation.Transform(sample);
         }
     }
 
@@ -917,5 +1063,27 @@ namespace OxyPlot.Axes.ComposableAxis
                 return false;
             }
         }
+    }
+
+    /// <summary>
+    /// Default spacing options class.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    public class SpacingOptions<TData> : ISpacingOptions<TData>
+    {
+        /// <inheritdoc/>
+        public int MaximumTickCount { get; set; }
+
+        /// <inheritdoc/>
+        public int MinimumTickCount { get; set; }
+
+        /// <inheritdoc/>
+        public TData MaximumStep { get; set; }
+
+        /// <inheritdoc/>
+        public TData MinimumStep { get; set; }
+
+        /// <inheritdoc/>
+        public int MinimumCount { get; set; }
     }
 }

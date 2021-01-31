@@ -20,7 +20,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
     /// <typeparam name="XData"></typeparam>
     /// <typeparam name="YData"></typeparam>
     /// <typeparam name="TSampleProvider"></typeparam>
-    public abstract class XYSampleSeries<TSample, XData, YData, TSampleProvider> : SampleSeries
+    public abstract class XYSampleSeries<TSample, XData, YData, TSampleProvider> : SampleSeries // TODO: we want these transposable, but we can't implement ITransposablePlotElement at the moment
         where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
     {
         /// <summary>
@@ -152,7 +152,8 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// <returns></returns>
         protected IXYHelper<XData, YData> GetHelper()
         {
-            return XYHelperPreparer<XData, YData>.Prepare(Collator);
+            var transpose = XAxis.Position == AxisPosition.Left || XAxis.Position == AxisPosition.Right;
+            return XYHelperPreparer<XData, YData>.PrepareHorizontalVertial(Collator, transpose);
         }
 
         /// <summary>
@@ -161,7 +162,8 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// <returns></returns>
         protected IXYRenderHelper<XData, YData> GetRenderHelper()
         {
-            return XYRenderHelperPreparer<XData, YData>.Prepare(Collator);
+            var transpose = XAxis.Position == AxisPosition.Left || XAxis.Position == AxisPosition.Right;
+            return XYRenderHelperPreparer<XData, YData>.PrepareHorizontalVertial(Collator, transpose);
         }
 
         /// <inheritdoc/>
@@ -525,8 +527,8 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
                     if (broken.Count > 0)
                     {
                         var actualBrokenLineColor = this.BrokenLineColor.IsAutomatic()
-                                                        ? this.ActualColor
-                                                        : this.BrokenLineColor;
+                            ? this.ActualColor
+                            : this.BrokenLineColor;
 
                         rc.DrawLineSegments(
                             broken,

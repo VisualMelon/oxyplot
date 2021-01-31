@@ -155,6 +155,61 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Provides methods to transform data samples into screen points.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    public interface IXYAxisTransformation<XData, YData>
+    {
+        // NOTE NOTE: by using this abstraction, we make it easier to implement e.g. triangle axes later on, because this does the job of interpreting the screen space values
+
+        /// <summary>
+        /// Transforms the given sample into screen space.
+        /// </summary>
+        /// <param name="sample"></param>
+        /// <returns></returns>
+        ScreenPoint Transform(DataSample<XData, YData> sample);
+
+        /// <summary>
+        /// Transforms the given screen point into data space.
+        /// </summary>
+        /// <param name="screenPoint"></param>
+        /// <returns></returns>
+        DataSample<XData, YData> InverseTransform(ScreenPoint screenPoint);
+
+        /// <summary>
+        /// Determines whether the given sample is within the clip bounds.
+        /// </summary>
+        bool WithinClipBounds(DataSample<XData, YData> sample);
+    }
+
+    /// <summary>
+    /// Provides methods to transform data samples into screen points, and more.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    /// <typeparam name="XDataProvider"></typeparam>
+    /// <typeparam name="YDataProvider"></typeparam>
+    /// <typeparam name="XAxisTransformation"></typeparam>
+    /// <typeparam name="YAxisTransformation"></typeparam>
+    public interface IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYAxisTransformation<XData, YData>
+        where XDataProvider : IDataProvider<XData>
+        where YDataProvider : IDataProvider<YData>
+        where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+        where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+    {
+        /// <summary>
+        /// The x transformation.
+        /// </summary>
+        XAxisTransformation XTransformation { get; }
+
+        /// <summary>
+        /// The y transformation.
+        /// </summary>
+        YAxisTransformation YTransformation { get; }
+    }
+
+    /// <summary>
     /// Provides methods to transform between Data space and Screen space along an axis
     /// </summary>
     /// <typeparam name="TData">The type of Data space</typeparam>
@@ -292,7 +347,7 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
-    /// Provides 
+    /// Provides spacing options.
     /// </summary>
     public interface ISpacingOptions<TData>
     {

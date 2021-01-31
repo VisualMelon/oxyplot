@@ -36,6 +36,7 @@ namespace ExampleLibrary
                 Minimum = 0,
                 Maximum = 10,
                 Title = "X Axis",
+                Key = "X",
             };
 
             plot.Axes.Add(xaxis);
@@ -46,6 +47,7 @@ namespace ExampleLibrary
                 Minimum = -1,
                 Maximum = 1,
                 Title = "Y Axis",
+                Key = "Y",
             };
 
             plot.Axes.Add(yaxis);
@@ -59,12 +61,36 @@ namespace ExampleLibrary
             var plot = LinearXY();
 
             var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default);
-            
+
             for (var x = 0.0; x < 10; x += 0.001)
             {
                 lines.Samples.Add(new DataPoint(x, Math.Sin(x)));
             }
-            
+
+            plot.Series.Add(lines);
+
+            return plot;
+        }
+
+        [Example("Line on LinearXY, Transposed")]
+        public static PlotModel LineOnLinearXYTransposed()
+        {
+            var plot = LinearXY();
+
+            plot.Axes[0].Position = AxisPosition.Left;
+            plot.Axes[1].Position = AxisPosition.Bottom;
+
+            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default)
+            {
+                XAxisKey = "X",
+                YAxisKey = "Y",
+            };
+
+            for (var x = 0.0; x < 10; x += 0.001)
+            {
+                lines.Samples.Add(new DataPoint(x, Math.Sin(x)));
+            }
+
             plot.Series.Add(lines);
 
             return plot;

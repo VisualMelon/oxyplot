@@ -515,6 +515,69 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// A band that renders axis ticks.
+    /// </summary>
+    public class TickBand<TData> : BandBase<TData>
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TitleBand" /> class.
+        /// </summary>
+        public TickBand()
+        {
+            this.BandPosition = BandPosition.Inline;
+            this.BandTier = 0;
+            this.IsBandVisible = true;
+
+            this.Ticks = new List<Tick<TData>>();
+        }
+
+        /// <summary>
+        /// Gets or sets the <see cref="ITickLocator{TData}"/> for this band.
+        /// </summary>
+        public ITickLocator<TData> TickLocator { get; set; }
+
+        /// <summary>
+        /// Gets or sets the <see cref="ISpacingOptions{TData}"/>  for this band.
+        /// </summary>
+        public ISpacingOptions<TData> SpacingOptions { get; set; }
+
+        /// <summary>
+        /// Gets the ticks rendered by this band.
+        /// </summary>
+        /// <remarks>
+        /// Updated by <see cref="Update"/>
+        /// </remarks>
+        public List<Tick<TData>> Ticks { get; }
+
+        /// <inheritdoc/>
+        public override void Measure(IRenderContext renderContext, double width)
+        {
+            // TODO: interrogate Axis to implement margins properly
+            Excesses = new BandExcesses(0.0, 1.0, 0.0, 0.0);
+        }
+
+        /// <inheritdoc/>
+        public override void Render(IRenderContext renderContext, BandLocation location)
+        {
+            // TODO: interrogate HorizontalVerticalAxisRenderer to implement rendering properly
+            
+
+
+            foreach (var tick in Ticks)
+            {
+                
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void Update()
+        {
+            Ticks.Clear();
+            TickLocator.GetTicks(Axis.ClipMinimum, Axis.ClipMaximum, SpacingOptions, Ticks);
+        }
+    }
+
+    /// <summary>
     /// Represents a sample.
     /// </summary>
     /// <typeparam name="XData"></typeparam>
