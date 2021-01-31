@@ -649,5 +649,13 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
                 this.defaultLineStyle = this.PlotModel.GetDefaultLineStyle();
             }
         }
+
+        /// <inheritdoc/>
+        public override OxyRect GetClippingRect()
+        {
+            var xrect = new OxyRect(XAxis.ScreenMin, XAxis.ScreenMax);
+            var yrect = new OxyRect(YAxis.ScreenMin, YAxis.ScreenMax);
+            return xrect.Intersect(yrect);
+        }
     }
 }

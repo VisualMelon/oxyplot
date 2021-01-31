@@ -62,7 +62,7 @@ namespace ExampleLibrary
 
             var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default);
 
-            for (var x = 0.0; x < 10; x += 0.001)
+            for (var x = 0.0; x < 10; x += 0.01)
             {
                 lines.Samples.Add(new DataPoint(x, Math.Sin(x)));
             }
@@ -84,9 +84,12 @@ namespace ExampleLibrary
             {
                 XAxisKey = "X",
                 YAxisKey = "Y",
+                MarkerType = MarkerType.Diamond,
+                MarkerFill = OxyColors.Red,
+                MarkerSize = 2,
             };
 
-            for (var x = 0.0; x < 10; x += 0.001)
+            for (var x = 0.0; x < 10; x += 0.01)
             {
                 lines.Samples.Add(new DataPoint(x, Math.Sin(x)));
             }

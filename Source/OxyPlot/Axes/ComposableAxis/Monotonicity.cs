@@ -204,7 +204,7 @@ namespace OxyPlot.Axes.ComposableAxis
             }
             else
             {
-                var c = Provider.Compare(Minimum, value);
+                var c = Provider.Compare(value, Minimum);
                 if (c == 0)
                 {
                     Flags |= Repeat;
@@ -216,15 +216,15 @@ namespace OxyPlot.Axes.ComposableAxis
                 }
                 else
                 {
-                    c = Provider.Compare(Maximum, value);
+                    c = Provider.Compare(value, Maximum);
                     if (c == 0)
                     {
                         Flags |= Repeat;
                     }
-                    else if (c < 0)
+                    else if (c > 0)
                     {
                         Flags |= Increase;
-                        Minimum = value;
+                        Maximum = value;
                     }
                 }
             }
@@ -240,7 +240,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 if (IsEmpty)
                     return Monotonicity.Empty;
                 else
-                    return new Monotonicity((Flags | Repeat) > 0, (Flags | Increase) > 0, (Flags | Decrease) > 0);
+                    return new Monotonicity((Flags & Repeat) > 0, (Flags & Increase) > 0, (Flags & Decrease) > 0);
             }
         }
     }

@@ -185,8 +185,9 @@ namespace OxyPlot.Axes.ComposableAxis
             int l = 0;
             int h = samples.Count - 1;
 
-            while (l != h)
+            while (l < h)
             {
+            cont:
                 int m = (h + l) / 2;
 
                 var i = m;
@@ -202,11 +203,12 @@ namespace OxyPlot.Axes.ComposableAxis
                     {
                         // oh, we ran out this side... best collapse it 
                         h = m - 1;
+                        goto cont;
                     }
                 }
 
-                int cx = xsign != 0 ? xDataProvider.Compare(start.X, candidate.X) : 0;
-                int cy = ysign != 0 ? yDataProvider.Compare(start.Y, candidate.Y) : 0;
+                int cx = xsign != 0 ? xDataProvider.Compare(candidate.X, start.X) * xsign : 0;
+                int cy = ysign != 0 ? yDataProvider.Compare(candidate.Y, start.Y) * ysign : 0;
 
                 if (cx >= 0 || cy >= 0)
                 {
@@ -257,8 +259,9 @@ namespace OxyPlot.Axes.ComposableAxis
             int l = 0;
             int h = samples.Count - 1;
 
-            while (l != h)
+            while (l < h)
             {
+            cont:
                 int m = (h + l + 1) / 2;
 
                 var i = m;
@@ -274,11 +277,12 @@ namespace OxyPlot.Axes.ComposableAxis
                     {
                         // oh, we ran out this side... best collapse it 
                         h = m - 1;
+                        goto cont;
                     }
                 }
 
-                int cx = xsign != 0 ? xDataProvider.Compare(end.X, candidate.X) : 0;
-                int cy = ysign != 0 ? yDataProvider.Compare(end.Y, candidate.Y) : 0;
+                int cx = xsign != 0 ? xDataProvider.Compare(candidate.X, end.X) * xsign : 0;
+                int cy = ysign != 0 ? yDataProvider.Compare(candidate.Y, end.Y) * ysign : 0;
 
                 if (cx <= 0 || cy <= 0)
                 {

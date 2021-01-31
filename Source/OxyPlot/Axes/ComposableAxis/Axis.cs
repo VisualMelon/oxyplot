@@ -575,6 +575,16 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Resets the data minimum and maximum values.
         /// </summary>
         void ResetDataMaxMin();
+
+        /// <summary>
+        /// Gets or sets the screen coordinate of the maximum end of the axis.
+        /// </summary>
+        ScreenPoint ScreenMax { get; }
+
+        /// <summary>
+        /// Gets or sets the screen coordinate of the minimum end of the axis.
+        /// </summary>
+        ScreenPoint ScreenMin { get; }
     }
 
     /// <summary>
@@ -1216,41 +1226,28 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public override void Render(IRenderContext rc, AxisRenderPass pass)
         {
-            // TODO: we want to abstract out rendering, just like ticks and all that... for now lets draw some big rectangles to show we know what we're doing
-
             if (pass == AxisRenderPass.Pass0)
             {
+                // TODO: we want to abstract out rendering, just like ticks and all that... for now lets draw some big rectangles to show we know what we're doing
                 rc.DrawRectangle(PlotBounds.Deflate(new OxyThickness(1)), OxyColors.Red, new OxyThickness(1), EdgeRenderingMode.Automatic);
                 rc.DrawRectangle(new OxyRect(ScreenMin, ScreenMax).Deflate(new OxyThickness(2)), OxyColors.Blue, new OxyThickness(1), EdgeRenderingMode.Automatic);
-            }
 
-            foreach (var band in Bands)
-            {
-                var table = band.BandPosition switch
+                // TODO: layout bands (pull this out of Measure into a method and call it here)
+
+                // render bands
+                foreach (var band in Bands)
                 {
-                    BandPosition.Inline => inlineLocations,
-                    BandPosition.Side => sideLocations,
-                    _ => throw new NotImplementedException(),
-                };
+                    var table = band.BandPosition switch
+                    {
+                        BandPosition.Inline => inlineLocations,
+                        BandPosition.Side => sideLocations,
+                        _ => throw new NotImplementedException(),
+                    };
 
-                var location = table[band.BandTier];
+                    var location = table[band.BandTier];
 
-                band.Render(rc, location);
-            }
-        }
-
-        // NOTE: use plotBounds instead of PlotModel to make Sub-Plot support easier
-        /// <summary>
-        /// Renders the axis.
-        /// </summary>
-        /// <param name="plotBounds"></param>
-        public void Render(OxyRect plotBounds)
-        {
-            // assumes we have been measured on these same plotBounds
-            if (!(IsHorizontal() || IsVertical()))
-            {
-                // we should not render
-                return;
+                    band.Render(rc, location);
+                }
             }
         }
 

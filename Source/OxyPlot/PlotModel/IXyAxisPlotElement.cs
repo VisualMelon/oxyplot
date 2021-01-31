@@ -7,6 +7,7 @@
 namespace OxyPlot
 {
     using OxyPlot.Axes;
+    using OxyPlot.Axes.ComposableAxis;
 
     /// <summary>
     /// Defines a plot element that uses an X and a Y axis.
