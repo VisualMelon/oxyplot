@@ -648,9 +648,13 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// Initializes a new instance of the <see cref="HorizontalVerticalAxis{TData, TDataProvider, TDataTransformation, TDataOptional, TDataOptionalProvider}" /> class.
         /// </summary>
-        public HorizontalVerticalAxis(TDataTransformation dataTransformation)
+        public HorizontalVerticalAxis(TDataTransformation dataTransformation, TDataOptionalProvider optionalProvider)
         {
             DataTransformation = dataTransformation;
+            OptionalProvider = optionalProvider;
+
+            Minimum = OptionalProvider.None;
+            Maximum = OptionalProvider.None;
         }
 
         /// <inheritdoc/>
@@ -899,11 +903,18 @@ namespace OxyPlot.Axes.ComposableAxis
                 if (!hasRange)
                     throw new InvalidOperationException("Axis must exist on some range");
 
-                var minimum = OptionalProvider.Unpack(Minimum, dmax);
-                var maximum = OptionalProvider.Unpack(Maximum, dmin);
+                var minimum = OptionalProvider.Unpack(Minimum, dmin);
+                var maximum = OptionalProvider.Unpack(Maximum, dmax);
 
                 var imin = DataTransformation.Transform(minimum);
                 var imax = DataTransformation.Transform(maximum);
+
+                // apply interaction-space padding where minimum/maximum are not specified
+                var iwidth = imax - imin;
+                if (!OptionalProvider.HasValue(Minimum))
+                    imin = imin - iwidth * MinimumPadding;
+                if (!OptionalProvider.HasValue(Maximum))
+                    imax = imax + iwidth * MaximumPadding;
 
                 ActualInteractionCenter = (imax + imin) / 2.0;
                 ActualInteractionRadius = (imax - imin) / 2.0;
