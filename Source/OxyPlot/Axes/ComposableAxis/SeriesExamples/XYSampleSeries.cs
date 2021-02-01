@@ -513,9 +513,14 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             ScreenPoint? lp = null;
             bool lpb = default(bool);
 
+            var xtransformation = xyRenderHelper.XTransformation;
+            var ytransformation = xyRenderHelper.YTransformation;
+
             if (XMonotonicity.IsMonotone || YMonotonicity.IsMonotone)
             {
-                xyRenderHelper.FindWindow(SampleProvider, Samples.AsReadOnlyList(), new DataSample<XData, YData>(MinX, MinY), new DataSample<XData, YData>(MaxX, MaxY), XMonotonicity, YMonotonicity, out startIdx, out endIdx);
+                var minSample = new DataSample<XData, YData>(xtransformation.ClipMinimum, ytransformation.ClipMinimum);
+                var maxSample = new DataSample<XData, YData>(xtransformation.ClipMaximum, ytransformation.ClipMaximum);
+                xyRenderHelper.FindWindow(SampleProvider, Samples.AsReadOnlyList(), minSample, maxSample, XMonotonicity, YMonotonicity, out startIdx, out endIdx);
             }
 
             int sampleIdx = startIdx;
@@ -633,7 +638,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         public override void RenderLegend(IRenderContext rc, OxyRect legendBox)
         {
             var points = new[] { new ScreenPoint(legendBox.Left, legendBox.Center.Y), new ScreenPoint(legendBox.Right, legendBox.Center.Y) };
-            rc.DrawLine(points, Color, StrokeThickness, EdgeRenderingMode, ActualDashArray, LineJoin);
+            rc.DrawLine(points, this.ActualColor, StrokeThickness, EdgeRenderingMode, ActualDashArray, LineJoin);
         }
 
         /// <inheritdoc/>

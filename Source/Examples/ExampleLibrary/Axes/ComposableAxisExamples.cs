@@ -171,6 +171,44 @@ namespace ExampleLibrary
             return plot;
         }
 
+        [Example("Many Points")]
+        public static PlotModel ManyPoints()
+        {
+            var plot = new PlotModel()
+            {
+                Subtitle = "10^8 points",
+            };
+
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
+            {
+                Position = AxisPosition.Bottom,
+                Title = "X",
+            };
+
+            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            xaxis.Bands.Add(xticks);
+            plot.Axes.Add(xaxis);
+            
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
+            {
+                Position = AxisPosition.Left,
+                Title = "X",
+            };
+
+            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            yaxis.Bands.Add(yticks);
+            plot.Axes.Add(yaxis);
+
+            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default);
+            for (var x = 1.0; x <= 1000; x += 0.001)
+            {
+                lines.Samples.Add(new DataPoint(x, Math.Sin(x)));
+            }
+            plot.Series.Add(lines);
+
+            return plot;
+        }
+
         [Example("Axis Margins, Data Margins, and Padding, Asymmetrical")]
         public static PlotModel MarginsAndPaddingAsymmetrical()
         {

@@ -401,6 +401,16 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="xySample"></param>
         /// <returns></returns>
         ScreenPoint TransformSample(DataSample<XData, YData> xySample);
+
+        /// <summary>
+        /// Gets the underlying XTransformation.
+        /// </summary>
+        IAxisScreenTransformation<XData> XTransformation { get; }
+
+        /// <summary>
+        /// Gets the underlying YTransformation.
+        /// </summary>
+        IAxisScreenTransformation<YData> YTransformation { get; }
     }
 
     /// <summary>
@@ -691,8 +701,11 @@ namespace OxyPlot.Axes.ComposableAxis
 
         private XYAxisTransformation XYTransformation { get; }
 
-        private XAxisTransformation XTransformation => XYTransformation.XTransformation;
-        private YAxisTransformation YTransformation => XYTransformation.YTransformation;
+        /// <inheritdoc/>
+        public IAxisScreenTransformation<XData> XTransformation => XYTransformation.XTransformation;
+
+        /// <inheritdoc/>
+        public IAxisScreenTransformation<YData> YTransformation => XYTransformation.YTransformation;
 
         /// <inheritdoc/>
         public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous) where TSampleProvider : IXYSampleProvider<TSample, XData, YData>

@@ -207,10 +207,8 @@ namespace OxyPlot.Axes.ComposableAxis
                     }
                 }
 
-                int cx = xsign != 0 ? xDataProvider.Compare(candidate.X, start.X) * xsign : 0;
-                int cy = ysign != 0 ? yDataProvider.Compare(candidate.Y, start.Y) * ysign : 0;
-
-                if (cx >= 0 || cy >= 0)
+                if ((xsign != 0 && xDataProvider.Compare(candidate.X, start.X) * xsign >= 0) ||
+                    (ysign != 0 && yDataProvider.Compare(candidate.Y, start.Y) * ysign >= 0))
                 {
                     h = i - 1;
                 }
@@ -281,10 +279,8 @@ namespace OxyPlot.Axes.ComposableAxis
                     }
                 }
 
-                int cx = xsign != 0 ? xDataProvider.Compare(candidate.X, end.X) * xsign : 0;
-                int cy = ysign != 0 ? yDataProvider.Compare(candidate.Y, end.Y) * ysign : 0;
-
-                if (cx <= 0 || cy <= 0)
+                if ((xsign != 0 && xDataProvider.Compare(candidate.X, end.X) * xsign <= 0) ||
+                    (ysign != 0 && yDataProvider.Compare(candidate.Y, end.Y) * ysign <= 0))
                 {
                     l = m + 1;
                 }
