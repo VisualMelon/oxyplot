@@ -16,7 +16,7 @@ namespace OxyPlot
     /// Represents a point in the data space.
     /// </summary>
     /// <remarks><see cref="DataPoint" />s are transformed to <see cref="ScreenPoint" />s.</remarks>
-    public struct DataPoint : ICodeGenerating, IEquatable<DataPoint>
+    public readonly struct DataPoint : ICodeGenerating, IEquatable<DataPoint>
     {
         /// <summary>
         /// The undefined.

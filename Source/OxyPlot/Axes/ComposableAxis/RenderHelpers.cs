@@ -333,6 +333,18 @@ namespace OxyPlot.Axes.ComposableAxis
             where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
             where XYTransformation : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
         {
+            // NOTE NOTE: this is barely faster than the equivalent in LineSeries, and it tooks 3 careful pieces of inlining to achieve it:
+            //  - inlined IXYAxisTransformation.WithinBounds below
+            //  - inlined IXYAxisTransformation.Transform below
+            //  - inlined ViewInfo.Transform in AxisScreenTransformation.Transform
+            // This inlining helps to cut down on method calls, which avoids the method call overhead
+            // (even though they should all be static calls, a calling a method which calls another method means lots of stack work we want to avoid)
+            // Without this inlining, this takes ~57ms/frame for 1Million Spiral example
+            // With the inlining, this takes ~32ms/frame for 1Million Spiral example (~20ns/sample in this method)
+            // The LineSeries implementation takes ~33ms/frame for equivalent 1Million Spiral example, but doesn't perform the bounds checks (reduces rendering overhead when cheap) or discontenuity checks (important feature for new axes)
+
+            // TODO: revise the IXYAxisTransformation interface, since we are currently bypassing everything except `Arrange` (like Orient in classic LineSeries) at the moment
+
             // Need to:
             //  - reject invalid points, forming broken line segments as necessary
             //  - reject points outside the axis bounds
@@ -352,8 +364,11 @@ namespace OxyPlot.Axes.ComposableAxis
                 return false;
             }
 
-            var currentSampleWithinClipBounds = transformation.WithinClipBounds(currentXYSample);
-            var currentPoint = transformation.Transform(currentXYSample);
+            // both inlined for performance reasons
+            var currentSampleWithinClipBounds = transformation.XTransformation.WithinClipBounds(currentXYSample.X)
+                && transformation.YTransformation.WithinClipBounds(currentXYSample.Y);
+            var currentPoint = transformation.Arrange(transformation.XTransformation.Transform(currentXYSample.X),
+                transformation.YTransformation.Transform(currentXYSample.Y));
 
             // Handle broken line segment if exists
             // Requires that there is a previous segment, and someone is within the clip bounds
@@ -384,8 +399,13 @@ namespace OxyPlot.Axes.ComposableAxis
                     break;
                 }
 
-                currentSampleWithinClipBounds = transformation.WithinClipBounds(currentXYSample);
-                currentPoint = transformation.Transform(currentXYSample);
+                // inlined for performance reasons
+                currentSampleWithinClipBounds = transformation.XTransformation.WithinClipBounds(currentXYSample.X)
+                    && transformation.YTransformation.WithinClipBounds(currentXYSample.Y);
+                currentPoint = transformation.Arrange(transformation.XTransformation.Transform(currentXYSample.X),
+                    transformation.YTransformation.Transform(currentXYSample.Y));
+                // original: currentSampleWithinClipBounds = transformation.WithinClipBounds(currentXYSample);
+                // original: currentPoint = transformation.Transform(currentXYSample);
 
                 if (haveLast)
                 {

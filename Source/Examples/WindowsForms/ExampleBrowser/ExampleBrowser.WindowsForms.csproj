@@ -4,6 +4,10 @@
       <UseWindowsForms>true</UseWindowsForms>
     <OutputType>WinExe</OutputType>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
+    <Optimize>false</Optimize>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\OxyPlot.WindowsForms\OxyPlot.WindowsForms.csproj" />
     <ProjectReference Include="..\..\..\OxyPlot\OxyPlot.csproj" />

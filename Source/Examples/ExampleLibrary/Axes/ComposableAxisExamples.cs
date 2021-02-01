@@ -171,13 +171,10 @@ namespace ExampleLibrary
             return plot;
         }
 
-        [Example("Many Points")]
-        public static PlotModel ManyPoints()
+        [Example("LineSeries, 1M points")]
+        public static PlotModel LineSeries1M()
         {
-            var plot = new PlotModel()
-            {
-                Subtitle = "10^8 points",
-            };
+            var plot = new PlotModel { Title = "LineSeries, 1M points" };
 
             var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
             {
@@ -188,11 +185,11 @@ namespace ExampleLibrary
             var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
             xaxis.Bands.Add(xticks);
             plot.Axes.Add(xaxis);
-            
+
             var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
             {
                 Position = AxisPosition.Left,
-                Title = "X",
+                Title = "Y",
             };
 
             var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
@@ -200,13 +197,21 @@ namespace ExampleLibrary
             plot.Axes.Add(yaxis);
 
             var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default);
-            for (var x = 1.0; x <= 1000; x += 0.001)
-            {
-                lines.Samples.Add(new DataPoint(x, Math.Sin(x)));
-            }
+
+            AddPoints(lines.Samples, 1000000);
+
             plot.Series.Add(lines);
 
             return plot;
+        }
+
+        private static void AddPoints(ICollection<DataPoint> points, int n)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                double x = Math.PI * 10 * i / (n - 1);
+                points.Add(new DataPoint(x * Math.Cos(x), x * Math.Sin(x)));
+            }
         }
 
         [Example("Axis Margins, Data Margins, and Padding, Asymmetrical")]

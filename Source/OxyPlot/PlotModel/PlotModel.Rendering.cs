@@ -25,6 +25,11 @@ namespace OxyPlot
     public partial class PlotModel
     {
         /// <summary>
+        /// Gets or sets a value determining whether the render time should be printed on each frame.
+        /// </summary>
+        public bool ShowRenderTime { get; set; } = true;
+
+        /// <summary>
         /// Renders the plot with the specified rendering context within the given rectangle.
         /// </summary>
         /// <param name="rc">The rendering context.</param>
@@ -41,6 +46,9 @@ namespace OxyPlot
         /// <param name="rect">The plot bounds.</param>
         protected virtual void RenderOverride(IRenderContext rc, OxyRect rect)
         {
+            var sw = new System.Diagnostics.Stopwatch();
+            sw.Restart();
+
             lock (this.SyncRoot)
             {
                 var initialClipCount = rc.ClipCount;
@@ -117,6 +125,12 @@ namespace OxyPlot
                     if (rc.ClipCount != initialClipCount + 1)
                     {
                         throw new InvalidOperationException("Unbalanced calls to IRenderContext.PushClip were made during rendering.");
+                    }
+
+                    if (ShowRenderTime)
+                    {
+                        rc.DrawText(new ScreenPoint(0, 0), sw.ElapsedMilliseconds + "ms", OxyColors.White);
+                        rc.DrawText(new ScreenPoint(1, 1), sw.ElapsedMilliseconds + "ms", OxyColors.Black);
                     }
                 }
                 catch (Exception exception)

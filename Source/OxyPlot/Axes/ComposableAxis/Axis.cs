@@ -1350,10 +1350,6 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             if (pass == AxisRenderPass.Pass0)
             {
-                // TODO: we want to abstract out rendering, just like ticks and all that... for now lets draw some big rectangles to show we know what we're doing
-                rc.DrawRectangle(PlotBounds.Deflate(new OxyThickness(1)), OxyColors.Red, new OxyThickness(1), EdgeRenderingMode.Automatic);
-                rc.DrawRectangle(new OxyRect(ScreenMin, ScreenMax).Deflate(new OxyThickness(2)), OxyColors.Blue, new OxyThickness(1), EdgeRenderingMode.Automatic);
-
                 LayoutBands();
                 RenderBands(rc);
             }

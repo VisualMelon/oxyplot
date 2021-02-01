@@ -7,7 +7,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// Providers method to interact with <see cref="System.Double"/>.
     /// </summary>
-    public struct DoubleProvider : IDataProvider<double>
+    public readonly struct DoubleProvider : IDataProvider<double>
     {
         /// <inheritdoc/>
         public bool IsDiscrete => false;
@@ -52,7 +52,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// A linear data transformation over <see cref="System.Double"/>.
     /// </summary>
-    public struct Linear : IDataTransformation<double, DoubleProvider>
+    public readonly struct Linear : IDataTransformation<double, DoubleProvider>
     {
         /// <inheritdoc/>
         public bool IsNonDiscontinuous => true;
@@ -88,7 +88,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// A logarithmic data projection over <see cref="System.Double"/>.
     /// </summary>
-    public struct Logarithmic : IDataTransformation<double, DoubleProvider>
+    public readonly struct Logarithmic : IDataTransformation<double, DoubleProvider>
     {
         /// <inheritdoc/>
         public bool IsNonDiscontinuous => false;
@@ -131,7 +131,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// This needs a better name
     /// </summary>
-    public struct ViewInfo
+    public readonly struct ViewInfo
     {
         /// <summary>
         /// Initialises a <see cref="ViewInfo"/>.
@@ -145,14 +145,14 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <summary>
-        /// Gets the Screen space offset, that is, the Screen space value to which the Interaction space zero maps.
+        /// The Screen space offset, that is, the Screen space value to which the Interaction space zero maps.
         /// </summary>
-        public ScreenReal ScreenOffset { get; }
+        public readonly ScreenReal ScreenOffset;
 
         /// <summary>
-        /// Gets the Screen space offset, that is, the scaling between Screen space and Interaction space.
+        /// The Screen space offset, that is, the scaling between Screen space and Interaction space.
         /// </summary>
-        public double ScreenScale { get; }
+        public readonly double ScreenScale;
 
         /// <summary>
         /// Transforms a value in Interaction space to Screen space.
@@ -201,7 +201,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="TData"></typeparam>
     /// <typeparam name="TDataProvider"></typeparam>
     /// <typeparam name="TDataTransformation"></typeparam>
-    public struct AxisScreenTransformation<TData, TDataProvider, TDataTransformation> : IAxisScreenTransformation<TData, TDataProvider>
+    public readonly struct AxisScreenTransformation<TData, TDataProvider, TDataTransformation> : IAxisScreenTransformation<TData, TDataProvider>
         where TDataProvider : IDataProvider<TData>
         where TDataTransformation : IDataTransformation<TData, TDataProvider>
     {
@@ -228,7 +228,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// Gets the <see cref="ViewInfo"/>.
         /// </summary>
-        private ViewInfo ViewInfo { get; }
+        private readonly ViewInfo ViewInfo;
 
         /// <inheritdoc/>
         public TData ClipMinimum { get; }
@@ -266,14 +266,16 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public ScreenReal Transform(TData data)
         {
-            return ViewInfo.Transform(DataTransformation.Transform(data));
+            // inlined for perf
+            return new ScreenReal(ViewInfo.ScreenOffset.Value + DataTransformation.Transform(data).Value * ViewInfo.ScreenScale);
+            // original: return ViewInfo.Transform(DataTransformation.Transform(data));
         }
     }
 
     /// <summary>
     /// Provides <see cref="System.Double"/> as option when <see cref="double.NaN"/>.
     /// </summary>
-    public struct DoubleAsNaNOptional : IOptionalProvider<double, double>
+    public readonly struct DoubleAsNaNOptional : IOptionalProvider<double, double>
     {
         /// <inheritdoc/>
         public bool HasValue(double optional)
@@ -571,7 +573,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="YDataProvider"></typeparam>
     /// <typeparam name="XAxisTransformation"></typeparam>
     /// <typeparam name="YAxisTransformation"></typeparam>
-    public struct HorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
+    public readonly struct HorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
         where XDataProvider : IDataProvider<XData>
         where YDataProvider : IDataProvider<YData>
         where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
@@ -584,36 +586,60 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="yTransformation"></param>
         public HorizontalVertialXYTransformation(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
         {
-            XTransformation = xTransformation;
-            YTransformation = yTransformation;
+            _XTransformation = xTransformation;
+            _YTransformation = yTransformation;
         }
 
         /// <summary>
         /// The x transformation.
         /// </summary>
-        public XAxisTransformation XTransformation { get; }
+        private readonly XAxisTransformation _XTransformation;
 
         /// <summary>
-        /// The y transformation.
+        /// Gets the x transformation.
         /// </summary>
-        public YAxisTransformation YTransformation { get; }
+        public XAxisTransformation XTransformation => _XTransformation;
+
+        /// <summary>
+        /// The x transformation.
+        /// </summary>
+        private readonly YAxisTransformation _YTransformation;
+
+        /// <summary>
+        /// Gets the x transformation.
+        /// </summary>
+        public YAxisTransformation YTransformation => _YTransformation;
 
         /// <inheritdoc/>
         public DataSample<XData, YData> InverseTransform(ScreenPoint screenPoint)
         {
-            return new DataSample<XData, YData>(XTransformation.InverseTransform(new ScreenReal(screenPoint.X)), YTransformation.InverseTransform(new ScreenReal(screenPoint.Y)));
+            InverseArrange(screenPoint, out var x, out var y);
+            return new DataSample<XData, YData>(_XTransformation.InverseTransform(x), _YTransformation.InverseTransform(y));
         }
 
         /// <inheritdoc/>
         public ScreenPoint Transform(DataSample<XData, YData> sample)
         {
-            return new ScreenPoint(XTransformation.Transform(sample.X).Value, YTransformation.Transform(sample.Y).Value);
+            return Arrange(_XTransformation.Transform(sample.X), _YTransformation.Transform(sample.Y));
         }
 
         /// <inheritdoc/>
         public bool WithinClipBounds(DataSample<XData, YData> sample)
         {
-            return XTransformation.WithinClipBounds(sample.X) && YTransformation.WithinClipBounds(sample.Y);
+            return _XTransformation.WithinClipBounds(sample.X) && _YTransformation.WithinClipBounds(sample.Y);
+        }
+
+        /// <inheritdoc/>
+        public void InverseArrange(ScreenPoint point, out ScreenReal x, out ScreenReal y)
+        {
+            x = new ScreenReal(point.X);
+            y = new ScreenReal(point.Y);
+        }
+
+        /// <inheritdoc/>
+        public ScreenPoint Arrange(ScreenReal x, ScreenReal y)
+        {
+            return new ScreenPoint(x.Value, y.Value);
         }
     }
 
@@ -626,7 +652,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="YDataProvider"></typeparam>
     /// <typeparam name="XAxisTransformation"></typeparam>
     /// <typeparam name="YAxisTransformation"></typeparam>
-    public struct TransposedHorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
+    public readonly struct TransposedHorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
         where XDataProvider : IDataProvider<XData>
         where YDataProvider : IDataProvider<YData>
         where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
@@ -639,36 +665,60 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="yTransformation"></param>
         public TransposedHorizontalVertialXYTransformation(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
         {
-            XTransformation = xTransformation;
-            YTransformation = yTransformation;
+            _XTransformation = xTransformation;
+            _YTransformation = yTransformation;
         }
 
         /// <summary>
         /// The x transformation.
         /// </summary>
-        public XAxisTransformation XTransformation { get; }
+        private readonly XAxisTransformation _XTransformation;
 
         /// <summary>
-        /// The y transformation.
+        /// Gets the x transformation.
         /// </summary>
-        public YAxisTransformation YTransformation { get; }
+        public XAxisTransformation XTransformation => _XTransformation;
+
+        /// <summary>
+        /// The x transformation.
+        /// </summary>
+        private readonly YAxisTransformation _YTransformation;
+
+        /// <summary>
+        /// Gets the x transformation.
+        /// </summary>
+        public YAxisTransformation YTransformation => _YTransformation;
 
         /// <inheritdoc/>
         public DataSample<XData, YData> InverseTransform(ScreenPoint screenPoint)
         {
-            return new DataSample<XData, YData>(XTransformation.InverseTransform(new ScreenReal(screenPoint.Y)), YTransformation.InverseTransform(new ScreenReal(screenPoint.X)));
+            InverseArrange(screenPoint, out var x, out var y);
+            return new DataSample<XData, YData>(_XTransformation.InverseTransform(x), _YTransformation.InverseTransform(y));
         }
 
         /// <inheritdoc/>
         public ScreenPoint Transform(DataSample<XData, YData> sample)
         {
-            return new ScreenPoint(YTransformation.Transform(sample.Y).Value, XTransformation.Transform(sample.X).Value);
+            return Arrange(_XTransformation.Transform(sample.X), _YTransformation.Transform(sample.Y));
         }
 
         /// <inheritdoc/>
         public bool WithinClipBounds(DataSample<XData, YData> sample)
         {
-            return XTransformation.WithinClipBounds(sample.X) && YTransformation.WithinClipBounds(sample.Y);
+            return _XTransformation.WithinClipBounds(sample.X) && _YTransformation.WithinClipBounds(sample.Y);
+        }
+
+        /// <inheritdoc/>
+        public void InverseArrange(ScreenPoint point, out ScreenReal x, out ScreenReal y)
+        {
+            x = new ScreenReal(point.Y);
+            y = new ScreenReal(point.X);
+        }
+
+        /// <inheritdoc/>
+        public ScreenPoint Arrange(ScreenReal x, ScreenReal y)
+        {
+            return new ScreenPoint(y.Value, x.Value);
         }
     }
 
@@ -1048,7 +1098,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// Providers a mapping from <see cref="DataPoint"/> to a <see cref="DataSample{XData, YData}"/> of doubles.
     /// </summary>
-    public struct DataPointXYSampleProvider : IXYSampleProvider<DataPoint, double, double>
+    public readonly struct DataPointXYSampleProvider : IXYSampleProvider<DataPoint, double, double>
     {
         /// <inheritdoc/>
         public bool IsInvalid(DataPoint sample)

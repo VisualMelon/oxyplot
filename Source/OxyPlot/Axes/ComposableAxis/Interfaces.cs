@@ -207,6 +207,16 @@ namespace OxyPlot.Axes.ComposableAxis
         /// The y transformation.
         /// </summary>
         YAxisTransformation YTransformation { get; }
+
+        /// <summary>
+        /// Arranges the screen coordinate into a screen point.
+        /// </summary>
+        ScreenPoint Arrange(ScreenReal x, ScreenReal y);
+
+        /// <summary>
+        /// Extracts screen coordaintes from a screen point.
+        /// </summary>
+        void InverseArrange(ScreenPoint point, out ScreenReal x, out ScreenReal y);
     }
 
     /// <summary>

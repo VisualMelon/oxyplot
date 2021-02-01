@@ -557,8 +557,6 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public override void Render(IRenderContext renderContext, BandLocation location)
         {
-            renderContext.DrawMarker(location.Reference, MarkerType.Circle, null, 4, OxyColors.Transparent, OxyColors.Green, 1, EdgeRenderingMode.Automatic);
-
             var titleTextSize = renderContext.MeasureText(Axis.ActualTitle, Axis.ActualTitleFont, Axis.ActualTitleFontSize, Axis.ActualTitleFontWeight);
 
             if (titleTextSize.Height > 0)
@@ -571,7 +569,6 @@ namespace OxyPlot.Axes.ComposableAxis
                 if (rot < -90 || rot > 90)
                     rot = 0;
                 
-                renderContext.DrawMarker(offset, MarkerType.Circle, null, 4, OxyColors.Transparent, OxyColors.Green, 1, EdgeRenderingMode.Automatic);
                 renderContext.DrawText(offset, Axis.ActualTitle, Axis.ActualTitleColor, Axis.ActualTitleFont, Axis.ActualTitleFontSize, Axis.ActualTitleFontWeight, rot, HorizontalAlignment.Center, VerticalAlignment.Middle, null);
             }
         }
@@ -644,7 +641,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// </summary>
     /// <typeparam name="XData"></typeparam>
     /// <typeparam name="YData"></typeparam>
-    public struct DataSample<XData, YData>
+    public readonly struct DataSample<XData, YData>
     {
         /// <summary>
         /// Creates a sample from values.
@@ -658,14 +655,14 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <summary>
-        /// Gets the X position.
+        /// The X position.
         /// </summary>
-        public XData X { get; }
+        public readonly XData X;
 
         /// <summary>
-        /// Gets the Y position.
+        /// The Y position.
         /// </summary>
-        public YData Y { get; }
+        public readonly YData Y;
     }
 
     /// <summary>
@@ -674,7 +671,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="XData"></typeparam>
     /// <typeparam name="YData"></typeparam>
     /// <typeparam name="VData"></typeparam>
-    public struct DataSample<XData, YData, VData>
+    public readonly struct DataSample<XData, YData, VData>
     {
         /// <summary>
         /// Creates a sample from values.
@@ -708,7 +705,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// Represents a value in Interaction space.
     /// </summary>
-    public struct InteractionReal : IComparable<InteractionReal>
+    public readonly struct InteractionReal : IComparable<InteractionReal>
     {
         /// <summary>
         /// Initialises a <see cref="InteractionReal"/> with the given value.
@@ -716,8 +713,8 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="value"></param>
         public InteractionReal(double value)
         {
-            if (double.IsNaN(value) || double.IsInfinity(value))
-                throw new ArgumentOutOfRangeException(nameof(value), "Value must be finite");
+            // it is critical that we don't do any work in the release build, because this whole struct should be erased by the JIT
+            //System.Diagnostics.Debug.Assert(!(double.IsNaN(value) || double.IsInfinity(value)), "Value must be finite");
 
             Value = value;
         }
@@ -857,7 +854,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// Represents a value in Screen space.
     /// </summary>
-    public struct ScreenReal : IComparable<ScreenReal>
+    public readonly struct ScreenReal : IComparable<ScreenReal>
     {
         /// <summary>
         /// Initialises a <see cref="ScreenReal"/> with the given value.
@@ -865,8 +862,8 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="value"></param>
         public ScreenReal(double value)
         {
-            if (double.IsNaN(value) || double.IsInfinity(value))
-                throw new ArgumentOutOfRangeException(nameof(value), "Value must be finite");
+            // it is critical that we don't do any work in the release build, because this whole struct should be erased by the JIT
+            //System.Diagnostics.Debug.Assert(!(double.IsNaN(value) || double.IsInfinity(value)), "Value must be finite");
 
             Value = value;
         }
