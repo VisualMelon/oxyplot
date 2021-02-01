@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+using OxyPlot.Axes.ComposableAxis;
+
 namespace OxyPlot
 {
     /// <summary>
@@ -49,8 +51,6 @@ namespace OxyPlot
                 return;
             }
 
-            var current = this.InverseTransform(e.Position.X, e.Position.Y);
-
             var scale = this.Step;
             if (this.FineControl)
             {
@@ -68,12 +68,12 @@ namespace OxyPlot
 
             if (this.XAxis != null)
             {
-                this.XAxis.ZoomAt(scale, current.X);
+                this.XAxis.ZoomAt(scale, new ScreenReal(e.Position.X));
             }
 
             if (this.YAxis != null)
             {
-                this.YAxis.ZoomAt(scale, current.Y);
+                this.YAxis.ZoomAt(scale, new ScreenReal(e.Position.Y));
             }
 
             this.PlotView.InvalidatePlot(false);

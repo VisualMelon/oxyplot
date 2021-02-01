@@ -38,34 +38,13 @@ namespace OxyPlot
         /// Gets or sets the X axis.
         /// </summary>
         /// <value>The X axis.</value>
-        protected Axis XAxis { get; set; }
+        protected AxisBase XAxis { get; set; }
 
         /// <summary>
         /// Gets or sets the Y axis.
         /// </summary>
         /// <value>The Y axis.</value>
-        protected Axis YAxis { get; set; }
-
-        /// <summary>
-        /// Transforms a point from screen coordinates to data coordinates.
-        /// </summary>
-        /// <param name="x">The x coordinate.</param>
-        /// <param name="y">The y coordinate.</param>
-        /// <returns>A data point.</returns>
-        protected DataPoint InverseTransform(double x, double y)
-        {
-            if (this.XAxis != null)
-            {
-                return this.XAxis.InverseTransform(x, y, this.YAxis);
-            }
-
-            if (this.YAxis != null)
-            {
-                return new DataPoint(0, this.YAxis.InverseTransform(y));
-            }
-
-            return new DataPoint();
-        }
+        protected AxisBase YAxis { get; set; }
 
         /// <summary>
         /// Assigns the axes to this manipulator by the specified position.
@@ -85,8 +64,8 @@ namespace OxyPlot
                 yaxis = null;
             }
 
-            this.XAxis = (Axis) xaxis;
-            this.YAxis = (Axis) yaxis;
+            this.XAxis = xaxis;
+            this.YAxis = yaxis;
         }
     }
 }

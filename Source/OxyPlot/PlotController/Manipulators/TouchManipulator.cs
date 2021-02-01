@@ -79,16 +79,14 @@ namespace OxyPlot
                 this.YAxis.Pan(previousPosition, newPosition);
             }
 
-            var current = this.InverseTransform(newPosition.X, newPosition.Y);
-
             if (this.XAxis != null)
             {
-                this.XAxis.ZoomAt(e.DeltaScale.X, current.X);
+                this.XAxis.ZoomAt(e.DeltaScale.X, new Axes.ComposableAxis.ScreenReal(newPosition.X));
             }
 
             if (this.YAxis != null)
             {
-                this.YAxis.ZoomAt(e.DeltaScale.Y, current.Y);
+                this.YAxis.ZoomAt(e.DeltaScale.Y, new Axes.ComposableAxis.ScreenReal(newPosition.y));
             }
 
             this.PlotView.InvalidatePlot(false);

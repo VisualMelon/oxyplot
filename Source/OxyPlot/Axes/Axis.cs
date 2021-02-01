@@ -271,11 +271,6 @@ namespace OxyPlot.Axes
         public double IntervalLength { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether panning is enabled. The default value is <c>true</c>.
-        /// </summary>
-        public bool IsPanEnabled { get; set; }
-
-        /// <summary>
         /// Gets a value indicating whether this axis is reversed. It is reversed if <see cref="ComposableAxis.AxisBase.StartPosition" /> &gt; <see cref="ComposableAxis.AxisBase.EndPosition" />.
         /// </summary>
         public bool IsReversed
@@ -285,11 +280,6 @@ namespace OxyPlot.Axes
                 return this.StartPosition > this.EndPosition;
             }
         }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether zooming is enabled. The default value is <c>true</c>.
-        /// </summary>
-        public bool IsZoomEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets the formatting function for the labels. The default value is <c>null</c>.
@@ -954,6 +944,23 @@ namespace OxyPlot.Axes
             var deltaMaximum = this.ActualMaximum - oldMaximum;
 
             this.OnAxisChanged(new AxisChangedEventArgs(AxisChangeTypes.Zoom, deltaMinimum, deltaMaximum));
+        }
+
+        /// <inheritdoc/>
+        public override void Zoom(ScreenReal s0, ScreenReal s1)
+        {
+            Zoom(this.InverseTransform(s0.Value), this.InverseTransform(s1.Value));
+        }
+
+        /// <summary>
+        /// Zooms by the given factor, maintaining the given screen-space position.
+        /// </summary>
+        /// <param name="factor"></param>
+        /// <param name="position"></param>
+        public override void ZoomAt(double factor, ScreenReal position)
+        {
+            var x = this.InverseTransform(position.Value);
+            ZoomAt(factor, x);
         }
 
         /// <summary>

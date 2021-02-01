@@ -77,6 +77,9 @@ namespace ExampleLibrary
                 Key = "X",
             };
 
+            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            xaxis.Bands.Add(xticks);
+
             plot.Axes.Add(xaxis);
 
             var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Logarithmic, double, DoubleAsNaNOptional>(default, default)
@@ -87,6 +90,9 @@ namespace ExampleLibrary
                 Title = "Y Axis (Log)",
                 Key = "Y",
             };
+
+            var yticks = new TickBand<double>(new LogarithmicDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            yaxis.Bands.Add(yticks);
 
             plot.Axes.Add(yaxis);
 
@@ -148,7 +154,10 @@ namespace ExampleLibrary
         {
             var plot = LogarithmicXY();
 
-            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default);
+            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default)
+            {
+                Title = "y = x^2",
+            };
 
             for (var x = 1.0; x <= 10; x += 0.01)
             {
@@ -157,7 +166,108 @@ namespace ExampleLibrary
 
             plot.Series.Add(lines);
 
+            plot.Legends.Add(new Legend());
+
             return plot;
+        }
+
+        [Example("Axis Margins, Data Margins, and Padding, Asymmetrical")]
+        public static PlotModel MarginsAndPaddingAsymmetrical()
+        {
+            var plot = new PlotModel
+            {
+                Title = "Try resizing the plot",
+                Subtitle = "ClipMinimum/Maximum are Blue\nActualMinimum/Maximum are Red\nDataMinimum/Maximum are Green"
+            };
+
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
+            {
+                Position = AxisPosition.Bottom,
+                MinimumPadding = 0.1,
+                MaximumPadding = 0.05,
+                MinimumDataMargin = new ScreenReal(20),
+                MaximumDataMargin = new ScreenReal(10),
+                MinimumMargin = new ScreenReal(30),
+                MaximumMargin = new ScreenReal(15),
+                //MajorGridlineStyle = LineStyle.Solid,  // these are not yet implemented
+                //MinorGridlineStyle = LineStyle.Dash,
+                //CropGridlines = true,
+            };
+
+            plot.Axes.Add(xaxis);
+
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
+            {
+                Position = AxisPosition.Left,
+                MinimumPadding = 0.2,
+                MaximumPadding = 0.1,
+                MinimumDataMargin = new ScreenReal(40),
+                MaximumDataMargin = new ScreenReal(20),
+                MinimumMargin = new ScreenReal(60),
+                MaximumMargin = new ScreenReal(30),
+                //MajorGridlineStyle = LineStyle.Solid,
+                //MinorGridlineStyle = LineStyle.Dash,
+                //CropGridlines = true,
+            };
+
+            plot.Axes.Add(yaxis);
+
+            var rectangle = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default);
+            rectangle.Color = OxyColors.Green;
+            rectangle.Samples.Add(new DataPoint(-5.0, 0.0));
+            rectangle.Samples.Add(new DataPoint(-5.0, 20.0));
+            rectangle.Samples.Add(new DataPoint(25.0, 20.0));
+            rectangle.Samples.Add(new DataPoint(25.0, 0.0));
+            rectangle.Samples.Add(new DataPoint(-5.0, 0.0));
+            plot.Series.Add(rectangle);
+
+            AddAxisMarginAnnotations(plot);
+
+            return plot;
+        }
+
+        private static void AddAxisMarginAnnotations(PlotModel plot)
+        {
+            plot.Annotations.Add(new RenderingCapabilities.DelegateAnnotation(rc =>
+            {
+                foreach (var axis in plot.Axes)
+                {
+                    if (axis.IsHorizontal())
+                    {
+                        var h = (IAxis<double>)axis;
+                        var t = h.GetTransformation();
+
+                        rc.DrawLine(t.Transform(h.ClipMinimum).Value, 0.0, t.Transform(h.ClipMinimum).Value, plot.Height, new OxyPen(OxyColors.Blue, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
+                        rc.DrawLine(t.Transform(h.ClipMaximum).Value, 0.0, t.Transform(h.ClipMaximum).Value, plot.Height, new OxyPen(OxyColors.Blue, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
+
+                        rc.DrawLine(t.Transform(h.ActualMinimum).Value, 0.0, t.Transform(h.ActualMinimum).Value, plot.Height, new OxyPen(OxyColors.Red, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
+                        rc.DrawLine(t.Transform(h.ActualMaximum).Value, 0.0, t.Transform(h.ActualMaximum).Value, plot.Height, new OxyPen(OxyColors.Red, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
+
+                        if (h.TryGetDataRange(out var dataMin, out var dataMax))
+                        {
+                            rc.DrawLine(t.Transform(dataMin).Value, 0.0, t.Transform(dataMin).Value, plot.Height, new OxyPen(OxyColors.Green, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
+                            rc.DrawLine(t.Transform(dataMax).Value, 0.0, t.Transform(dataMax).Value, plot.Height, new OxyPen(OxyColors.Green, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
+                        }
+                    }
+                    else
+                    {
+                        var v = (IAxis<double>)axis;
+                        var t = v.GetTransformation();
+
+                        rc.DrawLine(0.0, t.Transform(v.ClipMinimum).Value, plot.Width, t.Transform(v.ClipMinimum).Value, new OxyPen(OxyColors.Blue, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
+                        rc.DrawLine(0.0, t.Transform(v.ClipMaximum).Value, plot.Width, t.Transform(v.ClipMaximum).Value, new OxyPen(OxyColors.Blue, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
+
+                        rc.DrawLine(0.0, t.Transform(v.ActualMinimum).Value, plot.Width, t.Transform(v.ActualMinimum).Value, new OxyPen(OxyColors.Red, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
+                        rc.DrawLine(0.0, t.Transform(v.ActualMaximum).Value, plot.Width, t.Transform(v.ActualMaximum).Value, new OxyPen(OxyColors.Red, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
+
+                        if (v.TryGetDataRange(out var dataMin, out var dataMax))
+                        {
+                            rc.DrawLine(0.0, t.Transform(dataMin).Value, plot.Width, t.Transform(dataMin).Value, new OxyPen(OxyColors.Green, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
+                            rc.DrawLine(0.0, t.Transform(dataMax).Value, plot.Width, t.Transform(dataMax).Value, new OxyPen(OxyColors.Green, 1, LineStyle.Dot), EdgeRenderingMode.Automatic);
+                        }
+                    }
+                }
+            }));
         }
     }
 }

@@ -191,7 +191,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <returns></returns>
         public InteractionReal InverseScale(ScreenReal s)
         {
-            return new InteractionReal(s.Value * ScreenScale);
+            return new InteractionReal(s.Value / ScreenScale);
         }
     }
 
@@ -782,7 +782,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 get
                 {
                     if (_result == null)
-                        XAxis.Consume(this);
+                        XAxis.ConsumeTransformation(this);
                     return _result;
                 }
             }
@@ -792,7 +792,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 where XAxisScreenTransformation : IAxisScreenTransformation<XData, XDataProvider>
             {
                 var yconsumer = new YConsumer<XDataProvider, XAxisScreenTransformation>(transformation);
-                YAxis.Consume(yconsumer);
+                YAxis.ConsumeTransformation(yconsumer);
                 _result = yconsumer.Result;
             }
         }
@@ -926,7 +926,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 get
                 {
                     if (_result == null)
-                        XAxis.Consume(this);
+                        XAxis.ConsumeTransformation(this);
                     return _result;
                 }
             }
@@ -936,7 +936,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 where XAxisScreenTransformation : IAxisScreenTransformation<XData, XDataProvider>
             {
                 var yconsumer = new YConsumer<XDataProvider, XAxisScreenTransformation>(transformation, ZAxis);
-                YAxis.Consume(yconsumer);
+                YAxis.ConsumeTransformation(yconsumer);
                 _result = yconsumer.Result;
             }
         }
@@ -961,7 +961,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 where YAxisScreenTransformation : IAxisScreenTransformation<YData, YDataProvider>
             {
                 var zconsumer = new ZConsumer<XDataProvider, YDataProvider, XAxisTransformation, YAxisScreenTransformation>(XTransformation, transformation);
-                ZAxis.Consume(zconsumer);
+                ZAxis.ConsumeTransformation(zconsumer);
                 Result = zconsumer.Result;
             }
         }
@@ -1304,7 +1304,6 @@ namespace OxyPlot.Axes.ComposableAxis
 
             foreach (var tick in ticks)
             {
-
                 if (!string.IsNullOrWhiteSpace(tick.Label))
                 {
                     var s = this.Transform(tick.Value);
@@ -1373,7 +1372,7 @@ namespace OxyPlot.Axes.ComposableAxis
             };
 
             var generator = new Generator(axis.Position, new ScreenReal(s));
-            axis.Consume(generator);
+            axis.ConsumeTransformation(generator);
             return generator.Result;
         }
     }

@@ -9,6 +9,7 @@
 
 namespace OxyPlot
 {
+    using OxyPlot.Axes.ComposableAxis;
     using System;
 
     /// <summary>
@@ -52,17 +53,14 @@ namespace OxyPlot
             
             if (this.zoomRectangle.Width > 10 && this.zoomRectangle.Height > 10)
             {
-                var p0 = this.InverseTransform(this.zoomRectangle.Left, this.zoomRectangle.Top);
-                var p1 = this.InverseTransform(this.zoomRectangle.Right, this.zoomRectangle.Bottom);
-
                 if (this.XAxis != null)
                 {
-                    this.XAxis.Zoom(p0.X, p1.X);
+                    this.XAxis.Zoom(new ScreenReal(this.zoomRectangle.Left), new ScreenReal(this.zoomRectangle.Right));
                 }
 
                 if (this.YAxis != null)
                 {
-                    this.YAxis.Zoom(p0.Y, p1.Y);
+                    this.YAxis.Zoom(new ScreenReal(this.zoomRectangle.Top), new ScreenReal(this.zoomRectangle.Bottom));
                 }
 
                 this.PlotView.InvalidatePlot();
