@@ -51,10 +51,10 @@ namespace OxyPlot.Axes.ComposableAxis
                     }
                     else
                     {
-                        minX = x.Min(minX, xySample.X);
-                        maxX = x.Max(maxX, xySample.X);
-                        minY = y.Min(minY, xySample.Y);
-                        maxY = y.Max(maxY, xySample.Y);
+                        minX = DataHelpers.Min(x, minX, xySample.X);
+                        maxX = DataHelpers.Min(x, maxX, xySample.X);
+                        minY = DataHelpers.Min(y, minY, xySample.Y);
+                        maxY = DataHelpers.Min(y, maxY, xySample.Y);
                     }
                 }
             }
@@ -560,7 +560,7 @@ namespace OxyPlot.Axes.ComposableAxis
 
                 bool omitFirst = false;
 
-                while (si < dataSamples.Count)
+                while (si < dataSamples.Count - 1)
                 {
                     // advance
                     var s0 = s1;
@@ -629,6 +629,12 @@ namespace OxyPlot.Axes.ComposableAxis
 
                 // NOTE: this would be more efficient than flip-flopping, but flip-flopping may provide more stable outputs (which is important)
                 //xprinciple = Math.Abs(p1.X - p0.X) >= Math.Abs(p1.Y - p0.Y);
+
+                // check that we aren't trying to interpolate along something that is just about axis aligned
+                if (xprinciple && Math.Abs(p0.X - p1.X) < minSegmentLength)
+                    xprinciple = false;
+                else if (!xprinciple && Math.Abs(p0.Y - p1.Y) < minSegmentLength)
+                    xprinciple = true;
 
                 if (xprinciple)
                 {

@@ -13,31 +13,31 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Finds the maximum of two data values.
         /// </summary>
         /// <typeparam name="TData"></typeparam>
-        /// <typeparam name="TProvider"></typeparam>
-        /// <param name="provider"></param>
+        /// <typeparam name="TComparer"></typeparam>
+        /// <param name="comparer"></param>
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
-        public static TData Max<TData, TProvider>(this TProvider provider, TData a, TData b)
-            where TProvider : IComparer<TData>
+        public static TData Max<TData, TComparer>(TComparer comparer, TData a, TData b)
+            where TComparer : IComparer<TData>
         {
-            return provider.Compare(a, b) >= 0 ? a : b;
+            return comparer.Compare(a, b) >= 0 ? a : b;
         }
 
         /// <summary>
         /// Finds the maximum of two data values.
         /// </summary>
         /// <typeparam name="TData"></typeparam>
-        /// <typeparam name="TProvider"></typeparam>
-        /// <param name="provider"></param>
+        /// <typeparam name="TComparer"></typeparam>
+        /// <param name="comparer"></param>
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
-        public static TData Min<TData, TProvider>(this TProvider provider, TData a, TData b)
-            where TProvider : IComparer<TData>
+        public static TData Min<TData, TComparer>(TComparer comparer, TData a, TData b)
+            where TComparer : IComparer<TData>
         {
             // make sure we return the opposite of Max when they compare equal
-            return provider.Compare(a, b) >= 0 ? b : a;
+            return comparer.Compare(a, b) >= 0 ? b : a;
         }
 
         /// <summary>
@@ -46,14 +46,14 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <typeparam name="TValue"></typeparam>
         /// <typeparam name="TOptional"></typeparam>
         /// <typeparam name="TOptionalProvider"></typeparam>
-        /// <param name="provider"></param>
+        /// <param name="comparer"></param>
         /// <param name="optional"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public static TValue Unpack<TValue, TOptional, TOptionalProvider>(this TOptionalProvider provider, TOptional optional, TValue defaultValue)
+        public static TValue Unpack<TValue, TOptional, TOptionalProvider>(this TOptionalProvider comparer, TOptional optional, TValue defaultValue)
             where TOptionalProvider : IOptionalProvider<TValue, TOptional>
         {
-            return provider.TryGetValue(optional, out var found) ? found : defaultValue;
+            return comparer.TryGetValue(optional, out var found) ? found : defaultValue;
         }
 
         /// <summary>
@@ -86,7 +86,7 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             if (range.TryGetMinMax(out var min, out var max))
             {
-                return new Range<T>(comparer.Min(min, value), comparer.Max(max, value));
+                return new Range<T>(Min(comparer, min, value), Max(comparer, max, value));
             }
             else
             {

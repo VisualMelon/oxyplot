@@ -251,6 +251,87 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Providers method to interact with <see cref="System.DateTime"/>.
+    /// </summary>
+    public readonly struct DateTimeProvider : IDataProvider<DateTime>
+    {
+        /// <inheritdoc/>
+        public bool IsDiscrete => false;
+
+        /// <inheritdoc/>
+        public int Compare(DateTime x, DateTime y)
+        {
+            return x.CompareTo(y);
+        }
+
+        /// <inheritdoc/>
+        public double Deinterpolate(DateTime v0, DateTime v1, DateTime v)
+        {
+            return (v - v0).TotalSeconds / (v1 - v0).TotalSeconds;
+        }
+
+        /// <inheritdoc/>
+        public bool Equals(DateTime x, DateTime y)
+        {
+            return x.Equals(y);
+        }
+
+        /// <inheritdoc/>
+        public int GetHashCode(DateTime obj)
+        {
+            return obj.GetHashCode();
+        }
+
+        /// <inheritdoc/>
+        public bool Includes(DateTime min, DateTime max, DateTime v)
+        {
+            return min <= v && v <= max;
+        }
+
+        /// <inheritdoc/>
+        public DateTime Interpolate(DateTime v0, DateTime v1, double c)
+        {
+            return v0 + TimeSpan.FromSeconds((v1 - v0).TotalSeconds * c); // TODO: this is not good enough
+        }
+    }
+
+    /// <summary>
+    /// A linear data transformation over <see cref="System.DateTime"/>.
+    /// </summary>
+    public readonly struct LinearDateTime : IDataTransformation<DateTime, DateTimeProvider>
+    {
+        /// <inheritdoc/>
+        public bool IsNonDiscontinuous => true;
+
+        /// <inheritdoc/>
+        public bool IsLinear => true;
+
+        /// <inheritdoc/>
+        public bool IsDiscrete => false;
+
+        /// <inheritdoc/>
+        public DateTimeProvider Provider => default;
+
+        /// <inheritdoc/>
+        public DateTime InverseTransform(InteractionReal x)
+        {
+            return DateTimeAxis.ToDateTime(x.Value);
+        }
+
+        /// <inheritdoc/>
+        public InteractionReal Transform(DateTime data)
+        {
+            return new InteractionReal(DateTimeAxis.ToDouble(data));
+        }
+
+        /// <inheritdoc/>
+        public bool IsDiscontinuous(DateTime a, DateTime b)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
     /// This needs a better name
     /// </summary>
     public readonly struct ViewInfo
@@ -431,6 +512,80 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Represents an optional type.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    public readonly struct Option<TData>
+    {
+        private readonly bool _HasValue;
+        private readonly TData Value;
+
+        private Option(TData value)
+        {
+            Value = value;
+            _HasValue = false;
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the option has a value.
+        /// </summary>
+        public bool HasValue => _HasValue;
+
+        /// <summary>
+        /// Tries to get the value associated with this option.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public bool TryGetValue(out TData value)
+        {
+            value = this.Value;
+            return this.HasValue;
+        }
+
+        /// <summary>
+        /// Gets a None option, which has no associated value.
+        /// </summary>
+        public static Option<TData> None => default;
+
+        /// <summary>
+        /// Gets an option with the given value associated.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static Option<TData> Some(TData value)
+        {
+            return new Option<TData>(value);
+        }
+    }
+
+    /// <summary>
+    /// Provides <see cref="System.Double"/> as option when <see cref="double.NaN"/>.
+    /// </summary>
+    public readonly struct Optional<TData> : IOptionalProvider<TData, Option<TData>>
+    {
+        /// <inheritdoc/>
+        public bool HasValue(Option<TData> optional)
+        {
+            return optional.HasValue;
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetValue(Option<TData> optional, out TData value)
+        {
+            return optional.TryGetValue(out value);
+        }
+
+        /// <inheritdoc/>
+        public Option<TData> None => Option<TData>.None;
+
+        /// <inheritdoc/>
+        public Option<TData> Some(TData value)
+        {
+            return Option<TData>.Some(value);
+        }
+    }
+
+    /// <summary>
     /// Provides basic methods to help in X/Y space
     /// </summary>
     public interface IXYHelper<XData, YData>
@@ -482,6 +637,16 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <returns></returns>
         public bool FindWindow<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
+
+        /// <summary>
+        /// Gets the X provider.
+        /// </summary>
+        IDataProvider<XData> XProvider { get; }
+
+        /// <summary>
+        /// Gets the Y provider.
+        /// </summary>
+        IDataProvider<YData> YProvider { get; }
     }
 
     /// <summary>
@@ -525,11 +690,18 @@ namespace OxyPlot.Axes.ComposableAxis
         void TransformSamples(IReadOnlyList<DataSample<XData, YData>> xySamples, IList<ScreenPoint> screenPoints);
 
         /// <summary>
-        /// Transforms a single <see cref="DataSample{XData, YData}"/>
+        /// Transforms a single <see cref="DataSample{XData, YData}"/> to a <see cref="ScreenPoint"/>.
         /// </summary>
         /// <param name="xySample"></param>
         /// <returns></returns>
         ScreenPoint TransformSample(DataSample<XData, YData> xySample);
+
+        /// <summary>
+        /// Transforms a single <see cref="ScreenPoint"/> back to a <see cref="DataSample{XData, YData}"/>.
+        /// </summary>
+        /// <param name="screenPoint"></param>
+        /// <returns></returns>
+        DataSample<XData, YData> InverseTransform(ScreenPoint screenPoint);
 
         /// <summary>
         /// Gets the underlying XTransformation.
@@ -662,32 +834,38 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="yProvider"></param>
         public XYHelper(XDataProvider xProvider, YDataProvider yProvider)
         {
-            XProvider = xProvider;
-            YProvider = yProvider;
+            _XProvider = xProvider;
+            _YProvider = yProvider;
         }
 
-        private XDataProvider XProvider { get; }
-        private YDataProvider YProvider { get; }
+        private readonly XDataProvider _XProvider;
+        private readonly YDataProvider _YProvider;
+
+        /// <inheritdoc/>
+        IDataProvider<XData> IXYHelper<XData, YData>.XProvider => _XProvider;
+
+        /// <inheritdoc/>
+        IDataProvider<YData> IXYHelper<XData, YData>.YProvider => _YProvider;
 
         /// <inheritdoc/>
         public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         {
-            return XYHelpers.TryFindMinMax(sampleProvider, XProvider, YProvider, samples, out minX, out minY, out maxX, out maxY);
+            return XYHelpers.TryFindMinMax(sampleProvider, _XProvider, _YProvider, samples, out minX, out minY, out maxX, out maxY);
         }
 
         /// <inheritdoc/>
         public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         {
-            return XYHelpers.TryFindMinMax(sampleProvider, XProvider, YProvider, samples, out minX, out minY, out maxX, out maxY, out xMonotonicity, out yMonotonicity);
+            return XYHelpers.TryFindMinMax(sampleProvider, _XProvider, _YProvider, samples, out minX, out minY, out maxX, out maxY, out xMonotonicity, out yMonotonicity);
         }
 
         /// <inheritdoc/>
         public bool FindWindow<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         {
-            return XYHelpers.FindWindow(sampleProvider, XProvider, YProvider, samples, start, end, xMonotonicity, yMonotonicity, out startIndex, out endIndex);
+            return XYHelpers.FindWindow(sampleProvider, _XProvider, _YProvider, samples, start, end, xMonotonicity, yMonotonicity, out startIndex, out endIndex);
         }
     }
 
@@ -911,6 +1089,12 @@ namespace OxyPlot.Axes.ComposableAxis
         public ScreenPoint TransformSample(DataSample<XData, YData> sample)
         {
             return XYTransformation.Transform(sample);
+        }
+
+        /// <inheritdoc/>
+        public DataSample<XData, YData> InverseTransform(ScreenPoint screenPoint)
+        {
+            return XYTransformation.InverseTransform(screenPoint);
         }
     }
 
@@ -1230,6 +1414,31 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// Providers a mapping from <see cref="DataPoint"/> to a <see cref="DataSample{XData, YData}"/> of doubles.
     /// </summary>
+    public readonly struct IdentityXYSampleProvider<XData, YData> : IXYSampleProvider<DataSample<XData, YData>, XData, YData>
+    {
+        /// <inheritdoc/>
+        public bool IsInvalid(DataSample<XData, YData> sample)
+        {
+            return false;
+        }
+
+        /// <inheritdoc/>
+        public DataSample<XData, YData> Sample(DataSample<XData, YData> sample)
+        {
+            return sample;
+        }
+
+        /// <inheritdoc/>
+        public bool TrySample(DataSample<XData, YData> sample, out DataSample<XData, YData> result)
+        {
+            result = sample;
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Providers a mapping from <see cref="DataPoint"/> to a <see cref="DataSample{XData, YData}"/> of doubles.
+    /// </summary>
     public readonly struct DataPointXYSampleProvider : IXYSampleProvider<DataPoint, double, double>
     {
         /// <inheritdoc/>
@@ -1441,6 +1650,9 @@ namespace OxyPlot.Axes.ComposableAxis
 
             foreach (var tick in ticks)
             {
+                if (this.AxisScreenTransformation.IsDiscontinuous(tick.Value, tick.Value))
+                    continue;
+
                 var s = this.Transform(tick.Value);
 
                 var s0 = s + v0;

@@ -342,7 +342,120 @@ namespace OxyPlot.Axes.ComposableAxis
 
                 next += candidate;
             }
-            while (next < maximum);
+            while (next <= maximum);
+        }
+    }
+
+    /// <summary>
+    /// A basic Linear tick locator for doubles.
+    /// </summary>
+    public class LinearDateTimeTickLocator : ITickLocator<DateTime>
+    {
+        /// <summary>
+        /// Gets or sets the Formatter.
+        /// </summary>
+        public Func<DateTime, string> Formatter { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Format String. Used if <see cref="Formatter"/> is <c>null</c>. Default is <c>"G5"</c>.
+        /// </summary>
+        public string FormatString { get; set; } = null;
+
+        /// <inheritdoc/>
+        public void GetTicks(DateTime minium, DateTime maximum, ISpacingOptions<DateTime> spacingOptions, IList<Tick<DateTime>> ticks)
+        {
+            // TODO: proper implementation
+
+            var diff = (maximum - minium).TotalDays;
+
+            DateTime x0;
+            DateTime x1;
+
+            Func<DateTime, string> formatter = Formatter ?? (FormatString == null ? null : new Func<DateTime, string>(dt => dt.ToString(FormatString)));
+            Func<DateTime, DateTime> inc;
+
+            if (diff > 2000)
+            {
+                // years
+                x0 = new DateTime(minium.Year + 1, 1, 1);
+                x1 = new DateTime(maximum.Year, 1, 1);
+                inc = dt => dt.AddYears(1);
+                formatter ??= dt => dt.ToString("yyyy");
+            }
+            else if (diff > 100)
+            {
+                // months
+                x0 = new DateTime(minium.Year, minium.Month + 1, 1);
+                x1 = new DateTime(maximum.Year, maximum.Month, 1);
+                inc = dt => dt.AddYears(1);
+                formatter ??= dt => dt.ToString("yyyy-MMM");
+            }
+            else if (diff > 5)
+            {
+                // days
+                x0 = new DateTime(minium.Year, minium.Month, minium.Day + 1);
+                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day);
+                inc = dt => dt.AddDays(1);
+                formatter ??= dt => dt.ToString("yyyy-MMM-dd");
+            }
+            else if (diff > 1)
+            {
+                // 4 hours
+                x0 = new DateTime(minium.Year, minium.Month, minium.Day, (minium.Hour / 4 + 1) * 4, 0, 0);
+                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, 0, 0);
+                inc = dt => dt.AddHours(4);
+                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH");
+            }
+            else if (diff > 0.2)
+            {
+                // hours
+                x0 = new DateTime(minium.Year, minium.Month, minium.Day, minium.Hour + 1, 0, 0);
+                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, 0, 0);
+                inc = dt => dt.AddHours(1);
+                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH");
+            }
+            else if (diff > 0.002)
+            {
+                // minutes
+                x0 = new DateTime(minium.Year, minium.Month, minium.Day, minium.Hour, minium.Minute + 1, 0);
+                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, minium.Minute, 0);
+                inc = dt => dt.AddMinutes(1);
+                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH-mm");
+            }
+            else if (diff > 0.00001)
+            {
+                // seconds
+                x0 = new DateTime(minium.Year, minium.Month, minium.Day, minium.Hour, minium.Minute, minium.Second + 1);
+                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, minium.Minute, maximum.Second);
+                inc = dt => dt.AddMinutes(1);
+                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH-mm-SS");
+            }
+            else if (diff > 0.00000001)
+            {
+                // milliseconds
+                x0 = new DateTime(minium.Year, minium.Month, minium.Day, minium.Hour, minium.Minute, minium.Second, minium.Millisecond + 1);
+                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, minium.Minute, maximum.Second, maximum.Millisecond);
+                inc = dt => dt.AddMinutes(1);
+                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH-mm-SS fff");
+            }
+            else
+            {
+                var t = (maximum - minium).Ticks / 10;
+                // ticks
+                x0 = minium;
+                x1 = maximum;
+                inc = dt => dt.AddTicks(t);
+                formatter ??= dt => dt.ToString("O");
+            }
+
+            var x = x0;
+            do
+            {
+                ticks.Add(new Tick<DateTime>(x, formatter(x)));
+
+                x = inc(x);
+            }
+            while (x <= x1);
         }
     }
 
@@ -513,7 +626,7 @@ namespace OxyPlot.Axes.ComposableAxis
             }
             else
             {
-                throw new InvalidOperationException($"{this.GetType().Name} cannot be associated with an axis of type {axis.GetType().Name}. The axis must implement {typeof(IAxis<TData>).Name}.");
+                throw new InvalidOperationException($"{this.GetType().Name} cannot be associated with an axis of type {axis.GetType().Name}. The axis must implement IAxis<{typeof(TData).Name}>.");
             }
         }
     }

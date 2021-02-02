@@ -203,7 +203,6 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// <inheritdoc/>
         protected internal override void UpdateMaxMin()
         {
-            // TODO: inline?
             this.UpdateMinAndMax();
         }
     }
