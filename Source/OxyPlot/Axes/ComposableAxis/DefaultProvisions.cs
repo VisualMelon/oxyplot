@@ -5,6 +5,26 @@ using System.Text;
 namespace OxyPlot.Axes.ComposableAxis
 {
     /// <summary>
+    /// Helper that just returns an untyped version of whatever would be consumed.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    public class NonIAxisScreenTransformationConsumer<TData> : IAxisScreenTransformationConsumer<TData>
+    {
+        /// <summary>
+        /// The <see cref="IAxisScreenTransformation{TData}"/> fed to this consumer.
+        /// </summary>
+        public IAxisScreenTransformation<TData> Transformation { get; private set; }
+
+        /// <inheritdoc/>
+        public void Consume<TDataProvider, TAxisScreenTransformation>(TAxisScreenTransformation transformation)
+            where TDataProvider : IDataProvider<TData>
+            where TAxisScreenTransformation : IAxisScreenTransformation<TData, TDataProvider>
+        {
+            this.Transformation = transformation;
+        }
+    }
+
+    /// <summary>
     /// Providers method to interact with <see cref="System.Double"/>.
     /// </summary>
     public readonly struct DoubleProvider : IDataProvider<double>
@@ -90,6 +110,65 @@ namespace OxyPlot.Axes.ComposableAxis
     /// </summary>
     public readonly struct Logarithmic : IDataTransformation<double, DoubleProvider>
     {
+        /// <summary>
+        /// Initialises an instance of the <see cref="Logarithmic"/> struct.
+        /// </summary>
+        /// <param name="base"></param>
+        public Logarithmic(double @base)
+        {
+            _Base = @base;
+        }
+
+        /// <inheritdoc/>
+        public bool IsNonDiscontinuous => false;
+
+        /// <inheritdoc/>
+        public bool IsLinear => false;
+
+        /// <inheritdoc/>
+        public bool IsDiscrete => false;
+
+        /// <inheritdoc/>
+        public bool AreEqual(double l, double r)
+        {
+            return l == r;
+        }
+
+        /// <inheritdoc/>
+        public DoubleProvider Provider => default;
+
+        private readonly double _Base;
+
+        /// <summary>
+        /// Gets the base of the logarithm
+        /// </summary>
+        public double Base => _Base;
+
+        /// <inheritdoc/>
+        public double InverseTransform(InteractionReal x)
+        {
+            return Math.Pow(_Base, x.Value);
+        }
+
+        /// <inheritdoc/>
+        public InteractionReal Transform(double data)
+        {
+            return new InteractionReal(Math.Log(data, _Base));
+        }
+
+        /// <inheritdoc/>
+        public bool IsDiscontinuous(double a, double b)
+        {
+            // not sure it makes sense to not throw in this case
+            return a <= 0 || b <= 0;
+        }
+    }
+
+    /// <summary>
+    /// A logarithmic data projection over <see cref="System.Double"/>.
+    /// </summary>
+    public readonly struct LogarithmicNatural : IDataTransformation<double, DoubleProvider>
+    {
         /// <inheritdoc/>
         public bool IsNonDiscontinuous => false;
 
@@ -118,6 +197,49 @@ namespace OxyPlot.Axes.ComposableAxis
         public InteractionReal Transform(double data)
         {
             return new InteractionReal(Math.Log(data));
+        }
+
+        /// <inheritdoc/>
+        public bool IsDiscontinuous(double a, double b)
+        {
+            // not sure it makes sense to not throw in this case
+            return a <= 0 || b <= 0;
+        }
+    }
+
+    /// <summary>
+    /// A logarithmic data projection over <see cref="System.Double"/>.
+    /// </summary>
+    public readonly struct Logarithmic10 : IDataTransformation<double, DoubleProvider>
+    {
+        /// <inheritdoc/>
+        public bool IsNonDiscontinuous => false;
+
+        /// <inheritdoc/>
+        public bool IsLinear => false;
+
+        /// <inheritdoc/>
+        public bool IsDiscrete => false;
+
+        /// <inheritdoc/>
+        public bool AreEqual(double l, double r)
+        {
+            return l == r;
+        }
+
+        /// <inheritdoc/>
+        public DoubleProvider Provider => default;
+
+        /// <inheritdoc/>
+        public double InverseTransform(InteractionReal x)
+        {
+            return Math.Pow(10, x.Value);
+        }
+
+        /// <inheritdoc/>
+        public InteractionReal Transform(double data)
+        {
+            return new InteractionReal(Math.Log10(data));
         }
 
         /// <inheritdoc/>
@@ -215,20 +337,25 @@ namespace OxyPlot.Axes.ComposableAxis
         public AxisScreenTransformation(TDataTransformation dataTransformation, ViewInfo viewInfo, TData clipMinimum, TData clipMaximum)
         {
             DataTransformation = dataTransformation;
-            ViewInfo = viewInfo;
+            _ViewInfo = viewInfo;
             ClipMinimum = clipMinimum;
             ClipMaximum = clipMaximum;
         }
 
         /// <summary>
-        /// Gets the <typeparamref name="TDataProvider"/>.
+        /// The <typeparamref name="TDataProvider"/>.
         /// </summary>
-        private TDataTransformation DataTransformation { get; }
+        private readonly TDataTransformation DataTransformation;
 
         /// <summary>
-        /// Gets the <see cref="ViewInfo"/>.
+        /// The ViewInfo.
         /// </summary>
-        private readonly ViewInfo ViewInfo;
+        private readonly ViewInfo _ViewInfo;
+
+        /// <summary>
+        /// Gets the ViewInfo.
+        /// </summary>
+        public ViewInfo ViewInfo => _ViewInfo; // intentionally not made this part of the interface... just public here for testing
 
         /// <inheritdoc/>
         public TData ClipMinimum { get; }
@@ -254,7 +381,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public TData InverseTransform(ScreenReal s)
         {
-            return DataTransformation.InverseTransform(ViewInfo.InverseTransform(s));
+            return DataTransformation.InverseTransform(_ViewInfo.InverseTransform(s));
         }
 
         /// <inheritdoc/>
@@ -267,7 +394,7 @@ namespace OxyPlot.Axes.ComposableAxis
         public ScreenReal Transform(TData data)
         {
             // inlined for perf
-            return new ScreenReal(ViewInfo.ScreenOffset.Value + DataTransformation.Transform(data).Value * ViewInfo.ScreenScale);
+            return new ScreenReal(_ViewInfo.ScreenOffset.Value + DataTransformation.Transform(data).Value * _ViewInfo.ScreenScale);
             // original: return ViewInfo.Transform(DataTransformation.Transform(data));
         }
     }
@@ -746,33 +873,38 @@ namespace OxyPlot.Axes.ComposableAxis
         public XYRenderHelper(XYAxisTransformation xyTransformation)
             : base(xyTransformation.XTransformation.Provider, xyTransformation.YTransformation.Provider)
         {
-            XYTransformation = xyTransformation;
+            _XYTransformation = xyTransformation;
         }
 
-        private XYAxisTransformation XYTransformation { get; }
+        private readonly XYAxisTransformation _XYTransformation;
+
+        /// <summary>
+        /// The XY transformation.
+        /// </summary>
+        public XYAxisTransformation XYTransformation => _XYTransformation;
 
         /// <inheritdoc/>
-        public IAxisScreenTransformation<XData> XTransformation => XYTransformation.XTransformation;
+        IAxisScreenTransformation<XData> IXYRenderHelper<XData, YData>.XTransformation => _XYTransformation.XTransformation;
 
         /// <inheritdoc/>
-        public IAxisScreenTransformation<YData> YTransformation => XYTransformation.YTransformation;
+        IAxisScreenTransformation<YData> IXYRenderHelper<XData, YData>.YTransformation => _XYTransformation.YTransformation;
 
         /// <inheritdoc/>
         public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous) where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         {
-            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(sampleProvider, XYTransformation, samples, ref sampleIdx, endIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
+            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(sampleProvider, _XYTransformation, samples, ref sampleIdx, endIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
         }
 
         /// <inheritdoc/>
         public void InterpolateLines(IReadOnlyList<DataSample<XData, YData>> dataSamples, double minSegmentLength, IList<ScreenPoint> screenPoints)
         {
-            RenderHelpers.InterpolateLines<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(XYTransformation, dataSamples, minSegmentLength, screenPoints);
+            RenderHelpers.InterpolateLines<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(_XYTransformation, dataSamples, minSegmentLength, screenPoints);
         }
 
         /// <inheritdoc/>
         public void TransformSamples(IReadOnlyList<DataSample<XData, YData>> dataSamples, IList<ScreenPoint> screenPoints)
         {
-            RenderHelpers.TransformSamples<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(XYTransformation, dataSamples, screenPoints);
+            RenderHelpers.TransformSamples<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(_XYTransformation, dataSamples, screenPoints);
         }
 
         /// <inheritdoc/>

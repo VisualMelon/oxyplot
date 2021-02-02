@@ -19,7 +19,7 @@ namespace OxyPlot.Axes
     /// <summary>
     /// Provides an abstract base class for axes.
     /// </summary>
-    public abstract class Axis : AxisBase
+    public abstract class Axis : AxisBase, IAxis<double>
     //public abstract class Axis : PlotElement
     {
         /// <summary>
@@ -1634,6 +1634,35 @@ namespace OxyPlot.Axes
             {
                 handler(this, args);
             }
+        }
+
+        /// <inheritdoc/>
+        public void ZoomTo(double min, double max)
+        {
+            this.Zoom(min, max);
+        }
+
+        /// <inheritdoc/>
+        public virtual void ConsumeTransformation(IAxisScreenTransformationConsumer<double> consumer)
+        {
+            consumer.Consume<DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Linear>>(new AxisScreenTransformation<double, DoubleProvider, Linear>(default, this.ViewInfo, this.ClipMinimum, this.ClipMaximum));
+        }
+
+        /// <inheritdoc/>
+        public IAxisScreenTransformation<double> GetTransformation()
+        {
+            var non = new NonIAxisScreenTransformationConsumer<double>();
+            this.ConsumeTransformation(non);
+            return non.Transformation;
+        }
+
+        /// <inheritdoc/>
+        public virtual bool TryGetDataRange(out double minimum, out double maximum)
+        {
+            minimum = this.DataMinimum;
+            maximum = this.DataMaximum;
+
+            return !(double.IsNaN(minimum) || double.IsNaN(maximum));
         }
     }
 }

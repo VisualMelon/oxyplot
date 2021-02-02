@@ -364,11 +364,16 @@ namespace OxyPlot.Axes.ComposableAxis
                 return false;
             }
 
+            // putting these in locals seems to make a surprising difference to the generated asm:
+            // should probably investigate why this is the case, but for now let's do the faster thing
+            var x = transformation.XTransformation;
+            var y = transformation.YTransformation;
+
             // both inlined for performance reasons
-            var currentSampleWithinClipBounds = transformation.XTransformation.WithinClipBounds(currentXYSample.X)
-                && transformation.YTransformation.WithinClipBounds(currentXYSample.Y);
-            var currentPoint = transformation.Arrange(transformation.XTransformation.Transform(currentXYSample.X),
-                transformation.YTransformation.Transform(currentXYSample.Y));
+            var currentSampleWithinClipBounds = x.WithinClipBounds(currentXYSample.X)
+                && y.WithinClipBounds(currentXYSample.Y);
+            var currentPoint = transformation.Arrange(x.Transform(currentXYSample.X),
+                y.Transform(currentXYSample.Y));
 
             // Handle broken line segment if exists
             // Requires that there is a previous segment, and someone is within the clip bounds
@@ -400,16 +405,17 @@ namespace OxyPlot.Axes.ComposableAxis
                 }
 
                 // inlined for performance reasons
-                currentSampleWithinClipBounds = transformation.XTransformation.WithinClipBounds(currentXYSample.X)
-                    && transformation.YTransformation.WithinClipBounds(currentXYSample.Y);
-                currentPoint = transformation.Arrange(transformation.XTransformation.Transform(currentXYSample.X),
-                    transformation.YTransformation.Transform(currentXYSample.Y));
+                currentSampleWithinClipBounds = x.WithinClipBounds(currentXYSample.X)
+                    && y.WithinClipBounds(currentXYSample.Y);
+                currentPoint = transformation.Arrange(x.Transform(currentXYSample.X),
+                    y.Transform(currentXYSample.Y));
                 // original: currentSampleWithinClipBounds = transformation.WithinClipBounds(currentXYSample);
                 // original: currentPoint = transformation.Transform(currentXYSample);
 
                 if (haveLast)
                 {
-                    if (transformation.XTransformation.IsDiscontinuous(lastXYSample.X, currentXYSample.X))
+                    if (x.IsDiscontinuous(lastXYSample.X, currentXYSample.X)
+                        || y.IsDiscontinuous(lastXYSample.Y, currentXYSample.Y))
                     {
                         if (firstSample)
                         {

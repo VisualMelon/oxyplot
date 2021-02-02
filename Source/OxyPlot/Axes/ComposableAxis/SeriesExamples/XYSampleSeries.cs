@@ -175,7 +175,6 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// <inheritdoc/>
         protected internal override void EnsureAxes()
         {
-            // TODO: inline?
             ResolveAxes();
         }
 

@@ -7,7 +7,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// Represents the monotonicity of a sequence.
     /// </summary>
-    public struct Monotonicity
+    public readonly struct Monotonicity
     {
         private const byte Increase = 1;
         private const byte Decrease = 2;
@@ -96,7 +96,7 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
-    /// I'd make this a struct if it were not a tad out-of-place.
+    /// Measures basic metrics concerning a sequence.
     /// </summary>
     public class MonotonicityHelper<TData, TDataProvider>
         where TDataProvider : IDataProvider<TData>
@@ -108,7 +108,8 @@ namespace OxyPlot.Axes.ComposableAxis
 
         private byte Flags;
 
-        private TDataProvider Provider { get; }
+        private readonly TDataProvider Provider;
+
         private TData LastValue;
 
         /// <summary>
@@ -152,7 +153,7 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
-    /// I'd make this a struct if it were not a tad out-of-place.
+    /// Measures basic metrics concerning a sequence.
     /// </summary>
     public class SequenceHelper<TData, TDataProvider>
         where TDataProvider : IDataProvider<TData>
@@ -164,7 +165,10 @@ namespace OxyPlot.Axes.ComposableAxis
 
         private byte Flags;
 
-        private TDataProvider Provider { get; }
+        /// <summary>
+        /// The provider.
+        /// </summary>
+        private readonly TDataProvider Provider;
 
         /// <summary>
         /// The minimum value observed by the <see cref="SequenceHelper{TData, TDataProvider}"/>.
@@ -182,7 +186,7 @@ namespace OxyPlot.Axes.ComposableAxis
         public bool IsEmpty => Flags == Empty;
 
         /// <summary>
-        /// Initialises an instance of <see cref="MonotonicityHelper{TData, TDataProvider}"/>.
+        /// Initialises an instance of <see cref="SequenceHelper{TData, TDataProvider}"/>.
         /// </summary>
         public SequenceHelper(TDataProvider provider)
         {
@@ -231,7 +235,7 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <summary>
-        /// Translates the current state of the <see cref="MonotonicityHelper{TData, TDataProvider}"/> into a <see cref="ComposableAxis.Monotonicity"/>.
+        /// Translates the current state of the <see cref="SequenceHelper{TData, TDataProvider}"/> into a <see cref="ComposableAxis.Monotonicity"/>.
         /// </summary>
         public Monotonicity Monotonicity
         {
@@ -244,141 +248,4 @@ namespace OxyPlot.Axes.ComposableAxis
             }
         }
     }
-
-    ///// <summary>
-    ///// Describes the monotonicity of a sequence.
-    ///// </summary>
-    //public enum Monotonicity
-    //{
-    //    /// <summary>
-    //    /// There is no monotonicity in the values.
-    //    /// </summary>
-    //    None = 0,
-
-    //    /// <summary>
-    //    /// All values are equal.
-    //    /// </summary>
-    //    Constant = NonDecreasing | NonIncreasing,
-
-    //    /// <summary>
-    //    /// Each value is greater than the previous.
-    //    /// </summary>
-    //    Increasing = NonDecreasing | 4,
-
-    //    /// <summary>
-    //    /// Each value is no smaller than the previous.
-    //    /// </summary>
-    //    NonDecreasing = 1,
-
-    //    /// <summary>
-    //    /// Each value is no greater than the previous.
-    //    /// </summary>
-    //    NonIncreasing = 2,
-
-    //    /// <summary>
-    //    /// Each value is smaller than the previous.
-    //    /// </summary>
-    //    Decreasing = NonIncreasing | 4,
-    //}
-
-    ///// <summary>
-    ///// Provides methods to help interpret the <see cref="Monotonicity"/> enum.
-    ///// </summary>
-    //public static class MonotonicityHelpers
-    //{
-    //    /// <summary>
-    //    /// Determines whether a monotonicity is a real member of the <see cref="Monotonicity"/> enum.
-    //    /// </summary>
-    //    /// <param name="monotonicity"></param>
-    //    /// <returns></returns>
-    //    public static bool IsLegal(this Monotonicity monotonicity)
-    //    {
-    //        return monotonicity switch
-    //        {
-    //            Monotonicity.None => true,
-    //            Monotonicity.Constant => true,
-    //            Monotonicity.Increasing => true,
-    //            Monotonicity.NonDecreasing => true,
-    //            Monotonicity.NonIncreasing => true,
-    //            Monotonicity.Decreasing => true,
-    //            _ => false
-    //        };
-    //    }
-
-    //    /// <summary>
-    //    /// Determines whether a monotonicity is atleast Non-Decreasing.
-    //    /// </summary>
-    //    /// <param name="monotonicity"></param>
-    //    /// <returns></returns>
-    //    public static bool IsNonDecreasing(this Monotonicity monotonicity)
-    //    {
-    //        return monotonicity switch
-    //        {
-    //            Monotonicity.None => false,
-    //            Monotonicity.Constant => true,
-    //            Monotonicity.Increasing => true,
-    //            Monotonicity.NonDecreasing => true,
-    //            Monotonicity.NonIncreasing => false,
-    //            Monotonicity.Decreasing => false,
-    //            _ => throw new ArgumentOutOfRangeException(nameof(monotonicity))
-    //        };
-    //    }
-
-    //    /// <summary>
-    //    /// Determines whether a monotonicity is constant.
-    //    /// </summary>
-    //    /// <param name="monotonicity"></param>
-    //    /// <returns></returns>
-    //    public static bool IsConstant(this Monotonicity monotonicity)
-    //    {
-    //        return monotonicity switch
-    //        {
-    //            Monotonicity.None => false,
-    //            Monotonicity.Constant => true,
-    //            Monotonicity.Increasing => false,
-    //            Monotonicity.NonDecreasing => false,
-    //            Monotonicity.NonIncreasing => false,
-    //            Monotonicity.Decreasing => false,
-    //            _ => throw new ArgumentOutOfRangeException(nameof(monotonicity))
-    //        };
-    //    }
-
-    //    /// <summary>
-    //    /// Determines whether a monotonicity is atleast Non-Increasing.
-    //    /// </summary>
-    //    /// <param name="monotonicity"></param>
-    //    /// <returns></returns>
-    //    public static bool IsNonIncreasing(this Monotonicity monotonicity)
-    //    {
-    //        return monotonicity switch
-    //        {
-    //            Monotonicity.None => false,
-    //            Monotonicity.Constant => true,
-    //            Monotonicity.Increasing => false,
-    //            Monotonicity.NonDecreasing => false,
-    //            Monotonicity.NonIncreasing => true,
-    //            Monotonicity.Decreasing => true,
-    //            _ => throw new ArgumentOutOfRangeException(nameof(monotonicity))
-    //        };
-    //    }
-
-    //    /// <summary>
-    //    /// Determines whether a monotonicity is monotone.
-    //    /// </summary>
-    //    /// <param name="monotonicity"></param>
-    //    /// <returns></returns>
-    //    public static bool IsMonotone(this Monotonicity monotonicity)
-    //    {
-    //        return monotonicity switch
-    //        {
-    //            Monotonicity.None => false,
-    //            Monotonicity.Constant => true,
-    //            Monotonicity.Increasing => true,
-    //            Monotonicity.NonDecreasing => true,
-    //            Monotonicity.NonIncreasing => true,
-    //            Monotonicity.Decreasing => true,
-    //            _ => throw new ArgumentOutOfRangeException(nameof(monotonicity))
-    //        };
-    //    }
-    //}
 }

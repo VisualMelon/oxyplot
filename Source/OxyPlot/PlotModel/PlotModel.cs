@@ -97,7 +97,7 @@ namespace OxyPlot
         {
             this.Axes = new ElementCollection<AxisBase>(this);
             this.Series = new ElementCollection<Series.Series>(this);
-            this.Annotations = new ElementCollection<Annotation>(this);
+            this.Annotations = new ElementCollection<AnnotationBase>(this);
             this.Legends = new ElementCollection<LegendBase>(this);
             this.PlotType = PlotType.XY;
 
@@ -215,7 +215,7 @@ namespace OxyPlot
         /// Gets the annotations.
         /// </summary>
         /// <value>The annotations.</value>
-        public ElementCollection<Annotation> Annotations { get; private set; }
+        public ElementCollection<AnnotationBase> Annotations { get; private set; }
 
         /// <summary>
         /// Gets the axes.

@@ -82,7 +82,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Logarithmic, double, DoubleAsNaNOptional>(default, default)
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, LogarithmicNatural, double, DoubleAsNaNOptional>(default, default)
             {
                 Position = AxisPosition.Left,
                 Minimum = 1,
@@ -95,6 +95,29 @@ namespace ExampleLibrary
             yaxis.Bands.Add(yticks);
 
             plot.Axes.Add(yaxis);
+
+            return plot;
+        }
+
+        [Example("Line on default Axes")]
+        public static PlotModel LineOnDefaultAxis()
+        {
+            var plot = new PlotModel() { Subtitle = "The axes are 'normal' default axes" };
+
+            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default)
+            {
+                Title = "y = sin(x)",
+                RenderInLegend = true,
+            };
+
+            for (var x = 0.0; x <= 10; x += 0.01)
+            {
+                lines.Samples.Add(new DataPoint(x, Math.Sin(x)));
+            }
+
+            plot.Series.Add(lines);
+
+            plot.Legends.Add(new Legend());
 
             return plot;
         }

@@ -14,22 +14,46 @@ namespace OxyPlot.Annotations
     /// <summary>
     /// Provides an abstract base class for annotations.
     /// </summary>
-    public abstract class Annotation : PlotElement, IXyAxisPlotElement
+    public abstract class AnnotationBase : PlotElement
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Annotation" /> class.
         /// </summary>
-        protected Annotation()
+        protected AnnotationBase()
         {
             this.Layer = AnnotationLayer.AboveSeries;
-            this.ClipByXAxis = true;
-            this.ClipByYAxis = true;
         }
 
         /// <summary>
         /// Gets or sets the rendering layer of the annotation. The default value is <see cref="AnnotationLayer.AboveSeries" />.
         /// </summary>
         public AnnotationLayer Layer { get; set; }
+
+        /// <summary>
+        /// Ensures that the annotation axes are set.
+        /// </summary>
+        public abstract void EnsureAxes();
+
+        /// <summary>
+        /// Renders the annotation on the specified context.
+        /// </summary>
+        /// <param name="rc">The render context.</param>
+        public abstract void Render(IRenderContext rc);
+    }
+
+    /// <summary>
+    /// Provides an abstract base class for annotations on untyped XY plots.
+    /// </summary>
+    public abstract class Annotation : AnnotationBase, IXyAxisPlotElement
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Annotation" /> class.
+        /// </summary>
+        protected Annotation()
+        {
+            this.ClipByXAxis = true;
+            this.ClipByYAxis = true;
+        }
 
         /// <summary>
         /// Gets the X axis.
@@ -67,20 +91,15 @@ namespace OxyPlot.Annotations
         /// <value>The Y axis key.</value>
         public string YAxisKey { get; set; }
 
-        /// <summary>
-        /// Ensures that the annotation axes are set.
-        /// </summary>
-        public void EnsureAxes()
+        /// <inheritdoc/>
+        public override void EnsureAxes()
         {
             this.XAxis = (Axis)( this.XAxisKey != null ? this.PlotModel.GetAxis(this.XAxisKey) : this.PlotModel.DefaultXAxis ); // TODO: ... not sure... we need to re-write every single component so that they are typed... so this code won't survive... for now it can assume untyped axes
             this.YAxis = (Axis)(this.YAxisKey != null ? this.PlotModel.GetAxis(this.YAxisKey) : this.PlotModel.DefaultYAxis ); // ... or (much better): it could assume IAxis<double> (note: that's why I need everything in AxisBase in IAxis... I knew there was a reason for IAxis)
         }
 
-        /// <summary>
-        /// Renders the annotation on the specified context.
-        /// </summary>
-        /// <param name="rc">The render context.</param>
-        public virtual void Render(IRenderContext rc)
+        /// <inheritdoc/>
+        public override void Render(IRenderContext rc)
         {
         }
 

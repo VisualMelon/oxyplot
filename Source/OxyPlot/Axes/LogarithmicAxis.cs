@@ -9,6 +9,7 @@
 
 namespace OxyPlot.Axes
 {
+    using OxyPlot.Axes.ComposableAxis;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -625,6 +626,12 @@ namespace OxyPlot.Axes
             }
 
             base.CoerceActualMaxMin();
+        }
+
+        /// <inheritdoc/>
+        public override void ConsumeTransformation(IAxisScreenTransformationConsumer<double> consumer)
+        {
+            consumer.Consume<DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Logarithmic>>(new AxisScreenTransformation<double, DoubleProvider, Logarithmic>(new Logarithmic(Base), this.ViewInfo, this.ClipMinimum, this.ClipMaximum));
         }
     }
 }

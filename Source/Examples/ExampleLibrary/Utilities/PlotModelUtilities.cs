@@ -15,6 +15,7 @@ namespace ExampleLibrary.Utilities
     using System.Reflection;
 
     using OxyPlot;
+    using OxyPlot.Annotations;
     using OxyPlot.Axes;
     using OxyPlot.Series;
 
@@ -265,7 +266,7 @@ namespace ExampleLibrary.Utilities
                 }
             }
 
-            foreach (var annotation in model.Annotations)
+            foreach (var annotation in model.Annotations.OfType<Annotation>())
             {
                 if (annotation.XAxis != null && annotation.XAxisKey == null)
                 {

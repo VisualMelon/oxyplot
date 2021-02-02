@@ -865,7 +865,7 @@ namespace ExampleLibrary
         /// <summary>
         /// Represents an annotation that renders by a delegate.
         /// </summary>
-        public class DelegateAnnotation : Annotation
+        public class DelegateAnnotation : AnnotationBase
         {
             /// <summary>
             /// Initializes a new instance of the <see cref="DelegateAnnotation"/> class.
@@ -884,13 +884,9 @@ namespace ExampleLibrary
             /// </value>
             public Action<IRenderContext> Rendering { get; private set; }
 
-            /// <summary>
-            /// Renders the annotation on the specified context.
-            /// </summary>
-            /// <param name="rc">The render context.</param>
+            /// <inheritdoc/>
             public override void Render(IRenderContext rc)
             {
-                base.Render(rc);
                 this.Rendering(rc);
             }
 
@@ -898,6 +894,11 @@ namespace ExampleLibrary
             public override OxyRect GetClippingRect()
             {
                 return OxyRect.Everything;
+            }
+
+            /// <inheritdoc/>
+            public override void EnsureAxes()
+            {
             }
         }
     }

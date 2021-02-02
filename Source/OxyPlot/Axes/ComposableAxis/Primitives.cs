@@ -37,7 +37,12 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// Inline-Far band, positioned off the plot area, below any Inline bands.
         /// </summary>
-        InlineFar
+        InlineFar,
+
+        /// <summary>
+        /// A non-positions band, which won't constribute to margins.
+        /// </summary>
+        None,
     }
 
     /// <summary>
@@ -849,6 +854,12 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             return left.Value <= right.Value;
         }
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
     }
 
     /// <summary>
@@ -987,6 +998,12 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             return left.Value <= right.Value;
         }
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
     }
 
     /// <summary>
@@ -1041,6 +1058,12 @@ namespace OxyPlot.Axes.ComposableAxis
             max = _max;
             min = _min;
             return _isNonEmpty;
+        }
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            return $"[{_min}, {_max}]";
         }
     }
 }

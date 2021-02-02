@@ -1018,20 +1018,21 @@ namespace OxyPlot.Axes.ComposableAxis
                 return; // we cannot
             }
 
-            var actualScreenWidth = screenWidth - MinimumDataMargin - MaximumDataMargin;
+            var actualScreenWidth = screenWidth - (MinimumDataMargin + MaximumDataMargin) * Math.Sign(screenWidth.Value);
 
             var scale = actualScreenWidth.Value / (ActualInteractionRadius * 2.0).Value;
-            var offset = new ScreenReal(screenMin.Value - ClipInteractionMinimum.Value * scale);
 
-            _viewInfo = new ViewInfo(offset, scale);
-
-            ClipInteractionMinimum = ActualInteractionMinimum - new InteractionReal(MinimumDataMargin.Value * Math.Abs(scale));
-            ClipInteractionMaximum = ActualInteractionMaximum + new InteractionReal(MaximumDataMargin.Value * Math.Abs(scale));
+            ClipInteractionMinimum = ActualInteractionMinimum - new InteractionReal(MinimumDataMargin.Value / Math.Abs(scale));
+            ClipInteractionMaximum = ActualInteractionMaximum + new InteractionReal(MaximumDataMargin.Value / Math.Abs(scale));
 
             ActualMinimum = DataTransformation.InverseTransform(ActualInteractionMinimum);
             ActualMaximum = DataTransformation.InverseTransform(ActualInteractionMaximum);
             ClipMinimum = DataTransformation.InverseTransform(ClipInteractionMinimum);
             ClipMaximum = DataTransformation.InverseTransform(ClipInteractionMaximum);
+
+            var offset = new ScreenReal(screenMin.Value - ClipInteractionMinimum.Value * scale);
+
+            _viewInfo = new ViewInfo(offset, scale);
         }
 
         /// <inheritdoc/>
@@ -1070,7 +1071,7 @@ namespace OxyPlot.Axes.ComposableAxis
             if (IsHorizontal())
             {
                 screenMinimum = new ScreenReal(lerp(bounds.Left, bounds.Right, this.StartPosition) + MinimumMargin.Value * marginSign);
-                screenMaximum = new ScreenReal(lerp(bounds.Left, bounds.Right, this.EndPosition) + MinimumMargin.Value * marginSign);
+                screenMaximum = new ScreenReal(lerp(bounds.Left, bounds.Right, this.EndPosition) - MaximumMargin.Value * marginSign);
 
                 ScreenMin = new ScreenPoint(screenMinimum.Value, bounds.Top);
                 ScreenMax = new ScreenPoint(screenMaximum.Value, bounds.Bottom);
@@ -1078,7 +1079,7 @@ namespace OxyPlot.Axes.ComposableAxis
             else if (IsVertical())
             {
                 screenMinimum = new ScreenReal(lerp(bounds.Bottom, bounds.Top, this.StartPosition) + MinimumMargin.Value * marginSign);
-                screenMaximum = new ScreenReal(lerp(bounds.Bottom, bounds.Top, this.EndPosition) + MinimumMargin.Value * marginSign);
+                screenMaximum = new ScreenReal(lerp(bounds.Bottom, bounds.Top, this.EndPosition) - MaximumMargin.Value * marginSign);
 
                 ScreenMin = new ScreenPoint(bounds.Left, screenMinimum.Value);
                 ScreenMax = new ScreenPoint(bounds.Right, screenMaximum.Value);
