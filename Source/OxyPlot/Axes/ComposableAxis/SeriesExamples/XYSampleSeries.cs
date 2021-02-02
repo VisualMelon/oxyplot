@@ -205,6 +205,58 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         {
             this.UpdateMinAndMax();
         }
+
+        /// <summary>
+        /// Gets the point on the series that is nearest the specified point.
+        /// </summary>
+        /// <param name="point">The point.</param>
+        /// <param name="interpolate">Interpolate the series if this flag is set to <c>true</c>.</param>
+        /// <returns>A TrackerHitResult for the current hit.</returns>
+        public override TrackerHitResult GetNearestPoint(ScreenPoint point, bool interpolate)
+        {
+            var xyRenderHelper = GetRenderHelper();
+
+            int startIdx = 0;
+            int endIdx = Samples.Count - 1;
+
+            var xtransformation = xyRenderHelper.XTransformation;
+            var ytransformation = xyRenderHelper.YTransformation;
+
+            if (XMonotonicity.IsMonotone || YMonotonicity.IsMonotone)
+            {
+                var minSample = new DataSample<XData, YData>(xtransformation.ClipMinimum, ytransformation.ClipMinimum);
+                var maxSample = new DataSample<XData, YData>(xtransformation.ClipMaximum, ytransformation.ClipMaximum);
+                xyRenderHelper.FindWindow(SampleProvider, Samples.AsReadOnlyList(), minSample, maxSample, XMonotonicity, YMonotonicity, out startIdx, out endIdx);
+            }
+
+            if (xyRenderHelper.TryFindNearest(SampleProvider, Samples.AsReadOnlyList(), point, startIdx, endIdx, CanTrackerInterpolatePoints & interpolate, out var nearest, out var distance))
+            {
+                var sample = Samples[nearest];
+                var xySample = SampleProvider.Sample(sample);
+                var position = xyRenderHelper.TransformSample(xySample);
+
+                var result = new TrackerHitResult()
+                {
+                    Item = sample,
+                    Index = nearest,
+                    PlotModel = this.PlotModel,
+                    LineExtents = this.GetClippingRect(),
+                    Position = position,
+                    Series = this,
+                    Text = Samples[nearest].ToString(), // TODO: proper tracker string
+                    // NOTE: the typed axes do not have a concept of value formatting: should they?
+                    // I was planning to leave formatting to the bands, but I guess that will never be good enough for compat...
+                    // Yeah... need to keep all the old properties; bands can default to them, etc.
+                };
+
+                return result;
+            }
+            else
+            {
+                // no points found
+                return null;
+            }
+        }
     }
 
     /// <summary>

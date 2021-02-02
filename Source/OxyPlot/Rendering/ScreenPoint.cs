@@ -122,7 +122,7 @@ namespace OxyPlot
         /// </summary>
         /// <param name="point">The point.</param>
         /// <returns>The distance.</returns>
-        public double DistanceTo(ScreenPoint point)
+        public readonly double DistanceTo(ScreenPoint point)
         {
             double dx = point.x - this.x;
             double dy = point.y - this.y;
@@ -134,7 +134,7 @@ namespace OxyPlot
         /// </summary>
         /// <param name="point">The point.</param>
         /// <returns>The squared distance.</returns>
-        public double DistanceToSquared(ScreenPoint point)
+        public readonly double DistanceToSquared(ScreenPoint point)
         {
             double dx = point.x - this.x;
             double dy = point.y - this.y;
@@ -145,7 +145,7 @@ namespace OxyPlot
         /// Returns a <see cref="System.String" /> that represents this instance.
         /// </summary>
         /// <returns>A <see cref="System.String" /> that represents this instance.</returns>
-        public override string ToString()
+        public readonly override string ToString()
         {
             return this.x + " " + this.y;
         }
@@ -155,7 +155,7 @@ namespace OxyPlot
         /// </summary>
         /// <param name="other">The point to compare to this instance.</param>
         /// <returns><c>true</c> if the value of the <paramref name="other" /> parameter is the same as the value of this instance; otherwise, <c>false</c>.</returns>
-        public bool Equals(ScreenPoint other)
+        public readonly bool Equals(ScreenPoint other)
         {
             return this.x.Equals(other.x) && this.y.Equals(other.y);
         }

@@ -601,7 +601,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="minY"></param>
         /// <param name="maxX"></param>
         /// <param name="maxY"></param>
-        public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
+        bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
 
         /// <summary>
@@ -617,7 +617,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="maxY"></param>
         /// <param name="xMonotonicity"></param>
         /// <param name="yMonotonicity"></param>
-        public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
+        bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
 
         /// <summary>
@@ -635,7 +635,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="startIndex"></param>
         /// <param name="endIndex"></param>
         /// <returns></returns>
-        public bool FindWindow<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
+        bool FindWindow<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
 
         /// <summary>
@@ -680,6 +680,23 @@ namespace OxyPlot.Axes.ComposableAxis
         ///   <c>true</c> if line segments are extracted, <c>false</c> if reached end.
         /// </returns>
         bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
+
+        /// <summary>
+        /// Tries to find the sample that is closest to the given <see cref="ScreenPoint"/> in screen space.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="samples"></param>
+        /// <param name="screenPoint"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="endIndex"></param>
+        /// <param name="interpolate"></param>
+        /// <param name="nearest"></param>
+        /// <param name="distance"></param>
+        /// <returns></returns>
+        bool TryFindNearest<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ScreenPoint screenPoint, int startIndex, int endIndex, bool interpolate, out int nearest, out double distance)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
 
         /// <summary>
@@ -1071,6 +1088,13 @@ namespace OxyPlot.Axes.ComposableAxis
         public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous) where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         {
             return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(sampleProvider, _XYTransformation, samples, ref sampleIdx, endIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
+        }
+
+        /// <inheritdoc/>
+        public bool TryFindNearest<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ScreenPoint screenPoint, int startIndex, int endIndex, bool interpolate, out int nearest, out double distance)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+        {
+            return RenderHelpers.TryFindNearest<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(sampleProvider, _XYTransformation, samples, screenPoint, startIndex, endIndex, interpolate, out nearest, out distance);
         }
 
         /// <inheritdoc/>

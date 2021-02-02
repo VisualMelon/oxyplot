@@ -467,7 +467,7 @@ namespace ExampleLibrary
             {
                 y += (rnd.NextDouble() - 0.5) * y / 10;
 
-                if (x.DayOfWeek == DayOfWeek.Saturday || x.DayOfWeek == DayOfWeek.Sunday || x.Hour < 8 || x.Hour > 20)
+                if (x.DayOfWeek == DayOfWeek.Saturday || x.DayOfWeek == DayOfWeek.Sunday || x.Hour < 8 || x.Hour >= 20)
                 {
                     // skip
                 }

@@ -301,6 +301,89 @@ namespace OxyPlot.Axes.ComposableAxis
     public static class RenderHelpers
     {
         /// <summary>
+        /// Tries to find the sample that is closest to the given <see cref="ScreenPoint"/> in screen space.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="XData"></typeparam>
+        /// <typeparam name="YData"></typeparam>
+        /// <typeparam name="XDataProvider"></typeparam>
+        /// <typeparam name="YDataProvider"></typeparam>
+        /// <typeparam name="XAxisTransformation"></typeparam>
+        /// <typeparam name="YAxisTransformation"></typeparam>
+        /// <typeparam name="XYTransformation"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="transformation"></param>
+        /// <param name="samples"></param>
+        /// <param name="screenPoint"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="endIndex"></param>
+        /// <param name="interpolate"></param>
+        /// <param name="nearest"></param>
+        /// <param name="distance"></param>
+        /// <returns><c>true</c> if a point was found, otherwise false.</returns>
+        public static bool TryFindNearest<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYTransformation>(TSampleProvider sampleProvider, XYTransformation transformation, IReadOnlyList<TSample> samples, ScreenPoint screenPoint, int startIndex, int endIndex, bool interpolate, out int nearest, out double distance)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where XDataProvider : IDataProvider<XData>
+            where YDataProvider : IDataProvider<YData>
+            where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+            where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+            where XYTransformation : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
+        {
+            var x = transformation.XTransformation;
+            var y = transformation.YTransformation;
+
+            int best = -1;
+            double bestDistanceSqr = double.MaxValue;
+
+            // TODO: interpolation... should it be in data-space, or screen space?
+            // personally I'm opposed to interpolation a number of levels... but we probably need to implement it here somehow
+
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                var currentSample = samples[i];
+                var currentSampleIsValid = sampleProvider.TrySample(currentSample, out var currentXYSample);
+
+                if (!currentSampleIsValid)
+                    continue;
+
+                // inlined for performance reasons
+                var currentSampleWithinClipBounds = x.WithinClipBounds(currentXYSample.X)
+                    && y.WithinClipBounds(currentXYSample.Y);
+                // original: currentSampleWithinClipBounds = transformation.WithinClipBounds(currentXYSample);
+
+                if (!currentSampleWithinClipBounds)
+                    continue;
+
+                // inlined for performance reasons
+                var currentPoint = transformation.Arrange(x.Transform(currentXYSample.X),
+                    y.Transform(currentXYSample.Y));
+                // original: currentPoint = transformation.Transform(currentXYSample);
+
+                var distSqr = screenPoint.DistanceToSquared(currentPoint);
+
+                if (distSqr < bestDistanceSqr)
+                {
+                    bestDistanceSqr = distSqr;
+                    best = i;
+                }
+            }
+
+            if (bestDistanceSqr < double.MaxValue)
+            {
+                nearest = best;
+                distance = Math.Sqrt(bestDistanceSqr);
+                return true;
+            }
+            else
+            {
+                nearest = default;
+                distance = double.NaN;
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Extracts a single contiguous line segment beginning with the element at the position of the enumerator when the method
         /// is called. Invalid samples are ignored.
         /// </summary>
