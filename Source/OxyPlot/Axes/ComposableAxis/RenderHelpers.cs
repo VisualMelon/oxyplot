@@ -14,11 +14,13 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <typeparam name="TSample"></typeparam>
         /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
         /// <typeparam name="XData"></typeparam>
         /// <typeparam name="YData"></typeparam>
         /// <typeparam name="XDataProvider"></typeparam>
         /// <typeparam name="YDataProvider"></typeparam>
         /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <param name="samples"></param>
@@ -27,8 +29,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="maxX"></param>
         /// <param name="maxY"></param>
         /// <returns></returns>
-        public static bool TryFindMinMax<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, XDataProvider x, YDataProvider y, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
+        public static bool TryFindMinMax<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, XDataProvider x, YDataProvider y, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>
             where XDataProvider : IDataProvider<XData>
             where YDataProvider : IDataProvider<YData>
         {
@@ -41,7 +44,8 @@ namespace OxyPlot.Axes.ComposableAxis
 
             foreach (var sample in samples)
             {
-                if (sampleProvider.TrySample(sample, out var xySample))
+                if (sampleFilter.Filter(sample)
+                    && sampleProvider.TrySample(sample, out var xySample))
                 {
                     if (first)
                     {
@@ -67,11 +71,13 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <typeparam name="TSample"></typeparam>
         /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
         /// <typeparam name="XData"></typeparam>
         /// <typeparam name="YData"></typeparam>
         /// <typeparam name="XDataProvider"></typeparam>
         /// <typeparam name="YDataProvider"></typeparam>
         /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <param name="samples"></param>
@@ -82,8 +88,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="xMonotonicity"></param>
         /// <param name="yMonotonicity"></param>
         /// <returns></returns>
-        public static bool TryFindMinMax<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, XDataProvider x, YDataProvider y, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
+        public static bool TryFindMinMax<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, XDataProvider x, YDataProvider y, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>
             where XDataProvider : IDataProvider<XData>
             where YDataProvider : IDataProvider<YData>
         {
@@ -92,7 +99,8 @@ namespace OxyPlot.Axes.ComposableAxis
 
             foreach (var sample in samples)
             {
-                if (sampleProvider.TrySample(sample, out var xySample))
+                if (sampleFilter.Filter(sample)
+                    && sampleProvider.TrySample(sample, out var xySample))
                 {
                     xh.Next(xySample.X);
                     yh.Next(xySample.Y);
@@ -114,11 +122,13 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <typeparam name="TSample"></typeparam>
         /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
         /// <typeparam name="XData"></typeparam>
         /// <typeparam name="YData"></typeparam>
         /// <typeparam name="XDataProvider"></typeparam>
         /// <typeparam name="YDataProvider"></typeparam>
         /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
         /// <param name="xDataProvider"></param>
         /// <param name="yDataProvider"></param>
         /// <param name="samples"></param>
@@ -129,8 +139,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="startIndex"></param>
         /// <param name="endIndex"></param>
         /// <returns></returns>
-        public static bool FindWindow<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, XDataProvider xDataProvider, YDataProvider yDataProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
+        public static bool FindWindow<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, XDataProvider xDataProvider, YDataProvider yDataProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>
             where XDataProvider : IDataProvider<XData>
             where YDataProvider : IDataProvider<YData>
         {
@@ -144,8 +155,8 @@ namespace OxyPlot.Axes.ComposableAxis
                 throw new ArgumentException("Either the X or Y values must be monotonic");
             }
 
-            bool startOk = FindWindowStart<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(sampleProvider, xDataProvider, yDataProvider, samples, start, xMonotonicity, yMonotonicity, out startIndex);
-            bool endOk = FindWindowEnd<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(sampleProvider, xDataProvider, yDataProvider, samples, end, xMonotonicity, yMonotonicity, out endIndex);
+            bool startOk = FindWindowStart<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider>(sampleProvider, sampleFilter, xDataProvider, yDataProvider, samples, start, xMonotonicity, yMonotonicity, out startIndex);
+            bool endOk = FindWindowEnd<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider>(sampleProvider, sampleFilter, xDataProvider, yDataProvider, samples, end, xMonotonicity, yMonotonicity, out endIndex);
 
             return startOk && endOk;
         }
@@ -155,11 +166,13 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <typeparam name="TSample"></typeparam>
         /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
         /// <typeparam name="XData"></typeparam>
         /// <typeparam name="YData"></typeparam>
         /// <typeparam name="XDataProvider"></typeparam>
         /// <typeparam name="YDataProvider"></typeparam>
         /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
         /// <param name="xDataProvider"></param>
         /// <param name="yDataProvider"></param>
         /// <param name="samples"></param>
@@ -168,8 +181,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="yMonotonicity"></param>
         /// <param name="startIndex"></param>
         /// <returns></returns>
-        public static bool FindWindowStart<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, XDataProvider xDataProvider, YDataProvider yDataProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex)
+        public static bool FindWindowStart<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, XDataProvider xDataProvider, YDataProvider yDataProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>
             where XDataProvider : IDataProvider<XData>
             where YDataProvider : IDataProvider<YData>
         {
@@ -227,11 +241,13 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <typeparam name="TSample"></typeparam>
         /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
         /// <typeparam name="XData"></typeparam>
         /// <typeparam name="YData"></typeparam>
         /// <typeparam name="XDataProvider"></typeparam>
         /// <typeparam name="YDataProvider"></typeparam>
         /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
         /// <param name="xDataProvider"></param>
         /// <param name="yDataProvider"></param>
         /// <param name="samples"></param>
@@ -240,8 +256,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="yMonotonicity"></param>
         /// <param name="endIndex"></param>
         /// <returns></returns>
-        public static bool FindWindowEnd<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, XDataProvider xDataProvider, YDataProvider yDataProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int endIndex)
+        public static bool FindWindowEnd<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, XDataProvider xDataProvider, YDataProvider yDataProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int endIndex)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>
             where XDataProvider : IDataProvider<XData>
             where YDataProvider : IDataProvider<YData>
         {
@@ -389,6 +406,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <typeparam name="TSample"></typeparam>
         /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
         /// <typeparam name="XData"></typeparam>
         /// <typeparam name="YData"></typeparam>
         /// <typeparam name="XDataProvider"></typeparam>
@@ -397,6 +415,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <typeparam name="YAxisTransformation"></typeparam>
         /// <typeparam name="XYTransformation"></typeparam>
         /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
         /// <param name="transformation"></param>
         /// <param name="samples">Points collection</param>
         /// <param name="sampleIdx">Current sample index</param>
@@ -408,8 +427,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <returns>
         ///   <c>true</c> if line segments are extracted, <c>false</c> if reached end.
         /// </returns>
-        public static bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYTransformation>(TSampleProvider sampleProvider, XYTransformation transformation, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+        public static bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYTransformation>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, XYTransformation transformation, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>
             where XDataProvider : IDataProvider<XData>
             where YDataProvider : IDataProvider<YData>
             where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
@@ -421,10 +441,7 @@ namespace OxyPlot.Axes.ComposableAxis
             //  - inlined IXYAxisTransformation.Transform below
             //  - inlined ViewInfo.Transform in AxisScreenTransformation.Transform
             // This inlining helps to cut down on method calls, which avoids the method call overhead
-            // (even though they should all be static calls, a calling a method which calls another method means lots of stack work we want to avoid)
-            // Without this inlining, this takes ~57ms/frame for 1Million Spiral example
-            // With the inlining, this takes ~32ms/frame for 1Million Spiral example (~20ns/sample in this method)
-            // The LineSeries implementation takes ~33ms/frame for equivalent 1Million Spiral example, but doesn't perform the bounds checks (reduces rendering overhead when cheap) or discontenuity checks (important feature for new axes)
+            // (even though they should all be static calls, calling a method which calls another method means lots of stack work we want to avoid)
 
             // TODO: revise the IXYAxisTransformation interface, since we are currently bypassing everything except `Arrange` (like Orient in classic LineSeries) at the moment
 
@@ -432,25 +449,37 @@ namespace OxyPlot.Axes.ComposableAxis
             //  - reject invalid points, forming broken line segments as necessary
             //  - reject points outside the axis bounds
 
+            // putting these in locals seems to make a surprising difference to the generated asm:
+            // should probably investigate why this is the case, but for now let's do the faster thing
+            // After a little investigation, it seems that it is insisting on making them locals before usage anyway.
+            // I had hoped that the type being a readonly struct would avoid this unnecessary copying, but apparently not
+            // (JIT does do this in simple cases; not sure what is the problem here)
+            // I'm starting to think that the IAxisScreenTransform abstraction is more trouble than it's worth.
+            var x = transformation.XTransformation;
+            var y = transformation.YTransformation;
+
             TSample currentSample = default(TSample);
             DataSample<XData, YData> currentXYSample = default(DataSample<XData, YData>);
 
             // Skip all undefined points
-            while (sampleIdx <= endIdx && !sampleProvider.TrySample(currentSample = samples[sampleIdx], out currentXYSample))
+            while (sampleIdx <= endIdx)
             {
+                currentSample = samples[sampleIdx];
+
+                if (sampleFilter.Filter(currentSample)
+                    && sampleProvider.TrySample(currentSample, out currentXYSample)
+                    && x.Filter(currentXYSample.X)
+                    && y.Filter(currentXYSample.Y))
+                    break;
+
                 sampleIdx++;
             }
 
-            if (sampleIdx >= endIdx)
+            if (sampleIdx > endIdx)
             {
                 // ran out of samples
                 return false;
             }
-
-            // putting these in locals seems to make a surprising difference to the generated asm:
-            // should probably investigate why this is the case, but for now let's do the faster thing
-            var x = transformation.XTransformation;
-            var y = transformation.YTransformation;
 
             // both inlined for performance reasons
             var currentSampleWithinClipBounds = x.WithinClipBounds(currentXYSample.X)
@@ -478,7 +507,11 @@ namespace OxyPlot.Axes.ComposableAxis
             bool addedSamples = false;
             while (sampleIdx <= endIdx)
             {
-                var currentSampleIsValid = sampleProvider.TrySample(currentSample = samples[sampleIdx], out currentXYSample);
+                currentSample = samples[sampleIdx];
+                var currentSampleIsValid = sampleFilter.Filter(currentSample)
+                    && sampleProvider.TrySample(currentSample, out currentXYSample)
+                    && x.Filter(currentXYSample.X)
+                    && y.Filter(currentXYSample.Y);
 
                 if (!currentSampleIsValid)
                 {

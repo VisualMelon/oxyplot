@@ -631,7 +631,7 @@ namespace OxyPlot.Axes
         /// <inheritdoc/>
         public override void ConsumeTransformation(IAxisScreenTransformationConsumer<double> consumer)
         {
-            consumer.Consume<DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Logarithmic>>(new AxisScreenTransformation<double, DoubleProvider, Logarithmic>(new Logarithmic(Base), this.ViewInfo, this.ClipMinimum, this.ClipMaximum));
+            consumer.Consume<DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Logarithmic, MinMaxFilter<double, DoubleProvider>>>(new AxisScreenTransformation<double, DoubleProvider, Logarithmic, MinMaxFilter<double, DoubleProvider>>(new Logarithmic(Base), new MinMaxFilter<double, DoubleProvider>(default, this.FilterMinValue, this.FilterMaxValue), this.ViewInfo, this.ClipMinimum, this.ClipMaximum));
         }
     }
 }

@@ -30,7 +30,7 @@ namespace ExampleLibrary
         {
             var plot = new PlotModel();
 
-            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
             {
                 Position = AxisPosition.Bottom,
                 Minimum = 0,
@@ -46,7 +46,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
             {
                 Position = AxisPosition.Left,
                 Minimum = -1,
@@ -68,7 +68,7 @@ namespace ExampleLibrary
         {
             var plot = new PlotModel();
 
-            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
             {
                 Position = AxisPosition.Bottom,
                 Minimum = 1,
@@ -82,7 +82,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Logarithmic10, double, DoubleAsNaNOptional>(default, default)
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Logarithmic10, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
             {
                 Position = AxisPosition.Left,
                 Minimum = 1,
@@ -104,7 +104,7 @@ namespace ExampleLibrary
         {
             var plot = new PlotModel() { Subtitle = "The axes are 'normal' default axes" };
 
-            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default)
+            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>>(default, default)
             {
                 Title = "y = sin(x)",
                 RenderInLegend = true,
@@ -127,7 +127,7 @@ namespace ExampleLibrary
         {
             var plot = LinearXY();
 
-            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default)
+            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>>(default, default)
             {
                 Title = "y = sin(x)",
                 RenderInLegend = true,
@@ -153,7 +153,7 @@ namespace ExampleLibrary
             plot.Axes[0].Position = AxisPosition.Left;
             plot.Axes[1].Position = AxisPosition.Bottom;
 
-            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default)
+            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>>(default, default)
             {
                 XAxisKey = "X",
                 YAxisKey = "Y",
@@ -177,7 +177,7 @@ namespace ExampleLibrary
         {
             var plot = LogarithmicXY();
 
-            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default)
+            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>>(default, default)
             {
                 Title = "y = x^2",
             };
@@ -273,7 +273,7 @@ namespace ExampleLibrary
         {
             var plot = new PlotModel { Title = "LineSeries, 1M points" };
 
-            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
             {
                 Position = AxisPosition.Bottom,
                 Title = "X",
@@ -283,7 +283,7 @@ namespace ExampleLibrary
             xaxis.Bands.Add(xticks);
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
             {
                 Position = AxisPosition.Left,
                 Title = "Y",
@@ -293,7 +293,41 @@ namespace ExampleLibrary
             yaxis.Bands.Add(yticks);
             plot.Axes.Add(yaxis);
 
-            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default);
+            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>>(default, default);
+
+            AddPoints(lines.Samples, 1000000);
+
+            plot.Series.Add(lines);
+
+            return plot;
+        }
+
+        [Example("LineSeries, 1M points, Filtered")]
+        public static PlotModel LineSeries1M_ZeroZeromMin()
+        {
+            var plot = new PlotModel { Title = "LineSeries, 1M points" };
+
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, 0, double.MaxValue))
+            {
+                Position = AxisPosition.Bottom,
+                Title = "X",
+            };
+
+            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            xaxis.Bands.Add(xticks);
+            plot.Axes.Add(xaxis);
+
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, 0, double.MaxValue))
+            {
+                Position = AxisPosition.Left,
+                Title = "Y",
+            };
+
+            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            yaxis.Bands.Add(yticks);
+            plot.Axes.Add(yaxis);
+
+            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>>(default, default);
 
             AddPoints(lines.Samples, 1000000);
 
@@ -320,7 +354,7 @@ namespace ExampleLibrary
                 Subtitle = "ClipMinimum/Maximum are Blue\nActualMinimum/Maximum are Red\nDataMinimum/Maximum are Green"
             };
 
-            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
             {
                 Position = AxisPosition.Bottom,
                 MinimumPadding = 0.1,
@@ -336,7 +370,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
             {
                 Position = AxisPosition.Left,
                 MinimumPadding = 0.2,
@@ -352,7 +386,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(yaxis);
 
-            var rectangle = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider>(default);
+            var rectangle = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>>(default, default);
             rectangle.Color = OxyColors.Green;
             rectangle.Samples.Add(new DataPoint(-5.0, 0.0));
             rectangle.Samples.Add(new DataPoint(-5.0, 20.0));
@@ -421,7 +455,7 @@ namespace ExampleLibrary
             // The TickLocator probably also wants to be aware of these things
             var weekdays = new WeekdayTransformation(8, 20);
 
-            var xaxis = new HorizontalVerticalAxis<DateTime, DateTimeProvider, WeekdayTransformation, Option<DateTime>, Optional<DateTime>>(weekdays, default)
+            var xaxis = new HorizontalVerticalAxis<DateTime, DateTimeProvider, WeekdayTransformation, AcceptAllFilter<DateTime>, Option<DateTime>, Optional<DateTime>>(weekdays, default, default)
             {
                 Position = AxisPosition.Bottom,
                 Minimum = Option<DateTime>.Some(DateTime.Now),
@@ -438,7 +472,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, double, DoubleAsNaNOptional>(default, default)
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
             {
                 Position = AxisPosition.Left,
                 Minimum = 0,
@@ -455,7 +489,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(yaxis);
 
-            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataSample<DateTime, double>, DateTime, double, IdentityXYSampleProvider<DateTime, double>>(default);
+            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataSample<DateTime, double>, DateTime, double, IdentityXYSampleProvider<DateTime, double>, AcceptAllFilter<DataSample<DateTime, double>>>(default, default);
 
             var x = DateTime.Now;
             var y = 10.0;

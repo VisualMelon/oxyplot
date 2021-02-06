@@ -589,6 +589,22 @@ namespace ExampleLibrary
             return CreateHistogram(100000, 200);
         }
 
+        [Example("Histogram with V-Line Annotation")]
+        public static PlotModel HistogramWithVLine()
+        {
+            var plot = CreateHistogram(10000, 20);
+
+            var vline = new OxyPlot.Annotations.LineAnnotation()
+            {
+                Type = OxyPlot.Annotations.LineAnnotationType.Horizontal,
+                Y = -0.5,
+            };
+
+            plot.Annotations.Add(vline);
+
+            return plot;
+        }
+
         public static PlotModel CreateHistogram(int n, int binCount)
         {
             var bins = new HistogramBin[binCount];

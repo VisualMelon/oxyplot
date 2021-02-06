@@ -705,20 +705,23 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="TData"></typeparam>
     /// <typeparam name="TDataProvider"></typeparam>
     /// <typeparam name="TDataTransformation"></typeparam>
+    /// <typeparam name="TDataFilter"></typeparam>
     /// <typeparam name="TDataOptional"></typeparam>
     /// <typeparam name="TDataOptionalProvider"></typeparam>
-    public class HorizontalVerticalAxis<TData, TDataProvider, TDataTransformation, TDataOptional, TDataOptionalProvider> : AxisBase, IAxis<TData>, IComposableAxisStuffThatIsCurrentlyCausingProblemsWithRespectToCompatabilityWithExistingAxisImplementsAndAsSuchCannotAppearInIAxisAtThisTime
+    public class HorizontalVerticalAxis<TData, TDataProvider, TDataTransformation, TDataFilter, TDataOptional, TDataOptionalProvider> : AxisBase, IAxis<TData>, IComposableAxisStuffThatIsCurrentlyCausingProblemsWithRespectToCompatabilityWithExistingAxisImplementsAndAsSuchCannotAppearInIAxisAtThisTime
         where TDataProvider : IDataProvider<TData>
         where TDataTransformation : IDataTransformation<TData, TDataProvider>
+        where TDataFilter : IFilter<TData>
         where TDataOptionalProvider : IOptionalProvider<TData, TDataOptional>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="HorizontalVerticalAxis{TData, TDataProvider, TDataTransformation, TDataOptional, TDataOptionalProvider}" /> class.
+        /// Initializes a new instance of the <see cref="HorizontalVerticalAxis{TData, TDataProvider, TDataTransformation, TDataFilter, TDataOptional, TDataOptionalProvider}" /> class.
         /// </summary>
-        public HorizontalVerticalAxis(TDataTransformation dataTransformation, TDataOptionalProvider optionalProvider)
+        public HorizontalVerticalAxis(TDataTransformation dataTransformation, TDataOptionalProvider optionalProvider, TDataFilter filter)
         {
             DataTransformation = dataTransformation;
             OptionalProvider = optionalProvider;
+            Filter = filter;
 
             Minimum = OptionalProvider.None;
             Maximum = OptionalProvider.None;
@@ -741,6 +744,11 @@ namespace OxyPlot.Axes.ComposableAxis
         /// The <typeparamref name="TDataOptionalProvider"/>.
         /// </summary>
         public TDataOptionalProvider OptionalProvider { get; }
+
+        /// <summary>
+        /// The <typeparamref name="TDataFilter"/>.
+        /// </summary>
+        public TDataFilter Filter { get; set; }
 
         /// <inheritdoc/>
         public TData ClipMinimum { get; set; }
@@ -1038,12 +1046,12 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public void ConsumeTransformation(IAxisScreenTransformationConsumer<TData> consumer)
         {
-            consumer.Consume<TDataProvider, AxisScreenTransformation<TData, TDataProvider, TDataTransformation>>(GetTransformation());
+            consumer.Consume<TDataProvider, AxisScreenTransformation<TData, TDataProvider, TDataTransformation, TDataFilter>>(GetTransformation());
         }
 
-        private AxisScreenTransformation<TData, TDataProvider, TDataTransformation> GetTransformation()
+        private AxisScreenTransformation<TData, TDataProvider, TDataTransformation, TDataFilter> GetTransformation()
         {
-            return new AxisScreenTransformation<TData, TDataProvider, TDataTransformation>(DataTransformation, ViewInfo, ClipMinimum, ClipMaximum);
+            return new AxisScreenTransformation<TData, TDataProvider, TDataTransformation, TDataFilter>(DataTransformation, Filter, ViewInfo, ClipMinimum, ClipMaximum);
         }
 
         IAxisScreenTransformation<TData> IAxis<TData>.GetTransformation()
@@ -1342,7 +1350,7 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <summary>
-        /// A list of bands used by this <see cref="HorizontalVerticalAxis{TData, TDataProvider, TDataTransformation, TDataOptional, TDataOptionalProvider}"/>.
+        /// A list of bands used by this <see cref="HorizontalVerticalAxis{TData, TDataProvider, TDataTransformation, TDataFilter, TDataOptional, TDataOptionalProvider}"/>.
         /// </summary>
         public List<IBand> Bands { get; } = new List<IBand>() { new TitleBand() };
 

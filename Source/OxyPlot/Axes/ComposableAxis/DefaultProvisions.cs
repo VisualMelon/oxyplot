@@ -399,25 +399,29 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
-    /// Wraps a <typeparamref name="TDataTransformation"/> and <see cref="ViewInfo"/> to provide an <see cref="IAxisScreenTransformation{TData, TDataProvider}"/>.
+    /// Wraps a <typeparamref name="TDataTransformation"/> and ViewInfo to provide an <see cref="IAxisScreenTransformation{TData, TDataProvider}"/>.
     /// </summary>
     /// <typeparam name="TData"></typeparam>
     /// <typeparam name="TDataProvider"></typeparam>
     /// <typeparam name="TDataTransformation"></typeparam>
-    public readonly struct AxisScreenTransformation<TData, TDataProvider, TDataTransformation> : IAxisScreenTransformation<TData, TDataProvider>
+    /// <typeparam name="TDataFilter"></typeparam>
+    public readonly struct AxisScreenTransformation<TData, TDataProvider, TDataTransformation, TDataFilter> : IAxisScreenTransformation<TData, TDataProvider>
         where TDataProvider : IDataProvider<TData>
         where TDataTransformation : IDataTransformation<TData, TDataProvider>
+        where TDataFilter : IFilter<TData>
     {
         /// <summary>
-        /// Initialises the <see cref="AxisScreenTransformation{TData, TDataProvider, TDataTransformation}"/>.
+        /// Initialises the <see cref="AxisScreenTransformation{TData, TDataProvider, TDataTransformation, TDataFilter}"/>.
         /// </summary>
         /// <param name="dataTransformation"></param>
+        /// <param name="filter"></param>
         /// <param name="viewInfo"></param>
         /// <param name="clipMinimum">The minimum bound of the clipping region.</param>
         /// <param name="clipMaximum">The maximum bound of the clipping region.</param>
-        public AxisScreenTransformation(TDataTransformation dataTransformation, ViewInfo viewInfo, TData clipMinimum, TData clipMaximum)
+        public AxisScreenTransformation(TDataTransformation dataTransformation, TDataFilter filter, ViewInfo viewInfo, TData clipMinimum, TData clipMaximum)
         {
             DataTransformation = dataTransformation;
+            _Filter = filter;
             _ViewInfo = viewInfo;
             ClipMinimum = clipMinimum;
             ClipMaximum = clipMaximum;
@@ -427,6 +431,11 @@ namespace OxyPlot.Axes.ComposableAxis
         /// The <typeparamref name="TDataProvider"/>.
         /// </summary>
         private readonly TDataTransformation DataTransformation;
+
+        /// <summary>
+        /// The <typeparamref name="TDataFilter"/>.
+        /// </summary>
+        private readonly TDataFilter _Filter;
 
         /// <summary>
         /// The ViewInfo.
@@ -477,6 +486,12 @@ namespace OxyPlot.Axes.ComposableAxis
             // inlined for perf
             return new ScreenReal(_ViewInfo.ScreenOffset.Value + DataTransformation.Transform(data).Value * _ViewInfo.ScreenScale);
             // original: return ViewInfo.Transform(DataTransformation.Transform(data));
+        }
+
+        /// <inheritdoc/>
+        public bool Filter(TData data)
+        {
+            return _Filter.Filter(data);
         }
     }
 
@@ -595,21 +610,26 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <typeparam name="TSample"></typeparam>
         /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
         /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
         /// <param name="samples"></param>
         /// <param name="minX"></param>
         /// <param name="minY"></param>
         /// <param name="maxX"></param>
         /// <param name="maxY"></param>
-        bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
-            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
+        bool FindMinMax<TSample, TSampleProvider, TSampleFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>;
 
         /// <summary>
         /// Finds the minimum and maximum X and Y values in the samples.
         /// </summary>
         /// <typeparam name="TSample"></typeparam>
         /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
         /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
         /// <param name="samples"></param>
         /// <param name="minX"></param>
         /// <param name="minY"></param>
@@ -617,8 +637,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="maxY"></param>
         /// <param name="xMonotonicity"></param>
         /// <param name="yMonotonicity"></param>
-        bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
-            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
+        bool FindMinMax<TSample, TSampleProvider, TSampleFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>;
 
         /// <summary>
         /// Finds the start and end indexs of a window in some data.
@@ -626,7 +647,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <typeparam name="TSample"></typeparam>
         /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
         /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
         /// <param name="samples"></param>
         /// <param name="start"></param>
         /// <param name="end"></param>
@@ -635,8 +658,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="startIndex"></param>
         /// <param name="endIndex"></param>
         /// <returns></returns>
-        bool FindWindow<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
-            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
+        bool FindWindow<TSample, TSampleProvider, TSampleFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>;
 
         /// <summary>
         /// Gets the X provider.
@@ -668,7 +692,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <typeparam name="TSample"></typeparam>
         /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
         /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
         /// <param name="samples">Points collection</param>
         /// <param name="sampleIdx">Current sample index</param>
         /// <param name="endIdx">End index</param>
@@ -679,8 +705,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <returns>
         ///   <c>true</c> if line segments are extracted, <c>false</c> if reached end.
         /// </returns>
-        bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
-            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>;
+        bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>;
 
         /// <summary>
         /// Tries to find the sample that is closest to the given <see cref="ScreenPoint"/> in screen space.
@@ -865,24 +892,27 @@ namespace OxyPlot.Axes.ComposableAxis
         IDataProvider<YData> IXYHelper<XData, YData>.YProvider => _YProvider;
 
         /// <inheritdoc/>
-        public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
+        public bool FindMinMax<TSample, TSampleProvider, TSampleFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>
         {
-            return XYHelpers.TryFindMinMax(sampleProvider, _XProvider, _YProvider, samples, out minX, out minY, out maxX, out maxY);
+            return XYHelpers.TryFindMinMax(sampleProvider, sampleFilter, _XProvider, _YProvider, samples, out minX, out minY, out maxX, out maxY);
         }
 
         /// <inheritdoc/>
-        public bool FindMinMax<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
+        public bool FindMinMax<TSample, TSampleProvider, TSampleFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, out XData minX, out YData minY, out XData maxX, out YData maxY, out Monotonicity xMonotonicity, out Monotonicity yMonotonicity)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>
         {
-            return XYHelpers.TryFindMinMax(sampleProvider, _XProvider, _YProvider, samples, out minX, out minY, out maxX, out maxY, out xMonotonicity, out yMonotonicity);
+            return XYHelpers.TryFindMinMax(sampleProvider, sampleFilter, _XProvider, _YProvider, samples, out minX, out minY, out maxX, out maxY, out xMonotonicity, out yMonotonicity);
         }
 
         /// <inheritdoc/>
-        public bool FindWindow<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
+        public bool FindWindow<TSample, TSampleProvider, TSampleFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, DataSample<XData, YData> start, DataSample<XData, YData> end, Monotonicity xMonotonicity, Monotonicity yMonotonicity, out int startIndex, out int endIndex)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>
         {
-            return XYHelpers.FindWindow(sampleProvider, _XProvider, _YProvider, samples, start, end, xMonotonicity, yMonotonicity, out startIndex, out endIndex);
+            return XYHelpers.FindWindow(sampleProvider, sampleFilter, _XProvider, _YProvider, samples, start, end, xMonotonicity, yMonotonicity, out startIndex, out endIndex);
         }
     }
 
@@ -1045,6 +1075,100 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Represents a value filter.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    public interface IFilter<TData>
+    {
+        /// <summary>
+        /// Returns <c>true</c> if the value should be kept, otherwise <c>false</c>.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        bool Filter(TData value);
+    }
+
+    /// <summary>
+    /// A filter that accepts everything.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    public readonly struct AcceptAllFilter<TData> : IFilter<TData>
+    {
+        /// <inheritdoc/>
+        public bool Filter(TData value)
+        {
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// A filter that rejects everything.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    public readonly struct RejectAllFilter<TData> : IFilter<TData>
+    {
+        /// <inheritdoc/>
+        public bool Filter(TData value)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// A filter that rejects elemnts outside of a given range.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    /// <typeparam name="TProvider"></typeparam>
+    public readonly struct MinMaxFilter<TData, TProvider> : IFilter<TData>
+        where TProvider : IDataProvider<TData>
+    {
+        /// <summary>
+        /// Initialises an instance of the <see cref="MinMaxFilter{TData, TProvider}"/> struct.
+        /// </summary>
+        /// <param name="provider"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        public MinMaxFilter(TProvider provider, TData min, TData max)
+        {
+            Provider = provider;
+            Min = min;
+            Max = max;
+        }
+
+        private readonly TProvider Provider;
+        private readonly TData Min;
+        private readonly TData Max;
+
+        /// <inheritdoc/>
+        public bool Filter(TData value)
+        {
+            return Provider.Includes(Min, Max, value);
+        }
+    }
+
+    /// <summary>
+    /// A filter that defers judgement to a delegate.
+    /// </summary>
+    public readonly struct DelegateFilter<TData> : IFilter<TData>
+    {
+        /// <summary>
+        /// Initialises an instance of the <see cref="DelegateFilter{TData}"/> struct.
+        /// </summary>
+        public DelegateFilter(Predicate<TData> predicate)
+        {
+            Predicate = predicate ?? throw new ArgumentNullException(nameof(predicate));
+        }
+
+        private readonly Predicate<TData> Predicate { get; }
+
+        /// <inheritdoc/>
+        public bool Filter(TData value)
+        {
+            return Predicate(value);
+        }
+    }
+
+    /// <summary>
     /// Provides basic methods to render in X/Y space
     /// </summary>
     /// <typeparam name="XData"></typeparam>
@@ -1085,9 +1209,11 @@ namespace OxyPlot.Axes.ComposableAxis
         IAxisScreenTransformation<YData> IXYRenderHelper<XData, YData>.YTransformation => _XYTransformation.YTransformation;
 
         /// <inheritdoc/>
-        public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider>(TSampleProvider sampleProvider, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous) where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+        public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+            where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+            where TSampleFilter : IFilter<TSample>
         {
-            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(sampleProvider, _XYTransformation, samples, ref sampleIdx, endIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
+            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(sampleProvider, sampleFilter, _XYTransformation, samples, ref sampleIdx, endIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
         }
 
         /// <inheritdoc/>
@@ -1461,7 +1587,7 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
-    /// Providers a mapping from <see cref="DataPoint"/> to a <see cref="DataSample{XData, YData}"/> of doubles.
+    /// Provides a mapping from <see cref="DataPoint"/> to a <see cref="DataSample{XData, YData}"/> of doubles.
     /// </summary>
     public readonly struct DataPointXYSampleProvider : IXYSampleProvider<DataPoint, double, double>
     {

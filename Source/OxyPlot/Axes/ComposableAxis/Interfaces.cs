@@ -250,6 +250,13 @@ namespace OxyPlot.Axes.ComposableAxis
         TData InverseTransform(ScreenReal s);
 
         /// <summary>
+        /// Determines whether the given value should be presented on the axis.
+        /// </summary>
+        /// <param name="data">The value to test</param>
+        /// <returns><c>true</c> if the value should be presented, otherwise <c>false</c>.</returns>
+        bool Filter(TData data);
+
+        /// <summary>
         /// Determines whether there is a discontenuity between the two values.
         /// </summary>
         /// <param name="a"></param>

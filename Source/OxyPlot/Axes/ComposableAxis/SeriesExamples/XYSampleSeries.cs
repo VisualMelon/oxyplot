@@ -20,15 +20,18 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
     /// <typeparam name="XData"></typeparam>
     /// <typeparam name="YData"></typeparam>
     /// <typeparam name="TSampleProvider"></typeparam>
-    public abstract class XYSampleSeries<TSample, XData, YData, TSampleProvider> : SampleSeries // TODO: we want these transposable, but we can't implement ITransposablePlotElement at the moment
+    /// <typeparam name="TSampleFilter"></typeparam>
+    public abstract class XYSampleSeries<TSample, XData, YData, TSampleProvider, TSampleFilter> : SampleSeries // TODO: we want these transposable, but we can't implement ITransposablePlotElement at the moment
         where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+        where TSampleFilter : IFilter<TSample>
     {
         /// <summary>
         /// Initializes an instance of the <see cref="AxisBase"/> class.
         /// </summary>
-        protected XYSampleSeries(TSampleProvider sampleProvider)
+        protected XYSampleSeries(TSampleProvider sampleProvider, TSampleFilter sampleFilter)
         {
             this.SampleProvider = sampleProvider;
+            this.SampleFilter = sampleFilter;
             Samples = new List<TSample>();
             CanTrackerInterpolatePoints = false;
         }
@@ -41,7 +44,12 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// <summary>
         /// Gets or sets the sample provider.
         /// </summary>
-        public TSampleProvider SampleProvider { get; set; }
+        public TSampleProvider SampleProvider { get; }
+
+        /// <summary>
+        /// Gets or sets the sample filter.
+        /// </summary>
+        public TSampleFilter SampleFilter { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the tracker can interpolate points.
@@ -124,7 +132,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             ResolveAxes();
             var xyHelper = GetHelper();
 
-            HasMeaningfulDataRange = xyHelper.FindMinMax(SampleProvider, Samples.AsReadOnlyList(), out var minX, out var minY, out var maxX, out var maxY, out var xm, out var ym);
+            HasMeaningfulDataRange = xyHelper.FindMinMax(SampleProvider, SampleFilter, Samples.AsReadOnlyList(), out var minX, out var minY, out var maxX, out var maxY, out var xm, out var ym);
             MinX = minX;
             MinY = minY;
             MaxX = maxX;
@@ -226,7 +234,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             {
                 var minSample = new DataSample<XData, YData>(xtransformation.ClipMinimum, ytransformation.ClipMinimum);
                 var maxSample = new DataSample<XData, YData>(xtransformation.ClipMaximum, ytransformation.ClipMaximum);
-                xyRenderHelper.FindWindow(SampleProvider, Samples.AsReadOnlyList(), minSample, maxSample, XMonotonicity, YMonotonicity, out startIdx, out endIdx);
+                xyRenderHelper.FindWindow(SampleProvider, SampleFilter, Samples.AsReadOnlyList(), minSample, maxSample, XMonotonicity, YMonotonicity, out startIdx, out endIdx);
             }
 
             if (xyRenderHelper.TryFindNearest(SampleProvider, Samples.AsReadOnlyList(), point, startIdx, endIdx, CanTrackerInterpolatePoints & interpolate, out var nearest, out var distance))
@@ -266,8 +274,10 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
     /// <typeparam name="XData"></typeparam>
     /// <typeparam name="YData"></typeparam>
     /// <typeparam name="TSampleProvider"></typeparam>
-    public class LineSeries<TSample, XData, YData, TSampleProvider> : XYSampleSeries<TSample, XData, YData, TSampleProvider>
+    /// <typeparam name="TSampleFilter"></typeparam>
+    public class LineSeries<TSample, XData, YData, TSampleProvider, TSampleFilter> : XYSampleSeries<TSample, XData, YData, TSampleProvider, TSampleFilter>
         where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+        where TSampleFilter : IFilter<TSample>
     {
         /// <summary>
         /// The divisor value used to calculate tolerance for line smoothing.
@@ -315,10 +325,10 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         private List<DataPoint> smoothedPoints;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LineSeries{TSample, XData, YData, TSampleProvider}" /> class.
+        /// Initializes a new instance of the <see cref="LineSeries{TSample, XData, YData, TSampleProvider, TSampleFilter}" /> class.
         /// </summary>
-        public LineSeries(TSampleProvider sampleProvider)
-            : base(sampleProvider)
+        public LineSeries(TSampleProvider sampleProvider, TSampleFilter sampleFilter)
+            : base(sampleProvider, sampleFilter)
         {
             this.defaultColor = OxyColors.Undefined;
             this.defaultMarkerFill = OxyColors.Undefined;
@@ -343,6 +353,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             this.CanTrackerInterpolatePoints = true;
             this.LabelMargin = 6;
             this.smoothedPoints = new List<DataPoint>();
+            SampleFilter = sampleFilter;
         }
 
         /// <summary>
@@ -464,7 +475,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         public double MinimumSegmentLength { get; set; }
 
         /// <summary>
-        /// Gets or sets a type of interpolation algorithm used for smoothing this <see cref="LineSeries{TSample, XData, YData, TSampleProvider}" />.
+        /// Gets or sets a type of interpolation algorithm used for smoothing this <see cref="LineSeries{TSample, XData, YData, TSampleProvider, TSampleFilter}" />.
         /// </summary>
         /// <value>Type of interpolation algorithm.</value>
         public IInterpolationAlgorithm InterpolationAlgorithm { get; set; }
@@ -570,12 +581,12 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             {
                 var minSample = new DataSample<XData, YData>(xtransformation.ClipMinimum, ytransformation.ClipMinimum);
                 var maxSample = new DataSample<XData, YData>(xtransformation.ClipMaximum, ytransformation.ClipMaximum);
-                xyRenderHelper.FindWindow(SampleProvider, Samples.AsReadOnlyList(), minSample, maxSample, XMonotonicity, YMonotonicity, out startIdx, out endIdx);
+                xyRenderHelper.FindWindow(SampleProvider, SampleFilter, Samples.AsReadOnlyList(), minSample, maxSample, XMonotonicity, YMonotonicity, out startIdx, out endIdx);
             }
 
             int sampleIdx = startIdx;
 
-            while (xyRenderHelper.ExtractNextContinuousLineSegment<TSample, TSampleProvider>(SampleProvider, Samples.AsReadOnlyList(), ref sampleIdx, endIdx, ref lp, ref lpb, brokenBuffer, continuousBuffer))
+            while (xyRenderHelper.ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter>(SampleProvider, SampleFilter, Samples.AsReadOnlyList(), ref sampleIdx, endIdx, ref lp, ref lpb, brokenBuffer, continuousBuffer))
             {
                 if (areBrokenLinesRendered)
                 {

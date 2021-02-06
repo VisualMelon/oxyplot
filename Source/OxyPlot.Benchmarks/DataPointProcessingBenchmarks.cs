@@ -1,4 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Diagnosers;
 using OxyPlot.Axes.ComposableAxis;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace OxyPlot.Benchmarks
     [MemoryDiagnoser]
     public class DataPointProcessingBenchmarks
     {
-        [Params(1000, 1000000)]
+        [Params(/*1000,*/ 1000000)]
         public int PointCount;
 
         private List<DataPoint> Points { get; set; }
@@ -32,18 +33,18 @@ namespace OxyPlot.Benchmarks
             }
         }
 
-        private static AxisScreenTransformation<double, DoubleProvider, Linear> PrepareUnitTransform()
+        private static AxisScreenTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>> PrepareUnitTransform()
         {
-            return new AxisScreenTransformation<double, DoubleProvider, Linear>(default, new ViewInfo(new ScreenReal(0), 1), double.MinValue, double.MaxValue);
+            return new AxisScreenTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>(default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue), new ViewInfo(new ScreenReal(0), 1), double.MinValue, double.MaxValue);
         }
 
-        private static XYRenderHelper<double, double, DoubleProvider, DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Linear>, AxisScreenTransformation<double, DoubleProvider, Linear>, HorizontalVertialXYTransformation<double, double, DoubleProvider, DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Linear>, AxisScreenTransformation<double, DoubleProvider, Linear>>> PrepareUnitTransformHelper()
+        private static XYRenderHelper<double, double, DoubleProvider, DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>, AxisScreenTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>, HorizontalVertialXYTransformation<double, double, DoubleProvider, DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>, AxisScreenTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>>> PrepareUnitTransformHelper()
         {
             var xtransformation = PrepareUnitTransform();
             var ytransformation = PrepareUnitTransform();
-            var xytransformation = new HorizontalVertialXYTransformation<double, double, DoubleProvider, DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Linear>, AxisScreenTransformation<double, DoubleProvider, Linear>>(xtransformation, ytransformation);
+            var xytransformation = new HorizontalVertialXYTransformation<double, double, DoubleProvider, DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>, AxisScreenTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>>(xtransformation, ytransformation);
 
-            var xyRenderHelper = new XYRenderHelper<double, double, DoubleProvider, DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Linear>, AxisScreenTransformation<double, DoubleProvider, Linear>, HorizontalVertialXYTransformation<double, double, DoubleProvider, DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Linear>, AxisScreenTransformation<double, DoubleProvider, Linear>>>(xytransformation);
+            var xyRenderHelper = new XYRenderHelper<double, double, DoubleProvider, DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>, AxisScreenTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>, HorizontalVertialXYTransformation<double, double, DoubleProvider, DoubleProvider, AxisScreenTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>, AxisScreenTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>>>(xytransformation);
             return xyRenderHelper;
         }
 
@@ -55,8 +56,8 @@ namespace OxyPlot.Benchmarks
         [Benchmark]
         public void XYRenderHelpers_TypicalLinearDoubleConfiguration_NoBreaks()
         {
-            // v-call here is realistic
-            var xyRenderHelper = PrepareUnitTransformHelper_Interface();
+            // v-call would be realistic, but can make no real difference, and means we don't get dissassembly
+            var xyRenderHelper = PrepareUnitTransformHelper(); // PrepareUnitTransformHelper_Interface();
 
             int startIndex = 0;
             int endIndex = Points.Count - 1;
@@ -65,7 +66,7 @@ namespace OxyPlot.Benchmarks
 
             Broken.Clear();
             Continuous.Clear();
-            xyRenderHelper.ExtractNextContinuousLineSegment<DataPoint, DataPointXYSampleProvider>(default, Points.AsReadOnlyList(), ref startIndex, endIndex, ref psp, ref pb, Broken, Continuous);
+            xyRenderHelper.ExtractNextContinuousLineSegment<DataPoint, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>>(default, default, Points.AsReadOnlyList(), ref startIndex, endIndex, ref psp, ref pb, Broken, Continuous);
 
             if (Continuous.Count != Points.Count)
                 throw new Exception("xyRenderHelper.ExtractNextContinuousLineSegment doesn't work.");
@@ -97,7 +98,9 @@ namespace OxyPlot.Benchmarks
                 {
                     if (sampleProvider.TrySample(samples[sampleIdx++], out var valid))
                     {
-                        if (x.WithinClipBounds(valid.X)
+                        if (x.Filter(valid.X)
+                            && y.Filter(valid.Y)
+                            && x.WithinClipBounds(valid.X)
                             && y.WithinClipBounds(valid.Y))
                         {
                             Continuous.Add(transformation.Arrange(x.Transform(valid.X),
@@ -142,7 +145,7 @@ namespace OxyPlot.Benchmarks
             // v-call here is realistic
             var xyRenderHelper = PrepareUnitTransformHelper();
 
-            var worked = xyRenderHelper.FindMinMax<DataPoint, DataPointXYSampleProvider>(default, Points.AsReadOnlyList(), out var minX, out var minY, out var maxX, out var maxY, out var mX, out var mY);
+            var worked = xyRenderHelper.FindMinMax<DataPoint, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>>(default, default, Points.AsReadOnlyList(), out var minX, out var minY, out var maxX, out var maxY, out var mX, out var mY);
 
             if (!worked || !mX.IsMonotone)
                 throw new Exception("xyRenderHelper.FindMinMax doesn't work.");
