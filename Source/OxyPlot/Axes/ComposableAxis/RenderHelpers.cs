@@ -461,7 +461,7 @@ namespace OxyPlot.Axes.ComposableAxis
             TSample currentSample = default(TSample);
             DataSample<XData, YData> currentXYSample = default(DataSample<XData, YData>);
 
-            // Skip all undefined points
+            // Skip all invalid points
             while (sampleIdx <= endIdx)
             {
                 currentSample = samples[sampleIdx];
@@ -494,7 +494,18 @@ namespace OxyPlot.Axes.ComposableAxis
                 // TODO: we should check for discontenuity also, but can't with current API: should ref a TSample? rather than ScreenPoint?
                 broken.Add(previousContiguousLineSegmentEndPoint.Value);
                 broken.Add(currentPoint);
+
+                if (!currentSampleWithinClipBounds)
+                {
+                    previousContiguousLineSegmentEndPoint = currentPoint;
+                    previousContiguousLineSegmentEndPointWithinClipBounds = currentSampleWithinClipBounds;
+
+                    sampleIdx++;
+
+                    return true;
+                }
             }
+
             previousContiguousLineSegmentEndPoint = null;
 
             TSample lastSample = default(TSample);
@@ -597,7 +608,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 previousContiguousLineSegmentEndPointWithinClipBounds = lastSampleWithinClipBounds;
             }
 
-            return addedSamples;
+            return addedSamples || sampleIdx <= endIdx;
         }
 
         /// <summary>

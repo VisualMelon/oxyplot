@@ -121,6 +121,11 @@ namespace OxyPlot.Benchmarks
             var ymin = xyRenderHelper.XYTransformation.YTransformation.ClipMinimum;
             var ymax = xyRenderHelper.XYTransformation.YTransformation.ClipMaximum;
 
+            var xfiltermin = double.MinValue;
+            var xfiltermax = double.MaxValue;
+            var yfiltermin = double.MinValue;
+            var yfiltermax = double.MaxValue;
+
             var xview = xyRenderHelper.XYTransformation.YTransformation.ViewInfo;
             var yview = xyRenderHelper.XYTransformation.YTransformation.ViewInfo;
 
@@ -131,6 +136,9 @@ namespace OxyPlot.Benchmarks
                 var p = Points[i];
                 if (!p.IsDefined())
                     return;
+
+                if (p.X > xfiltermax || p.X < xfiltermin || p.Y > yfiltermax || p.Y < yfiltermin)
+                    continue;
 
                 if (p.X > xmax || p.X < xmin || p.Y > ymax || p.Y < ymin)
                     continue;

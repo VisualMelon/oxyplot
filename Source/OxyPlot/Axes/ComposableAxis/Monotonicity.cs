@@ -180,6 +180,8 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         public TData Maximum { get; private set; }
 
+        private TData Previous;
+
         /// <summary>
         /// Gets a value indicating whether no values have been observed.
         /// </summary>
@@ -204,33 +206,34 @@ namespace OxyPlot.Axes.ComposableAxis
             if (Flags == Empty)
             {
                 Flags = 0;
-                Minimum = Maximum = value;
+                Minimum = Maximum = Previous = value;
             }
             else
             {
-                var c = Provider.Compare(value, Minimum);
-                if (c == 0)
-                {
-                    Flags |= Repeat;
-                }
-                else if (c < 0)
+                var c = Provider.Compare(value, Previous);
+
+                if (c < 0)
                 {
                     Flags |= Decrease;
-                    Minimum = value;
-                }
-                else
-                {
-                    c = Provider.Compare(value, Maximum);
-                    if (c == 0)
+                    if (Provider.Compare(value, Minimum) < 0)
                     {
-                        Flags |= Repeat;
+                        Minimum = value;
                     }
-                    else if (c > 0)
+                }
+                else if (c > 0)
+                {
+                    Flags |= Increase;
+                    if (Provider.Compare(value, Maximum) > 0)
                     {
-                        Flags |= Increase;
                         Maximum = value;
                     }
                 }
+                else
+                {
+                    Flags |= Repeat;
+                }
+
+                Previous = value;
             }
         }
 
