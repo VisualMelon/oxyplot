@@ -136,7 +136,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// Base class for axes.
     /// </summary>
-    public abstract class AxisBase : PlotElement, IAxis
+    public abstract class AxisBase : PlotElement, IPrettyAxis
     {
         /// <summary>
         /// Initializes an instance of the <see cref="AxisBase"/> class.
@@ -171,13 +171,66 @@ namespace OxyPlot.Axes.ComposableAxis
             this.TitleFontWeight = FontWeights.Normal;
             this.ClipTitle = true;
 
+            this.TickStyle = TickStyle.Outside;
+            this.TicklineColor = OxyColors.Black;
+            this.MinorTicklineColor = OxyColors.Automatic;
+
+            this.MinorTickSize = 4;
+            this.MajorTickSize = 7;
+
+            this.MajorGridlineStyle = LineStyle.None;
+            this.MajorGridlineColor = OxyColor.FromArgb(0x40, 0, 0, 0);
+            this.MajorGridlineThickness = 1;
+
+            this.MinorGridlineStyle = LineStyle.None;
+            this.MinorGridlineColor = OxyColor.FromArgb(0x20, 0, 0, 0x00);
+            this.MinorGridlineThickness = 1;
+
+            this.AxisDistance = 0;
             this.AxisTitleDistance = 4;
+            this.AxisTickToLabelDistance = 4;
         }
 
-        /// <summary>
-        /// Determines whether this is an X/T axis.
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
+        public TickStyle TickStyle { get; set; }
+
+        /// <inheritdoc/>
+        public OxyColor TicklineColor { get; set; }
+
+        /// <inheritdoc/>
+        public OxyColor MinorTicklineColor { get; set; }
+
+        /// <inheritdoc/>
+        public double MajorTickSize { get; set; }
+
+        /// <inheritdoc/>
+        public double MinorTickSize { get; set; }
+
+        /// <inheritdoc/>
+        public OxyColor MinorGridlineColor { get; set; }
+
+        /// <inheritdoc/>
+        public LineStyle MinorGridlineStyle { get; set; }
+
+        /// <inheritdoc/>
+        public double MinorGridlineThickness { get; set; }
+
+        /// <inheritdoc/>
+        public OxyColor MajorGridlineColor { get; set; }
+
+        /// <inheritdoc/>
+        public LineStyle MajorGridlineStyle { get; set; }
+
+        /// <inheritdoc/>
+        public double MajorGridlineThickness { get; set; }
+
+        /// <inheritdoc/>
+        public double Angle { get; set; }
+
+        /// <inheritdoc/>
+        public double AxisTickToLabelDistance { get; set; }
+
+        /// <returns><c>true</c> if the axis is an xy axis.</returns>
         public abstract bool IsXyAxis();
 
         /// <summary>
@@ -244,14 +297,9 @@ namespace OxyPlot.Axes.ComposableAxis
         public double AxisTitleDistance { get; set; }
 
         /// <summary>
-        /// Gets or sets the orientation angle (degrees) for the axis labels. The default value is <c>0</c>.
+        /// Gets or sets the distance between the plot area and the axis. The default value is <c>0</c>.
         /// </summary>
-        public double Angle { get; set; }
-
-        /// <summary>
-        /// Gets or sets the distance from the end of the tick lines to the labels. The default value is <c>4</c>.
-        /// </summary>
-        public double AxisTickToLabelDistance { get; set; }
+        public double AxisDistance { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to clip the axis title. The default value is <c>true</c>.
@@ -640,9 +688,82 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Represents a pretty axis. Not sure where these things should be yet.
+    /// </summary>
+    public interface IPrettyAxis : IAxis
+    {
+        /// <summary>
+        /// Gets or sets the tick style for major and minor ticks. The default value is <see cref="OxyPlot.Axes.TickStyle.Outside"/>.
+        /// </summary>
+        TickStyle TickStyle { get; set; }
+
+        /// <summary>
+        /// Gets or sets the color of the major and minor ticks. The default value is <see cref="OxyColors.Black"/>.
+        /// </summary>
+        OxyColor TicklineColor { get; set; }
+
+        /// <summary>
+        /// Gets or sets the color of the minor ticks. The default value is <see cref="OxyColors.Automatic"/>.
+        /// </summary>
+        /// <remarks>If the value is <see cref="OxyColors.Automatic"/>, the value of
+        /// <see cref="AxisBase.TicklineColor"/> will be used.</remarks>
+        OxyColor MinorTicklineColor { get; set; }
+
+        /// <summary>
+        /// Gets or sets the size of the major ticks. The default value is <c>7</c>.
+        /// </summary>
+        double MajorTickSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the size of the minor ticks. The default value is <c>4</c>.
+        /// </summary>
+        double MinorTickSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the color of the minor gridlines. The default value is <c>#20000000</c>.
+        /// </summary>
+        OxyColor MinorGridlineColor { get; set; }
+
+        /// <summary>
+        /// Gets or sets the line style of the minor gridlines. The default value is <see cref="LineStyle.None"/>.
+        /// </summary>
+        LineStyle MinorGridlineStyle { get; set; }
+
+        /// <summary>
+        /// Gets or sets the thickness of the minor gridlines and ticks. The default value is <c>1</c>.
+        /// </summary>
+        double MinorGridlineThickness { get; set; }
+
+        /// <summary>
+        /// Gets or sets the color of the major gridlines. The default value is <c>#40000000</c>.
+        /// </summary>
+        OxyColor MajorGridlineColor { get; set; }
+
+        /// <summary>
+        /// Gets or sets the line style of the major gridlines. The default value is <see cref="LineStyle.None"/>.
+        /// </summary>
+        LineStyle MajorGridlineStyle { get; set; }
+
+        /// <summary>
+        /// Gets or sets the thickness of the major gridlines. The default value is <c>1</c>.
+        /// </summary>
+        double MajorGridlineThickness { get; set; }
+
+        /// <summary>
+        /// Gets or sets the orientation angle (degrees) for the axis labels. The default value is <c>0</c>.
+        /// </summary>
+        double Angle { get; set; }
+
+        /// <summary>
+        /// Gets or sets the distance from the end of the tick lines to the labels. The default value is <c>4</c>.
+        /// </summary>
+        double AxisTickToLabelDistance { get; set; }
+    }
+
+    /// <summary>
     /// An axis over a particular data type.
     /// </summary>
-    public interface IAxis<TData> : IAxis
+    public interface IAxis<TData> : IPrettyAxis
     {
         /// <summary>
         /// Zooms to the given range.
@@ -1061,7 +1182,7 @@ namespace OxyPlot.Axes.ComposableAxis
 
         internal override void UpdateIntervals(OxyRect plotArea)
         {
-            // the plan is to abstract this away entirely... so let's do nothing for now
+            // !??!?!?!
         }
 
         /// <inheritdoc/>
@@ -1112,6 +1233,22 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             // should probably be a better place for this...
 
+            var plotBounds = PlotBounds;
+
+            if (this.Position == AxisPosition.None)
+            {
+                this.DesiredMargin = new OxyThickness(0);
+                return;
+            }
+
+            if (!ScreenRange.TryGetMinMax(out var screenMin, out var screenMax))
+            {
+                throw new InvalidOperationException("Axis must exist on some range");
+            }
+
+            inlineAndSideWidth = Math.Abs((screenMax - screenMin).Value);
+
+            // update bands
             foreach (var band in Bands)
             {
                 band.AssociateAxis(this);
@@ -1122,21 +1259,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 band.Update();
             }
 
-            var plotBounds = PlotBounds;
-
-            if (this.Position == AxisPosition.None)
-            {
-                this.DesiredMargin = new OxyThickness(0);
-                return;
-            }
-
-            if (!ScreenRange.TryGetMinMax(out var min, out var max))
-            {
-                throw new InvalidOperationException("Axis must exist on some range");
-            }
-
             // margins are determined by the bands
-            inlineAndSideWidth = Math.Abs((max - min).Value);
             inlineExcesses = Measure(rc, BandPosition.Inline, inlineAndSideWidth);
             sideExcesses = Measure(rc, BandPosition.Side, inlineAndSideWidth);
 
@@ -1236,10 +1359,10 @@ namespace OxyPlot.Axes.ComposableAxis
             {
                 inlineOffset = new ScreenReal(this.Position switch
                 {
-                    AxisPosition.Left => this.ScreenMin.X,
-                    AxisPosition.Top => this.ScreenMin.Y,
-                    AxisPosition.Right => this.ScreenMax.X,
-                    AxisPosition.Bottom => this.ScreenMax.Y,
+                    AxisPosition.Left => this.ScreenMin.X - this.AxisDistance,
+                    AxisPosition.Top => this.ScreenMin.Y - this.AxisDistance,
+                    AxisPosition.Right => this.ScreenMax.X + this.AxisDistance,
+                    AxisPosition.Bottom => this.ScreenMax.Y + this.AxisDistance,
                     _ => throw new NotImplementedException(),
                 });
             }

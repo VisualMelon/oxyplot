@@ -357,36 +357,12 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <param name="minium"></param>
         /// <param name="maximum"></param>
+        /// <param name="availableWidth"></param>
         /// <param name="spacingOptions"></param>
-        /// <param name="ticks"></param>
+        /// <param name="majorTicks"></param>
+        /// <param name="minorTicks"></param>
         /// <returns></returns>
-        void GetTicks(TData minium, TData maximum, ISpacingOptions<TData> spacingOptions, IList<Tick<TData>> ticks);
-    }
-
-    /// <summary>
-    /// Provides spacing options.
-    /// </summary>
-    public interface ISpacingOptions<TData>
-    {
-        /// <summary>
-        /// Gets the maximum allowed number of ticks.
-        /// </summary>
-        public int MaximumTickCount { get; }
-
-        /// <summary>
-        /// Gets the minimum allowed number of ticks.
-        /// </summary>
-        public int MinimumTickCount { get; }
-
-        /// <summary>
-        /// Gets the maximum allowed step.
-        /// </summary>
-        public TData MaximumStep { get; }
-
-        /// <summary>
-        /// Gets the minimum allowed step.
-        /// </summary>
-        public TData MinimumStep { get; }
+        void GetTicks(TData minium, TData maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<TData>> majorTicks, IList<Tick<TData>> minorTicks);
     }
 
     /// <summary>

@@ -73,10 +73,6 @@ namespace OxyPlot.Axes
             this.MinimumRange = 0;
             this.MaximumRange = double.PositiveInfinity;
 
-            this.TickStyle = TickStyle.Outside;
-            this.TicklineColor = OxyColors.Black;
-            this.MinorTicklineColor = OxyColors.Automatic;
-
             this.AxislineStyle = LineStyle.None;
             this.AxislineColor = OxyColors.Black;
             this.AxislineThickness = 1.0;
@@ -92,9 +88,6 @@ namespace OxyPlot.Axes
             this.ExtraGridlineStyle = LineStyle.Solid;
             this.ExtraGridlineColor = OxyColors.Black;
             this.ExtraGridlineThickness = 1;
-
-            this.MinorTickSize = 4;
-            this.MajorTickSize = 7;
 
             this.StartPosition = 0;
             this.EndPosition = 1;
@@ -196,11 +189,6 @@ namespace OxyPlot.Axes
         public string ActualStringFormat { get; protected set; }
 
         /// <summary>
-        /// Gets or sets the distance between the plot area and the axis. The default value is <c>0</c>.
-        /// </summary>
-        public double AxisDistance { get; set; }
-
-        /// <summary>
         /// Gets or sets the color of the axis line. The default value is <see cref="OxyColors.Black" />.
         /// </summary>
         public OxyColor AxislineColor { get; set; }
@@ -288,29 +276,9 @@ namespace OxyPlot.Axes
         public Func<double, string> LabelFormatter { get; set; }
 
         /// <summary>
-        /// Gets or sets the color of the major gridlines. The default value is <c>#40000000</c>.
-        /// </summary>
-        public OxyColor MajorGridlineColor { get; set; }
-
-        /// <summary>
-        /// Gets or sets the line style of the major gridlines. The default value is <see cref="LineStyle.None"/>.
-        /// </summary>
-        public LineStyle MajorGridlineStyle { get; set; }
-
-        /// <summary>
-        /// Gets or sets the thickness of the major gridlines. The default value is <c>1</c>.
-        /// </summary>
-        public double MajorGridlineThickness { get; set; }
-
-        /// <summary>
         /// Gets or sets the interval between major ticks. The default value is <c>double.NaN</c>.
         /// </summary>
         public double MajorStep { get; set; }
-
-        /// <summary>
-        /// Gets or sets the size of the major ticks. The default value is <c>7</c>.
-        /// </summary>
-        public double MajorTickSize { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum value of the axis. The default value is <c>double.NaN</c>.
@@ -343,36 +311,9 @@ namespace OxyPlot.Axes
         public double MinimumRange { get; set; }
 
         /// <summary>
-        /// Gets or sets the color of the minor gridlines. The default value is <c>#20000000</c>.
-        /// </summary>
-        public OxyColor MinorGridlineColor { get; set; }
-
-        /// <summary>
-        /// Gets or sets the line style of the minor gridlines. The default value is <see cref="LineStyle.None"/>.
-        /// </summary>
-        public LineStyle MinorGridlineStyle { get; set; }
-
-        /// <summary>
-        /// Gets or sets the thickness of the minor gridlines. The default value is <c>1</c>.
-        /// </summary>
-        public double MinorGridlineThickness { get; set; }
-
-        /// <summary>
         /// Gets or sets the interval between minor ticks. The default value is <c>double.NaN</c>.
         /// </summary>
         public double MinorStep { get; set; }
-
-        /// <summary>
-        /// Gets or sets the color of the minor ticks. The default value is <see cref="OxyColors.Automatic"/>.
-        /// </summary>
-        /// <remarks>If the value is <see cref="OxyColors.Automatic"/>, the value of
-        /// <see cref="Axis.TicklineColor"/> will be used.</remarks>
-        public OxyColor MinorTicklineColor { get; set; }
-
-        /// <summary>
-        /// Gets or sets the size of the minor ticks. The default value is <c>4</c>.
-        /// </summary>
-        public double MinorTickSize { get; set; }
 
         /// <summary>
         /// Gets the offset. This is used to transform between data and screen coordinates.
@@ -403,16 +344,6 @@ namespace OxyPlot.Axes
         /// Gets or sets the string format used for formatting the axis values. The default value is <c>null</c>.
         /// </summary>
         public string StringFormat { get; set; }
-
-        /// <summary>
-        /// Gets or sets the tick style for major and minor ticks. The default value is <see cref="OxyPlot.Axes.TickStyle.Outside"/>.
-        /// </summary>
-        public TickStyle TickStyle { get; set; }
-
-        /// <summary>
-        /// Gets or sets the color of the major and minor ticks. The default value is <see cref="OxyColors.Black"/>.
-        /// </summary>
-        public OxyColor TicklineColor { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to use superscript exponential format. The default value is <c>false</c>.
@@ -1542,70 +1473,7 @@ namespace OxyPlot.Axes
         /// <returns>Actual interval to use to determine which values are displayed in the axis.</returns>
         protected double CalculateActualInterval(double availableSize, double maxIntervalSize, double range)
         {
-            if (availableSize <= 0)
-            {
-                return maxIntervalSize;
-            }
-
-            if (Math.Abs(maxIntervalSize) < double.Epsilon)
-            {
-                throw new ArgumentException("Maximum interval size cannot be zero.", "maxIntervalSize");
-            }
-
-            if (Math.Abs(range) < double.Epsilon)
-            {
-                throw new ArgumentException("Range cannot be zero.", "range");
-            }
-
-            Func<double, double> exponent = x => Math.Ceiling(Math.Log(x, 10));
-            Func<double, double> mantissa = x => x / Math.Pow(10, exponent(x) - 1);
-
-            // reduce intervals for horizontal axis.
-            // double maxIntervals = Orientation == AxisOrientation.x ? MaximumAxisIntervalsPer200Pixels * 0.8 : MaximumAxisIntervalsPer200Pixels;
-            // real maximum interval count
-            double maxIntervalCount = availableSize / maxIntervalSize;
-
-            range = Math.Abs(range);
-            double interval = Math.Pow(10, exponent(range));
-            double intervalCandidate = interval;
-
-            // Function to remove 'double precision noise'
-            // TODO: can this be improved
-            Func<double, double> removeNoise = x => double.Parse(x.ToString("e14"));
-
-            // decrease interval until interval count becomes less than maxIntervalCount
-            while (true)
-            {
-                var m = (int)mantissa(intervalCandidate);
-                if (m == 5)
-                {
-                    // reduce 5 to 2
-                    intervalCandidate = removeNoise(intervalCandidate / 2.5);
-                }
-                else if (m == 2 || m == 1 || m == 10)
-                {
-                    // reduce 2 to 1, 10 to 5, 1 to 0.5
-                    intervalCandidate = removeNoise(intervalCandidate / 2.0);
-                }
-                else
-                {
-                    intervalCandidate = removeNoise(intervalCandidate / 2.0);
-                }
-
-                if (range / intervalCandidate > maxIntervalCount)
-                {
-                    break;
-                }
-
-                if (double.IsNaN(intervalCandidate) || double.IsInfinity(intervalCandidate))
-                {
-                    break;
-                }
-
-                interval = intervalCandidate;
-            }
-
-            return interval;
+            return AxisUtilities.CalculateActualIntervalLinear(availableSize, maxIntervalSize, range);
         }
 
         /// <summary>

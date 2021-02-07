@@ -41,7 +41,7 @@ namespace ExampleLibrary
                 EndPosition = 0.2,
             };
 
-            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
             xaxis.Bands.Add(xticks);
 
             plot.Axes.Add(xaxis);
@@ -55,7 +55,7 @@ namespace ExampleLibrary
                 Key = "Y",
             };
 
-            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
             yaxis.Bands.Add(yticks);
 
             plot.Axes.Add(yaxis);
@@ -77,7 +77,7 @@ namespace ExampleLibrary
                 Key = "X",
             };
 
-            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
             xaxis.Bands.Add(xticks);
 
             plot.Axes.Add(xaxis);
@@ -91,7 +91,7 @@ namespace ExampleLibrary
                 Key = "Y",
             };
 
-            var yticks = new TickBand<double>(new LogarithmicDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            var yticks = new TickBand<double>(new LogarithmicDoubleTickLocator(), new SpacingOptions());
             yaxis.Bands.Add(yticks);
 
             plot.Axes.Add(yaxis);
@@ -102,7 +102,50 @@ namespace ExampleLibrary
         [Example("LineSeries on default Axes")]
         public static PlotModel LineOnDefaultAxis()
         {
-            var plot = new PlotModel() { Subtitle = "The axes are 'normal' default axes" };
+            var plot = new PlotModel() { Subtitle = "The axes are default axes" };
+
+            var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>>(default, default)
+            {
+                Title = "y = sin(x)",
+                RenderInLegend = true,
+            };
+
+            for (var x = 0.0; x <= 10; x += 0.01)
+            {
+                lines.Samples.Add(new DataPoint(x, Math.Sin(x)));
+            }
+
+            plot.Series.Add(lines);
+
+            plot.Legends.Add(new Legend());
+
+            return plot;
+        }
+
+        [Example("LineSeries on immitation default Axes")]
+        public static PlotModel LineOnimmitationDefaultAxis()
+        {
+            var plot = new PlotModel() { Subtitle = "The axes are immitations of the default axes" };
+
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            {
+                Position = AxisPosition.Bottom,
+            };
+
+            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
+            xaxis.Bands.Add(xticks);
+
+            plot.Axes.Add(xaxis);
+
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            {
+                Position = AxisPosition.Left,
+            };
+
+            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
+            yaxis.Bands.Add(yticks);
+
+            plot.Axes.Add(yaxis);
 
             var lines = new OxyPlot.Axes.ComposableAxis.SeriesExamples.LineSeries<DataPoint, double, double, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>>(default, default)
             {
@@ -279,7 +322,7 @@ namespace ExampleLibrary
                 Title = "X",
             };
 
-            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
             xaxis.Bands.Add(xticks);
             plot.Axes.Add(xaxis);
 
@@ -289,7 +332,7 @@ namespace ExampleLibrary
                 Title = "Y",
             };
 
-            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
             yaxis.Bands.Add(yticks);
             plot.Axes.Add(yaxis);
 
@@ -313,7 +356,7 @@ namespace ExampleLibrary
                 Title = "X",
             };
 
-            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
             xaxis.Bands.Add(xticks);
             plot.Axes.Add(xaxis);
 
@@ -323,7 +366,7 @@ namespace ExampleLibrary
                 Title = "Y",
             };
 
-            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
             yaxis.Bands.Add(yticks);
             plot.Axes.Add(yaxis);
 
@@ -467,7 +510,7 @@ namespace ExampleLibrary
                 Key = "X",
             };
 
-            var xticks = new TickBand<DateTime>(new LinearDateTimeTickLocator(), new SpacingOptions<DateTime>(20, 3, default, default));
+            var xticks = new TickBand<DateTime>(new LinearDateTimeTickLocator(), new SpacingOptions());
             xaxis.Bands.Add(xticks);
 
             plot.Axes.Add(xaxis);
@@ -484,7 +527,7 @@ namespace ExampleLibrary
                 Key = "Y",
             };
 
-            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions<double>(20, 3, double.PositiveInfinity, 0.0));
+            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
             yaxis.Bands.Add(yticks);
 
             plot.Axes.Add(yaxis);

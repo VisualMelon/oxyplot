@@ -52,7 +52,7 @@ namespace OxyPlot.Axes.ComposableAxis
     public struct Tick<TData>
     {
         /// <summary>
-        /// 
+        /// Initalises a <see cref="Tick{TData}"/> with value and label;
         /// </summary>
         /// <param name="value"></param>
         /// <param name="label"></param>
@@ -60,6 +60,16 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             Value = value;
             Label = label ?? throw new ArgumentNullException(nameof(label));
+        }
+
+        /// <summary>
+        /// Initalises a <see cref="Tick{TData}"/> with value only;
+        /// </summary>
+        /// <param name="value"></param>
+        public Tick(TData value)
+        {
+            Value = value;
+            Label = null;
         }
 
         /// <summary>
@@ -203,9 +213,9 @@ namespace OxyPlot.Axes.ComposableAxis
         public ITickLocator<double> TickLocator { get; set; }
 
         /// <summary>
-        /// Gets or sets the <see cref="ISpacingOptions{TData}"/> for this instance.
+        /// Gets or sets the <see cref="SpacingOptions"/> for this instance.
         /// </summary>
-        public ISpacingOptions<double> SpacingOptions { get; set; }
+        public SpacingOptions SpacingOptions { get; set; }
 
         /// <inheritdoc/>
         public void Invalidate()
@@ -219,8 +229,9 @@ namespace OxyPlot.Axes.ComposableAxis
             if (!_invalidated)
                 return;
 
+            // TODO: not sure if I want the ITicks abstraction at the moment...
             this._ticks.Clear();
-            this.TickLocator.GetTicks(viewInformation.ClipMinimum, viewInformation.ClipMaximum, this.SpacingOptions, this._ticks);
+            this.TickLocator.GetTicks(viewInformation.ClipMinimum, viewInformation.ClipMaximum, 100, this.SpacingOptions, this._ticks, null);
         }
     }
 
@@ -258,7 +269,7 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
-        public void GetTicks(double minium, double maximum, ISpacingOptions<double> spacingOptions, IList<Tick<double>> ticks)
+        public void GetTicks(double minium, double maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<double>> majorTicks, IList<Tick<double>> minorTicks)
         {
             minium = Math.Log(minium);
             maximum = Math.Log(maximum);
@@ -279,7 +290,7 @@ namespace OxyPlot.Axes.ComposableAxis
             do
             {
                 var actual = Math.Exp(next);
-                ticks.Add(new Tick<double>(actual, Format(actual)));
+                majorTicks.Add(new Tick<double>(actual, Format(actual)));
 
                 next += candidate;
             }
@@ -321,28 +332,19 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
-        public void GetTicks(double minium, double maximum, ISpacingOptions<double> spacingOptions, IList<Tick<double>> ticks)
+        public void GetTicks(double minium, double maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<double>> majorTicks, IList<Tick<double>> minorTicks)
         {
-            // TODO: proper implementation
-            var upperBound = (maximum - minium) / spacingOptions.MaximumTickCount;
-            var niceLog = Math.Floor(Math.Log10(upperBound));
-            var candidate = Math.Pow(10, niceLog);
-            if (candidate * 5 < upperBound)
-                candidate *= 5; ;
-            if (candidate * 2 < upperBound)
-                candidate *= 2;
+            var majorInterval = AxisUtilities.CalculateActualIntervalLinear(availableWidth, spacingOptions.MaximumIntervalSize, maximum - minium);
+            var minorInterval = AxisUtilities.CalculateMinorInterval(majorInterval);
 
-            var next = Math.Round((minium - Offset) / candidate) * candidate;
-            while (next < minium)
-                next += candidate;
+            var majorTickValues = AxisUtilities.CreateTickValues(minium, maximum, majorInterval, spacingOptions.MaximumTickCount);
+            var minorTickValues = AxisUtilities.CreateTickValues(minium, maximum, minorInterval, spacingOptions.MaximumTickCount);
+            minorTickValues = AxisUtilities.FilterRedundantMinorTicks(majorTickValues, minorTickValues);
 
-            do
-            {
-                ticks.Add(new Tick<double>(next, Format(next)));
-
-                next += candidate;
-            }
-            while (next <= maximum);
+            foreach (var t in majorTickValues)
+                majorTicks.Add(new Tick<double>(t, Format(t)));
+            foreach (var t in minorTickValues)
+                minorTicks.Add(new Tick<double>(t));
         }
     }
 
@@ -362,7 +364,7 @@ namespace OxyPlot.Axes.ComposableAxis
         public string FormatString { get; set; } = null;
 
         /// <inheritdoc/>
-        public void GetTicks(DateTime minium, DateTime maximum, ISpacingOptions<DateTime> spacingOptions, IList<Tick<DateTime>> ticks)
+        public void GetTicks(DateTime minium, DateTime maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<DateTime>> majorTicks, IList<Tick<DateTime>> minorTicks)
         {
             // TODO: proper implementation
 
@@ -451,7 +453,7 @@ namespace OxyPlot.Axes.ComposableAxis
             var x = x0;
             do
             {
-                ticks.Add(new Tick<DateTime>(x, formatter(x)));
+                majorTicks.Add(new Tick<DateTime>(x, formatter(x)));
 
                 x = inc(x);
             }
@@ -700,7 +702,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// Initializes a new instance of the <see cref="TitleBand" /> class.
         /// </summary>
-        public TickBand(ITickLocator<TData> tickLocator, ISpacingOptions<TData> spacingOptions)
+        public TickBand(ITickLocator<TData> tickLocator, SpacingOptions spacingOptions)
         {
             this.TickLocator = tickLocator;
             this.SpacingOptions = spacingOptions;
@@ -709,7 +711,8 @@ namespace OxyPlot.Axes.ComposableAxis
             this.BandTier = 0;
             this.IsBandVisible = true;
 
-            this.Ticks = new List<Tick<TData>>();
+            this.MajorTicks = new List<Tick<TData>>();
+            this.MinorTicks = new List<Tick<TData>>();
         }
 
         /// <summary>
@@ -718,9 +721,9 @@ namespace OxyPlot.Axes.ComposableAxis
         public ITickLocator<TData> TickLocator { get; set; }
 
         /// <summary>
-        /// Gets or sets the <see cref="ISpacingOptions{TData}"/>  for this band.
+        /// Gets or sets the <see cref="SpacingOptions"/>  for this band.
         /// </summary>
-        public ISpacingOptions<TData> SpacingOptions { get; set; }
+        public SpacingOptions SpacingOptions { get; set; }
 
         /// <summary>
         /// Gets the ticks rendered by this band.
@@ -728,14 +731,33 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <remarks>
         /// Updated by <see cref="Update"/>
         /// </remarks>
-        public List<Tick<TData>> Ticks { get; }
+        public List<Tick<TData>> MajorTicks { get; }
+
+        /// <summary>
+        /// Gets the ticks rendered by this band.
+        /// </summary>
+        /// <remarks>
+        /// Updated by <see cref="Update"/>
+        /// </remarks>
+        public List<Tick<TData>> MinorTicks { get; }
+
+        private void UpdateTicks(double availableWidth)
+        {
+            MajorTicks.Clear();
+            MinorTicks.Clear();
+
+            TickLocator.GetTicks(Axis.ClipMinimum, Axis.ClipMaximum, availableWidth, SpacingOptions, MajorTicks, MinorTicks);
+        }
 
         /// <inheritdoc/>
         public override void Measure(IRenderContext renderContext, double width)
         {
-            // TODO: refit when we change ITickRenderHelper to take a BandLocation
+            UpdateTicks(width);
+
             var renderHelper = TickRenderHelper<TData>.PrepareHorizontalVertial(Axis);
-            Excesses = renderHelper.MeasureTicks(renderContext, Ticks.AsReadOnlyList(), TickStyle.Outside, 5, 1, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, ((AxisBase)Axis).AxisTickToLabelDistance);
+            var majorExcesses = renderHelper.MeasureTicks(renderContext, MajorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MajorTickSize, Axis.MajorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
+            var minorExcesses = renderHelper.MeasureTicks(renderContext, MajorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MinorTickSize, Axis.MinorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
+            Excesses = BandExcesses.Max(majorExcesses, minorExcesses);
         }
 
         /// <inheritdoc/>
@@ -743,14 +765,13 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             // TODO: refit when we change ITickRenderHelper to take a BandLocation
             var renderHelper = TickRenderHelper<TData>.PrepareHorizontalVertial(Axis);
-            renderHelper.RenderTicks(renderContext, Ticks.AsReadOnlyList(), TickStyle.Outside, 5, 1, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, ((AxisBase)Axis).AxisTickToLabelDistance);
+            renderHelper.RenderTicks(renderContext, MajorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MajorTickSize, Axis.MajorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
+            renderHelper.RenderTicks(renderContext, MinorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MinorTickSize, Axis.MinorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
         }
 
         /// <inheritdoc/>
         public override void Update()
         {
-            Ticks.Clear();
-            TickLocator.GetTicks(Axis.ClipMinimum, Axis.ClipMaximum, SpacingOptions, Ticks);
         }
     }
 

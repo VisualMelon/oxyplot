@@ -1620,37 +1620,40 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
-    /// Default spacing options class.
+    /// Spacing options class.
     /// </summary>
-    /// <typeparam name="TData"></typeparam>
-    public class SpacingOptions<TData> : ISpacingOptions<TData>
+    public class SpacingOptions
     {
         /// <summary>
-        /// Initialises an instance of the <see cref="SpacingOptions{TData}"/> class.
+        /// Initialises an instance of the <see cref="SpacingOptions"/> class.
         /// </summary>
-        /// <param name="maximumTickCount"></param>
-        /// <param name="minimumTickCount"></param>
-        /// <param name="maximumStep"></param>
-        /// <param name="minimumStep"></param>
-        public SpacingOptions(int maximumTickCount, int minimumTickCount, TData maximumStep, TData minimumStep)
+        public SpacingOptions()
         {
-            MaximumTickCount = maximumTickCount;
-            MinimumTickCount = minimumTickCount;
-            MaximumStep = maximumStep;
-            MinimumStep = minimumStep;
+            MaximumTickCount = 100;
+            MinimumTickCount = 2;
+            MinimumIntervalSize = 10;
+            MaximumIntervalSize = 60;
         }
 
-        /// <inheritdoc/>
-        public int MaximumTickCount { get; set; }
+        /// <summary>
+        /// Gets the maximum allowed number of ticks.
+        /// </summary>
+        public int MaximumTickCount { get; }
 
-        /// <inheritdoc/>
-        public int MinimumTickCount { get; set; }
+        /// <summary>
+        /// Gets the minimum allowed number of ticks.
+        /// </summary>
+        public int MinimumTickCount { get; }
 
-        /// <inheritdoc/>
-        public TData MaximumStep { get; set; }
+        /// <summary>
+        /// Gets the minimum allowed step.
+        /// </summary>
+        public double MinimumIntervalSize { get; }
 
-        /// <inheritdoc/>
-        public TData MinimumStep { get; set; }
+        /// <summary>
+        /// Gets the minimum allowed step.
+        /// </summary>
+        public double MaximumIntervalSize { get; }
     }
 
     /// <summary>
@@ -1868,14 +1871,17 @@ namespace OxyPlot.Axes.ComposableAxis
 
                     var labelSize = renderContext.MeasureText(tick.Label, labelFont, labelFontSize, labelFontWeight, labelAngle);
 
-                    // just fudge it for now
                     if (IsVertical)
                     {
                         top = Math.Max(top, labelSize.Width + AxisTickToLabelDistance + tickLength);
+                        left = Math.Max(left, labelSize.Height / 2);
+                        right = Math.Max(right, labelSize.Height / 2);
                     }
                     else
                     {
                         top = Math.Max(top, labelSize.Height + AxisTickToLabelDistance + tickLength);
+                        left = Math.Max(left, labelSize.Width / 2);
+                        right = Math.Max(right, labelSize.Width / 2);
                     }
                 }
             }

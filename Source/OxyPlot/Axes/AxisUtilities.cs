@@ -35,6 +35,81 @@ namespace OxyPlot.Axes
             return majorInterval / 5;
         }
 
+        /// <summary>
+        /// Returns the actual interval to use to determine which values are displayed in the axis.
+        /// </summary>
+        /// <param name="availableSize">The available size.</param>
+        /// <param name="maxIntervalSize">The maximum interval size.</param>
+        /// <param name="range">The range.</param>
+        /// <returns>Actual interval to use to determine which values are displayed in the axis.</returns>
+        public static double CalculateActualIntervalLinear(double availableSize, double maxIntervalSize, double range)
+        {
+            if (availableSize <= 0)
+            {
+                return maxIntervalSize;
+            }
+
+            if (Math.Abs(maxIntervalSize) < double.Epsilon)
+            {
+                throw new ArgumentException("Maximum interval size cannot be zero.", "maxIntervalSize");
+            }
+
+            if (Math.Abs(range) < double.Epsilon)
+            {
+                throw new ArgumentException("Range cannot be zero.", "range");
+            }
+
+            Func<double, double> exponent = x => Math.Ceiling(Math.Log(x, 10));
+            Func<double, double> mantissa = x => x / Math.Pow(10, exponent(x) - 1);
+
+            // reduce intervals for horizontal axis.
+            // double maxIntervals = Orientation == AxisOrientation.x ? MaximumAxisIntervalsPer200Pixels * 0.8 : MaximumAxisIntervalsPer200Pixels;
+            // real maximum interval count
+            double maxIntervalCount = availableSize / maxIntervalSize;
+
+            range = Math.Abs(range);
+            double interval = Math.Pow(10, exponent(range));
+            double intervalCandidate = interval;
+
+            // Function to remove 'double precision noise'
+            // TODO: can this be improved
+            Func<double, double> removeNoise = x => double.Parse(x.ToString("e14"));
+
+            // decrease interval until interval count becomes less than maxIntervalCount
+            while (true)
+            {
+                var m = (int)mantissa(intervalCandidate);
+                if (m == 5)
+                {
+                    // reduce 5 to 2
+                    intervalCandidate = removeNoise(intervalCandidate / 2.5);
+                }
+                else if (m == 2 || m == 1 || m == 10)
+                {
+                    // reduce 2 to 1, 10 to 5, 1 to 0.5
+                    intervalCandidate = removeNoise(intervalCandidate / 2.0);
+                }
+                else
+                {
+                    intervalCandidate = removeNoise(intervalCandidate / 2.0);
+                }
+
+                if (range / intervalCandidate > maxIntervalCount)
+                {
+                    break;
+                }
+
+                if (double.IsNaN(intervalCandidate) || double.IsInfinity(intervalCandidate))
+                {
+                    break;
+                }
+
+                interval = intervalCandidate;
+            }
+
+            return interval;
+        }
+
 #if DEBUG
         /// <summary>
         /// Calculates the minor interval (alternative algorithm).
