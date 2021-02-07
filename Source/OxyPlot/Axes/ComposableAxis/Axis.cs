@@ -27,6 +27,38 @@ namespace OxyPlot.Axes.ComposableAxis
     /// Consumes an axis-screen transformation.
     /// </summary>
     /// <typeparam name="TData"></typeparam>
+    public interface IAxisDataProviderConsumer<TData>
+    {
+        /// <summary>
+        /// Consumes an a data provder.
+        /// </summary>
+        /// <typeparam name="TDataProvider"></typeparam>
+        /// <param name="provider"></param>
+        void Consume<TDataProvider>(TDataProvider provider)
+            where TDataProvider : IDataProvider<TData>;
+    }
+
+    /// <summary>
+    /// Consumes an axis color transformation.
+    /// </summary>
+    /// <typeparam name="VData"></typeparam>
+    public interface IAxisColorTransformationConsumer<VData>
+    {
+        /// <summary>
+        /// Consumes an a data provder.
+        /// </summary>
+        /// <typeparam name="VDataProvider"></typeparam>
+        /// <typeparam name="TAxisColorTransformation"></typeparam>
+        /// <param name="transformation"></param>
+        void Consume<VDataProvider, TAxisColorTransformation>(TAxisColorTransformation transformation)
+            where VDataProvider : IDataProvider<VData>
+            where TAxisColorTransformation : IAxisColorTransformation<VData, VDataProvider>;
+    }
+
+    /// <summary>
+    /// Consumes an axis screen transformation.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
     public interface IAxisScreenTransformationConsumer<TData>
     {
         /// <summary>
@@ -791,6 +823,42 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <remarks>The bigger the value the further afar is the axis from the graph.</remarks>
         int PositionTier { get; set; }
+    }
+
+    /// <summary>
+    /// Represents an axis that translates values into colors.
+    /// </summary>
+    /// <typeparam name="VData"></typeparam>
+    public interface IColorAxis<VData>
+    {
+        /// <summary>
+        /// Consumes a <see cref="IAxisColorTransformationConsumer{VData}"/>, which provides strongly typed access to the axis' current transformation.
+        /// </summary>
+        /// <param name="consumer">The consumer that will receive the transformation.</param>
+        void ConsumeTransformation(IAxisColorTransformationConsumer<VData> consumer);
+
+        /// <summary>
+        /// Gets the <see cref="IAxisColorTransformation{TData}"/>
+        /// </summary>
+        /// <returns></returns>
+        IAxisColorTransformation<VData> GetColorTransformation();
+
+        // TODO: should this be here?
+        /// <summary>
+        /// Includes a sample in the axis data range.
+        /// </summary>
+        /// <param name="sample"></param>
+        void Include(VData sample);
+
+        /// <summary>
+        /// Gets or setse the low color.
+        /// </summary>
+        OxyColor LowColor { get; set; }
+
+        /// <summary>
+        /// Gets or setse the high color.
+        /// </summary>
+        OxyColor HighColor { get; set; }
     }
 
     /// <summary>
@@ -1681,13 +1749,74 @@ namespace OxyPlot.Axes.ComposableAxis
                 var p1 = location.Reference - r * band.Excesses.Left + u * band.Excesses.Top;
                 var p2 = location.Reference + location.Parallel + r * band.Excesses.Left + u * band.Excesses.Top;
                 var p3 = location.Reference + location.Parallel + r * band.Excesses.Left - u * band.Excesses.Bottom;
-                
+
                 rc.DrawLine(new[] { p0, p1, p2, p3, p0 }, OxyColors.DarkGray, 1, EdgeRenderingMode.Automatic);
 
                 // parallel and normal
                 rc.DrawLine(new[] { location.Reference, location.Reference + location.Parallel }, OxyColors.Orange, 1, EdgeRenderingMode.Automatic);
                 rc.DrawLine(new[] { location.Reference + location.Parallel * 0.5, location.Reference + location.Parallel * 0.5 + location.Normal * 5 }, OxyColors.Red, 1, EdgeRenderingMode.Automatic);
             }
+        }
+    }
+
+    /// <summary>
+    /// An axis.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    /// <typeparam name="TDataProvider"></typeparam>
+    /// <typeparam name="TDataTransformation"></typeparam>
+    /// <typeparam name="TDataFilter"></typeparam>
+    /// <typeparam name="TDataOptional"></typeparam>
+    /// <typeparam name="TDataOptionalProvider"></typeparam>
+    public class ColorAxis<TData, TDataProvider, TDataTransformation, TDataFilter, TDataOptional, TDataOptionalProvider> : HorizontalVerticalAxis<TData, TDataProvider, TDataTransformation, TDataFilter, TDataOptional, TDataOptionalProvider>, IColorAxis<TData>
+        where TDataProvider : IDataProvider<TData>
+        where TDataTransformation : IDataTransformation<TData, TDataProvider>
+        where TDataFilter : IFilter<TData>
+        where TDataOptionalProvider : IOptionalProvider<TData, TDataOptional>
+    {
+        /// <summary>
+        /// Initialises an instance of the <see cref="ColorAxis{TData, TDataProvider, TDataTransformation, TDataFilter, TDataOptional, TDataOptionalProvider}"/> class.
+        /// </summary>
+        /// <param name="dataTransformation"></param>
+        /// <param name="optionalProvider"></param>
+        /// <param name="filter"></param>
+        public ColorAxis(TDataTransformation dataTransformation, TDataOptionalProvider optionalProvider, TDataFilter filter)
+            : base(dataTransformation, optionalProvider, filter)
+        {
+            this.Position = AxisPosition.Right;
+            this.AxisDistance = 10;
+        }
+
+        /// <summary>
+        /// Gets the color palette.
+        /// </summary>
+        public OxyPalette Palette { get; set; } = OxyPalettes.Gray(100);
+
+        /// <summary>
+        /// Gets or sets the low color.
+        /// </summary>
+        public OxyColor LowColor { get; set; } = OxyColors.Undefined;
+
+        /// <summary>
+        /// Gets or sets the high color.
+        /// </summary>
+        public OxyColor HighColor { get; set; } = OxyColors.Undefined;
+
+        /// <inheritdoc/>
+        public virtual void ConsumeTransformation(IAxisColorTransformationConsumer<TData> consumer)
+        {
+            consumer.Consume<TDataProvider, AxisColorTransformation<TData, TDataProvider, TDataTransformation>>(GetTypedColorTransformation());
+        }
+
+        private AxisColorTransformation<TData, TDataProvider, TDataTransformation> GetTypedColorTransformation()
+        {
+            return new AxisColorTransformation<TData, TDataProvider, TDataTransformation>(Palette, DataTransformation, LowColor, HighColor, ClipInteractionMinimum, ClipInteractionMaximum);
+        }
+
+        /// <inheritdoc/>
+        public IAxisColorTransformation<TData> GetColorTransformation()
+        {
+            return GetTypedColorTransformation();
         }
     }
 }

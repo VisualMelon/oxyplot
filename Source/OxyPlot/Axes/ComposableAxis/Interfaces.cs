@@ -36,20 +36,46 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
-    /// Maps samples to XYZ samples
+    /// Maps samples to values.
     /// </summary>
     /// <typeparam name="TSample"></typeparam>
-    /// <typeparam name="XData"></typeparam>
-    /// <typeparam name="YData"></typeparam>
-    /// <typeparam name="ZData"></typeparam>
-    public interface IXYZSampleProvider<TSample, XData, YData, ZData>
+    /// <typeparam name="VData"></typeparam>
+    public interface IValueProvider<TSample, VData>
     {
         /// <summary>
-        /// Extracts a <see cref="DataSample{XData, YData, ZData}"/> from a <typeparamref name="TSample"/>.
+        /// Extracts a <typeparamref name="VData"/> from a <typeparamref name="TSample"/>.
         /// </summary>
         /// <param name="sample"></param>
         /// <returns></returns>
-        DataSample<XData, YData, ZData> Sample(TSample sample);
+        VData Sample(TSample sample);
+    }
+
+    /// <summary>
+    /// A <see cref="IValueProvider{TSample, VData}"/> that just returns a constant.
+    /// </summary>
+    /// <typeparam name="TSample"></typeparam>
+    /// <typeparam name="VData"></typeparam>
+    public readonly struct ConstantProvider<TSample, VData> : IValueProvider<TSample, VData>
+    {
+        /// <summary>
+        /// The constant.
+        /// </summary>
+        public readonly VData Constant;
+
+        /// <summary>
+        /// Initialises a new instance of the <see cref="ConstantProvider{TSample, VData}"/> struct.
+        /// </summary>
+        /// <param name="constant"></param>
+        public ConstantProvider(VData constant)
+        {
+            Constant = constant;
+        }
+
+        /// <inheritdoc/>
+        public VData Sample(TSample sample)
+        {
+            return Constant;
+        }
     }
 
     /// <summary>
@@ -220,6 +246,27 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Provides methods to transform between values and colors.
+    /// </summary>
+    /// <typeparam name="TData">The type of Data space</typeparam>
+    public interface IAxisColorTransformation<TData>
+    {
+        /// <summary>
+        /// Transforms a value to a color.
+        /// </summary>
+        /// <param name="data">The value.</param>
+        /// <returns>A <see cref="OxyColor"/>.</returns>
+        OxyColor Transform(TData data);
+
+        /// <summary>
+        /// Determines whether the given value should be presented on the axis.
+        /// </summary>
+        /// <param name="data">The value to test</param>
+        /// <returns><c>true</c> if the value should be presented, otherwise <c>false</c>.</returns>
+        bool Filter(TData data);
+    }
+
+    /// <summary>
     /// Provides methods to transform between Data space and Screen space along an axis
     /// </summary>
     /// <typeparam name="TData">The type of Data space</typeparam>
@@ -280,6 +327,20 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="v"></param>
         /// <returns><c>true</c> if the value is within the axis clip bounds.</returns>
         public bool WithinClipBounds(TData v);
+    }
+
+    /// <summary>
+    /// Provides methods to transform between values and colors.
+    /// </summary>
+    /// <typeparam name="TData">The type of Data space</typeparam>
+    /// <typeparam name="TDataProvider">The type of Data space</typeparam>
+    public interface IAxisColorTransformation<TData, TDataProvider> : IAxisColorTransformation<TData>
+        where TDataProvider : IDataProvider<TData>
+    {
+        /// <summary>
+        /// Gets the <see cref="IDataPointProvider"/> for <typeparamref name="TData"/>.
+        /// </summary>
+        public TDataProvider Provider { get; }
     }
 
     /// <summary>
@@ -363,6 +424,24 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="minorTicks"></param>
         /// <returns></returns>
         void GetTicks(TData minium, TData maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<TData>> majorTicks, IList<Tick<TData>> minorTicks);
+    }
+
+    /// <summary>
+    /// Provides methods to locate ticks and gridlines on an axis
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    public interface IRangeTickLocator<TData>
+    {
+        /// <summary>
+        /// Generates range ticks between the given minimum and maximum data values.
+        /// </summary>
+        /// <param name="minium"></param>
+        /// <param name="maximum"></param>
+        /// <param name="availableWidth"></param>
+        /// <param name="spacingOptions"></param>
+        /// <param name="ticks"></param>
+        /// <returns></returns>
+        void GetTicks(TData minium, TData maximum, double availableWidth, SpacingOptions spacingOptions, IList<RangeTick<TData>> ticks);
     }
 
     /// <summary>

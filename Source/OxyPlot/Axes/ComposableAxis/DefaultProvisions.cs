@@ -399,6 +399,75 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Axis color transformation.
+    /// Maps interaction space to 
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    /// <typeparam name="TDataProvider"></typeparam>
+    /// <typeparam name="TDataTransformation"></typeparam>
+    public readonly struct AxisColorTransformation<TData, TDataProvider, TDataTransformation> : IAxisColorTransformation<TData, TDataProvider>
+        where TDataProvider : IDataProvider<TData>
+        where TDataTransformation : IDataTransformation<TData, TDataProvider>
+    {
+        private readonly OxyPalette Palette;
+        private readonly TDataTransformation _Transformation;
+
+        private readonly OxyColor LowColor;
+        private readonly OxyColor HighColor;
+        private readonly InteractionReal InteractionMin;
+        private readonly InteractionReal InteractionMax;
+
+        /// <summary>
+        /// Initialises an <see cref="AxisColorTransformation{TData, TDataProvider, TDataTransformation}"/>.
+        /// </summary>
+        /// <param name="palette"></param>
+        /// <param name="transformation"></param>
+        /// <param name="lowColor"></param>
+        /// <param name="highColor"></param>
+        /// <param name="interactionMin"></param>
+        /// <param name="interactionMax"></param>
+        public AxisColorTransformation(OxyPalette palette, TDataTransformation transformation, OxyColor lowColor, OxyColor highColor, InteractionReal interactionMin, InteractionReal interactionMax)
+        {
+            Palette = palette ?? throw new ArgumentNullException(nameof(palette));
+            _Transformation = transformation;
+            LowColor = lowColor;
+            HighColor = highColor;
+            InteractionMin = interactionMin;
+            InteractionMax = interactionMax;
+        }
+
+        /// <inheritdoc/>
+        public TDataProvider Provider => _Transformation.Provider;
+
+        /// <inheritdoc/>
+        public bool Filter(TData data)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc/>
+        public OxyColor Transform(TData data)
+        {
+            var idx = GetIndex(data);
+
+            if (idx < 0)
+                return LowColor.IsUndefined() ? Palette.Colors[0] : LowColor;
+            if (idx >= Palette.Colors.Count)
+                return HighColor.IsUndefined() ? Palette.Colors[Palette.Colors.Count - 1] : HighColor;
+
+            return Palette.Colors[idx];
+        }
+
+        private int GetIndex(TData data)
+        {
+            var i = _Transformation.Transform(data);
+            var c = (i - InteractionMin).Value / (InteractionMax - InteractionMin).Value;
+
+            return (int)(c * this.Palette.Colors.Count);
+        }
+    }
+
+    /// <summary>
     /// Wraps a <typeparamref name="TDataTransformation"/> and ViewInfo to provide an <see cref="IAxisScreenTransformation{TData, TDataProvider}"/>.
     /// </summary>
     /// <typeparam name="TData"></typeparam>
@@ -601,6 +670,63 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Provides basic methods process value.
+    /// </summary>
+    /// <typeparam name="VData"></typeparam>
+    public interface IVHelper<VData>
+    {
+        /// <summary>
+        /// Finds the minimum and maximum values in the samples.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TValueProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
+        /// <param name="samples"></param>
+        /// <param name="minV"></param>
+        /// <param name="maxV"></param>
+        bool FindMinMax<TSample, TValueProvider, TSampleFilter>(TValueProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, out VData minV, out VData maxV)
+            where TValueProvider : IValueProvider<TSample, VData>
+            where TSampleFilter : IFilter<TSample>;
+
+        /// <summary>
+        /// Finds the minimum and maximum X and Y values in the samples.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TValueProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
+        /// <param name="samples"></param>
+        /// <param name="minV"></param>
+        /// <param name="maxV"></param>
+        /// <param name="vMonotonicity"></param>
+        bool FindMinMax<TSample, TValueProvider, TSampleFilter>(TValueProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, out VData minV, out VData maxV, out Monotonicity vMonotonicity)
+            where TValueProvider : IValueProvider<TSample, VData>
+            where TSampleFilter : IFilter<TSample>;
+
+        /// <summary>
+        /// Gets the value data provider.
+        /// </summary>
+        IDataProvider<VData> VProvider { get; }
+    }
+
+    /// <summary>
+    /// Provides basic methods to help with colors.
+    /// </summary>
+    /// <typeparam name="VData"></typeparam>
+    public interface IColorHelper<VData> : IVHelper<VData>
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        OxyColor Transform(VData value);
+    }
+
+    /// <summary>
     /// Provides basic methods to help in X/Y space
     /// </summary>
     public interface IXYHelper<XData, YData>
@@ -756,6 +882,126 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets the underlying YTransformation.
         /// </summary>
         IAxisScreenTransformation<YData> YTransformation { get; }
+    }
+
+    /// <summary>
+    /// Prepares instances of <see cref="IVHelper{VData}"/>.
+    /// </summary>
+    /// <typeparam name="VData"></typeparam>
+    public class ColorHelperPreparer<VData>
+    {
+        private class Generator : IAxisColorTransformationConsumer<VData>
+        {
+            public Generator()
+            {
+            }
+
+            public void Consume<VDataProvider, TAxisColorTransformation>(TAxisColorTransformation transformation)
+                where VDataProvider : IDataProvider<VData>
+                where TAxisColorTransformation : IAxisColorTransformation<VData, VDataProvider>
+            {
+                Result = new ColorHelper<VData, VDataProvider, TAxisColorTransformation>(transformation);
+            }
+
+            public IColorHelper<VData> Result { get; private set; }
+        }
+
+        /// <summary>
+        /// Prepares a <see cref="IColorHelper{VData}"/> for a horizontal or vertical axis.
+        /// </summary>
+        /// <param name="axis"></param>
+        /// <returns></returns>
+        public static IColorHelper<VData> Prepare(IColorAxis<VData> axis)
+        {
+            var generator = new Generator();
+            axis.ConsumeTransformation(generator);
+            return generator.Result;
+        }
+    }
+
+    /// <summary>
+    /// Value helper
+    /// </summary>
+    /// <typeparam name="VData"></typeparam>
+    /// <typeparam name="VDataProvider"></typeparam>
+    public class ValueHelper<VData, VDataProvider> : IVHelper<VData>
+        where VDataProvider : IDataProvider<VData>
+    {
+        private readonly VDataProvider _VDataProvider;
+
+        /// <summary>
+        /// Initialises an isntance of the <see cref="ValueHelper{VData, VDataProvider}"/> class.
+        /// </summary>
+        /// <param name="vDataProvider"></param>
+        public ValueHelper(VDataProvider vDataProvider)
+        {
+            _VDataProvider = vDataProvider;
+        }
+
+        /// <inheritdoc/>
+        public IDataProvider<VData> VProvider => _VDataProvider;
+
+        /// <inheritdoc/>
+        public bool FindMinMax<TSample, TValueProvider, TSampleFilter>(TValueProvider valueProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, out VData minV, out VData maxV)
+            where TValueProvider : IValueProvider<TSample, VData>
+            where TSampleFilter : IFilter<TSample>
+        {
+            return this.FindMinMax(valueProvider, sampleFilter, samples, out minV, out maxV, out _);
+        }
+
+        /// <inheritdoc/>
+        public bool FindMinMax<TSample, TValueProvider, TSampleFilter>(TValueProvider valueProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, out VData minV, out VData maxV, out Monotonicity vMonotonicity)
+            where TValueProvider : IValueProvider<TSample, VData>
+            where TSampleFilter : IFilter<TSample>
+        {
+            var v = new SequenceHelper<VData, VDataProvider>(_VDataProvider);
+
+            foreach (var sample in samples)
+            {
+                if (sampleFilter.Filter(sample))
+                {
+                    v.Next(valueProvider.Sample(sample));
+                }
+            }
+
+            minV = v.Minimum;
+            maxV = v.Maximum;
+            vMonotonicity = v.Monotonicity;
+
+            return !v.IsEmpty;
+        }
+    }
+
+    /// <summary>
+    /// Provides basic methods to render in X/Y space
+    /// </summary>
+    /// <typeparam name="VData"></typeparam>
+    /// <typeparam name="VDataProvider"></typeparam>
+    /// <typeparam name="VAxisColorTransformation"></typeparam>
+    public class ColorHelper<VData, VDataProvider, VAxisColorTransformation> : ValueHelper<VData, VDataProvider>, IColorHelper<VData>
+        where VDataProvider : IDataProvider<VData>
+        where VAxisColorTransformation : IAxisColorTransformation<VData, VDataProvider>
+    {
+        /// <summary>
+        /// Initialises an instance of the <see cref="ColorHelper{VData, VDataProvider, VAxisColorTransformation}"/> class.
+        /// </summary>
+        /// <param name="transformation"></param>
+        public ColorHelper(VAxisColorTransformation transformation)
+            : base(transformation.Provider)
+        {
+            Transformation = transformation;
+        }
+
+        /// <summary>
+        /// The axis color transformation.
+        /// </summary>
+        public VAxisColorTransformation Transformation { get; }
+
+        /// <inheritdoc/>
+        public OxyColor Transform(VData value)
+        {
+            return Transformation.Transform(value);
+        }
     }
 
     /// <summary>
@@ -1165,6 +1411,28 @@ namespace OxyPlot.Axes.ComposableAxis
         public bool Filter(TData value)
         {
             return Predicate(value);
+        }
+    }
+
+    /// <summary>
+    /// A filter that defers judgement to a delegate.
+    /// </summary>
+    public readonly struct DelegateValueProvider<TSample, VData> : IValueProvider<TSample, VData>
+    {
+        /// <summary>
+        /// Initialises an instance of the <see cref="DelegateValueProvider{TSample, VData}"/> struct.
+        /// </summary>
+        public DelegateValueProvider(Func<TSample, VData> mapping)
+        {
+            Mapping = mapping ?? throw new ArgumentNullException(nameof(mapping));
+        }
+
+        private readonly Func<TSample, VData> Mapping { get; }
+
+        /// <inheritdoc/>
+        public VData Sample(TSample sample)
+        {
+            return Mapping(sample);
         }
     }
 
@@ -1638,22 +1906,22 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// Gets the maximum allowed number of ticks.
         /// </summary>
-        public int MaximumTickCount { get; }
+        public int MaximumTickCount { get; set; }
 
         /// <summary>
         /// Gets the minimum allowed number of ticks.
         /// </summary>
-        public int MinimumTickCount { get; }
+        public int MinimumTickCount { get; set; }
 
         /// <summary>
         /// Gets the minimum allowed step.
         /// </summary>
-        public double MinimumIntervalSize { get; }
+        public double MinimumIntervalSize { get; set; }
 
         /// <summary>
         /// Gets the minimum allowed step.
         /// </summary>
-        public double MaximumIntervalSize { get; }
+        public double MaximumIntervalSize { get; set; }
     }
 
     /// <summary>
@@ -1661,11 +1929,8 @@ namespace OxyPlot.Axes.ComposableAxis
     /// </summary>
     public interface ITickRenderHelper<TData>
     {
-        // TODO: the idea is that these render onto a band... so why do I not just provide a bank to the methods?
-        // TODO: provide a bank to the methods; remove the non-vectorized hideousness and compute a ScreenReal offset for the reference point, so that we can translate the same computed values as normal
-
         /// <summary>
-        /// Renders a whole load of ticks.
+        /// Renders a whole load of <see cref="TickStyle"/>.
         /// </summary>
         /// <param name="renderContext"></param>
         /// <param name="bandLocation"></param>
@@ -1683,7 +1948,7 @@ namespace OxyPlot.Axes.ComposableAxis
         void RenderTicks(IRenderContext renderContext, BandLocation bandLocation, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance);
 
         /// <summary>
-        /// Measures the excesses of a whole load of ticks.
+        /// Measures a whole load of <see cref="TickStyle"/>.
         /// </summary>
         /// <param name="renderContext"></param>
         /// <param name="bandLocation"></param>
@@ -1699,6 +1964,32 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="labelAngle"></param>
         /// <param name="AxisTickToLabelDistance"></param>
         BandExcesses MeasureTicks(IRenderContext renderContext, BandLocation bandLocation, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance);
+
+        /// <summary>
+        /// Renders a whole load of <see cref="ColorRangeTick{TData}"/>.
+        /// </summary>
+        /// <param name="renderContext"></param>
+        /// <param name="bandLocation"></param>
+        /// <param name="ticks"></param>
+        /// <param name="tickStyle"></param>
+        /// <param name="barWidth"></param>
+        /// <param name="lowColor"></param>
+        /// <param name="highColor"></param>
+        /// <param name="highLowExcess"></param>
+        void RenderColorRangeTicks(IRenderContext renderContext, BandLocation bandLocation, IReadOnlyList<ColorRangeTick<TData>> ticks, TickStyle tickStyle, double barWidth, OxyColor lowColor, OxyColor highColor, double highLowExcess);
+
+        /// <summary>
+        /// Measures a whole load of <see cref="ColorRangeTick{TData}"/>.
+        /// </summary>
+        /// <param name="renderContext"></param>
+        /// <param name="bandLocation"></param>
+        /// <param name="ticks"></param>
+        /// <param name="tickStyle"></param>
+        /// <param name="barWidth"></param>
+        /// <param name="lowColor"></param>
+        /// <param name="highColor"></param>
+        /// <param name="highLowExcess"></param>
+        BandExcesses MeasureColorRangeTicks(IRenderContext renderContext, BandLocation bandLocation, IReadOnlyList<ColorRangeTick<TData>> ticks, TickStyle tickStyle, double barWidth, OxyColor lowColor, OxyColor highColor, double highLowExcess);
     }
 
     /// <summary>
@@ -1837,7 +2128,7 @@ namespace OxyPlot.Axes.ComposableAxis
             var left = 0.0;
             var right = 0.0;
 
-            var vnominal = AxisPosition switch
+            var vnormal = AxisPosition switch
             {
                 AxisPosition.Left => new ScreenVector(-1, 0),
                 AxisPosition.Top => new ScreenVector(0, -1),
@@ -1864,7 +2155,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 _ => throw new NotImplementedException(),
             };
 
-            var vt = vnominal * (AxisTickToLabelDistance + tickLength);
+            var vt = vnormal * (AxisTickToLabelDistance + tickLength);
 
             foreach (var tick in ticks)
             {
@@ -1894,13 +2185,76 @@ namespace OxyPlot.Axes.ComposableAxis
 
             return new BandExcesses(left, top, right, bottom);
         }
+
+        /// <inheritdoc/>
+        public void RenderColorRangeTicks(IRenderContext renderContext, BandLocation bandLocation, IReadOnlyList<ColorRangeTick<TData>> ticks, TickStyle tickStyle, double barWidth, OxyColor lowColor, OxyColor highColor, double highLowExcess)
+        {
+            var vUnitParallel = bandLocation.Parallel;
+            vUnitParallel.Normalize();
+            var vNomal = bandLocation.Normal;
+
+            var v0 = tickStyle == TickStyle.Crossing || tickStyle == TickStyle.Outside ? vNomal * barWidth : new ScreenVector(0, 0);
+            var v1 = tickStyle == TickStyle.Crossing || tickStyle == TickStyle.Inside ? vNomal * -barWidth : new ScreenVector(0, 0);
+
+            ScreenPoint smin, smax;
+
+            var points = new ScreenPoint[4];
+
+            // main spread
+            foreach (var tick in ticks)
+            {
+                if (this.AxisScreenTransformation.IsDiscontinuous(tick.Minimum, tick.Maximum))
+                    continue; // TODO: should probably do something more extreme...
+
+                // TODO: should clamp these (add a TransformClamped method, that clamps to the band width)
+                smin = this.Transform(tick.Minimum, bandLocation);
+                smax = this.Transform(tick.Maximum, bandLocation);
+
+                points[0] = smin + v0;
+                points[1] = smin + v1;
+                points[2] = smax + v1;
+                points[3] = smax + v0;
+
+                renderContext.DrawPolygon(points, tick.Color, OxyColors.Transparent, 0, EdgeRenderingMode.Automatic);
+            }
+
+            bool swapHighLow = AxisScreenTransformation.Transform(AxisScreenTransformation.ClipMinimum).Value > AxisScreenTransformation.Transform(AxisScreenTransformation.ClipMaximum).Value;
+
+            // low
+            smin = bandLocation.Reference - vUnitParallel * highLowExcess;
+            smax = bandLocation.Reference;
+
+            points[0] = smin + v0;
+            points[1] = smin + v1;
+            points[2] = smax + v1;
+            points[3] = smax + v0;
+
+            renderContext.DrawPolygon(points, swapHighLow ? highColor : lowColor, OxyColors.Transparent, 0, EdgeRenderingMode.Automatic);
+
+            // high
+            smin = bandLocation.Reference + bandLocation.Parallel;
+            smax = bandLocation.Reference + bandLocation.Parallel + vUnitParallel * highLowExcess;
+
+            points[0] = smin + v0;
+            points[1] = smin + v1;
+            points[2] = smax + v1;
+            points[3] = smax + v0;
+
+            renderContext.DrawPolygon(points, swapHighLow ? lowColor : highColor, OxyColors.Transparent, 0, EdgeRenderingMode.Automatic);
+        }
+
+        /// <inheritdoc/>
+        public BandExcesses MeasureColorRangeTicks(IRenderContext renderContext, BandLocation bandLocation, IReadOnlyList<ColorRangeTick<TData>> ticks, TickStyle tickStyle, double barWidth, OxyColor lowColor, OxyColor highColor, double highLowExcess)
+        {
+            return new BandExcesses(highLowExcess, barWidth, highLowExcess, 0.0);
+        }
     }
 
     /// <summary>
     /// Prepares instances of <see cref="ITickRenderHelper{TData}"/>.
     /// </summary>
     /// <typeparam name="TData"></typeparam>
-    public static class TickRenderHelper<TData>
+    public static class TickRenderHelperPreparer<TData>
     {
         private class Generator : IAxisScreenTransformationConsumer<TData>
         {

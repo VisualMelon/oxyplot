@@ -124,7 +124,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// <summary>
         /// Updates the minX, maxX, minY, and maxY values.
         /// </summary>
-        public void UpdateMinAndMax()
+        protected virtual void UpdateMinAndMax()
         {
             if (Samples.Count == 0)
                 return; // bail before we crash
@@ -146,12 +146,37 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// <summary>
         /// Resolves axes from the axis keys.
         /// </summary>
-        protected void ResolveAxes()
+        protected virtual void ResolveAxes()
         {
             // should throw if we can't get axes of the right type
             XAxis = (IAxis<XData>)this.PlotModel.GetAxisOrDefault(XAxisKey, this.PlotModel.DefaultXAxis);
             YAxis = (IAxis<YData>)this.PlotModel.GetAxisOrDefault(YAxisKey, this.PlotModel.DefaultYAxis);
             Collator = XYCollator<XData, YData>.Prepare(XAxis, YAxis);
+        }
+
+        /// <summary>
+        /// Finds a window of sample that are within the clip bounds if the data are monotonic.
+        /// </summary>
+        /// <param name="startIndex">The first index, inclusive.</param>
+        /// <param name="endIndex">The last index, inclusive.</param>
+        protected void FindWindow(out int startIndex, out int endIndex)
+        {
+            var xyRenderHelper = GetRenderHelper();
+
+            var xtransformation = xyRenderHelper.XTransformation;
+            var ytransformation = xyRenderHelper.YTransformation;
+
+            if (XMonotonicity.IsMonotone || YMonotonicity.IsMonotone)
+            {
+                var minSample = new DataSample<XData, YData>(xtransformation.ClipMinimum, ytransformation.ClipMinimum);
+                var maxSample = new DataSample<XData, YData>(xtransformation.ClipMaximum, ytransformation.ClipMaximum);
+                xyRenderHelper.FindWindow(SampleProvider, SampleFilter, Samples.AsReadOnlyList(), minSample, maxSample, XMonotonicity, YMonotonicity, out startIndex, out endIndex);
+            }
+            else
+            {
+                startIndex = 0;
+                endIndex = Samples.Count - 1;
+            }
         }
 
         /// <summary>
@@ -224,18 +249,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         {
             var xyRenderHelper = GetRenderHelper();
 
-            int startIdx = 0;
-            int endIdx = Samples.Count - 1;
-
-            var xtransformation = xyRenderHelper.XTransformation;
-            var ytransformation = xyRenderHelper.YTransformation;
-
-            if (XMonotonicity.IsMonotone || YMonotonicity.IsMonotone)
-            {
-                var minSample = new DataSample<XData, YData>(xtransformation.ClipMinimum, ytransformation.ClipMinimum);
-                var maxSample = new DataSample<XData, YData>(xtransformation.ClipMaximum, ytransformation.ClipMaximum);
-                xyRenderHelper.FindWindow(SampleProvider, SampleFilter, Samples.AsReadOnlyList(), minSample, maxSample, XMonotonicity, YMonotonicity, out startIdx, out endIdx);
-            }
+            this.FindWindow(out var startIdx, out var endIdx);
 
             if (xyRenderHelper.TryFindNearest(SampleProvider, Samples.AsReadOnlyList(), point, startIdx, endIdx, CanTrackerInterpolatePoints & interpolate, out var nearest, out var distance))
             {
@@ -279,11 +293,6 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         where TSampleFilter : IFilter<TSample>
     {
-        /// <summary>
-        /// The divisor value used to calculate tolerance for line smoothing.
-        /// </summary>
-        private const double ToleranceDivisor = 200;
-
         /// <summary>
         /// The output buffer for continuous line segments.
         /// </summary>
@@ -568,21 +577,10 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             brokenBuffer = brokenBuffer ?? new List<ScreenPoint>();
             continuousBuffer = continuousBuffer ?? new List<ScreenPoint>();
 
-            int startIdx = 0;
-            int endIdx = Samples.Count - 1;
-
             ScreenPoint? lp = null;
             bool lpb = default(bool);
 
-            var xtransformation = xyRenderHelper.XTransformation;
-            var ytransformation = xyRenderHelper.YTransformation;
-
-            if (XMonotonicity.IsMonotone || YMonotonicity.IsMonotone)
-            {
-                var minSample = new DataSample<XData, YData>(xtransformation.ClipMinimum, ytransformation.ClipMinimum);
-                var maxSample = new DataSample<XData, YData>(xtransformation.ClipMaximum, ytransformation.ClipMaximum);
-                xyRenderHelper.FindWindow(SampleProvider, SampleFilter, Samples.AsReadOnlyList(), minSample, maxSample, XMonotonicity, YMonotonicity, out startIdx, out endIdx);
-            }
+            base.FindWindow(out var startIdx, out var endIdx);
 
             int sampleIdx = startIdx;
 

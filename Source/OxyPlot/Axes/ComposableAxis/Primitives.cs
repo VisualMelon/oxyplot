@@ -49,7 +49,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// Represents a tick or label at a position on an axis
     /// </summary>
     /// <typeparam name="TData"></typeparam>
-    public struct Tick<TData>
+    public readonly struct Tick<TData>
     {
         /// <summary>
         /// Initalises a <see cref="Tick{TData}"/> with value and label;
@@ -81,6 +81,88 @@ namespace OxyPlot.Axes.ComposableAxis
         /// The label - if any - to attach to this tick.
         /// </summary>
         public string Label { get; }
+    }
+
+    /// <summary>
+    /// Represents a label over a range of values
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    public readonly struct RangeTick<TData>
+    {
+        /// <summary>
+        /// Initalises a <see cref="Range{TData}"/> with min, max, and label.
+        /// </summary>
+        /// <param name="minimum"></param>
+        /// <param name="maximum"></param>
+        /// <param name="label"></param>
+        public RangeTick(TData minimum, TData maximum, string label)
+        {
+            Minimum = minimum;
+            Maximum = maximum;
+            Label = label ?? throw new ArgumentNullException(nameof(label));
+        }
+
+        /// <summary>
+        /// Initalises a <see cref="Tick{TData}"/> with min and max only.
+        /// </summary>
+        /// <param name="minimum"></param>
+        /// <param name="maximum"></param>
+        public RangeTick(TData minimum, TData maximum)
+        {
+            Minimum = minimum;
+            Maximum = maximum;
+            Label = null;
+        }
+
+        /// <summary>
+        /// The minimum value of this range.
+        /// </summary>
+        public TData Minimum { get; }
+
+        /// <summary>
+        /// The value representated by this tick.
+        /// </summary>
+        public TData Maximum { get; }
+
+        /// <summary>
+        /// The label - if any - to attach to this tick.
+        /// </summary>
+        public string Label { get; }
+    }
+
+    /// <summary>
+    /// Represents a label over a range of values
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    public readonly struct ColorRangeTick<TData>
+    {
+        /// <summary>
+        /// Initalises a <see cref="Range{TData}"/> with min, max, and color.
+        /// </summary>
+        /// <param name="minimum"></param>
+        /// <param name="maximum"></param>
+        /// <param name="color"></param>
+        public ColorRangeTick(TData minimum, TData maximum, OxyColor color)
+        {
+            Minimum = minimum;
+            Maximum = maximum;
+            Color = color;
+        }
+
+        /// <summary>
+        /// The minimum value of this range.
+        /// </summary>
+        public TData Minimum { get; }
+
+        /// <summary>
+        /// The value representated by this tick.
+        /// </summary>
+        public TData Maximum { get; }
+
+        /// <summary>
+        /// The color of this range.
+        /// </summary>
+        public OxyColor Color { get; }
     }
 
     /// <summary>
@@ -137,7 +219,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// The excesses of a band.
     /// </summary>
-    public struct BandExcesses
+    public readonly struct BandExcesses
     {
         /// <summary>
         /// Initialises the <see cref="BandExcesses"/>.
@@ -345,6 +427,51 @@ namespace OxyPlot.Axes.ComposableAxis
                 majorTicks.Add(new Tick<double>(t, Format(t)));
             foreach (var t in minorTickValues)
                 minorTicks.Add(new Tick<double>(t));
+        }
+    }
+
+    /// <summary>
+    /// A basic Linear tick locator for doubles.
+    /// </summary>
+    public class LinearDoubleRangeTickLocator : IRangeTickLocator<double>
+    {
+        /// <summary>
+        /// Gets or sets the Tick Offset.
+        /// </summary>
+        public double Offset { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Formatter.
+        /// </summary>
+        public Func<double, string> Formatter { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Format String. Used if <see cref="Formatter"/> is <c>null</c>. Default is <c>"G5"</c>.
+        /// </summary>
+        public string FormatString { get; set; } = "G5";
+
+        /// <summary>
+        /// Formats a tick value.
+        /// </summary>
+        /// <param name="value">The tick value to format.</param>
+        /// <returns></returns>
+        public string Format(double value)
+        {
+            if (Formatter != null)
+                return Formatter(value);
+            else
+                return value.ToString(FormatString);
+        }
+
+        /// <inheritdoc/>
+        public void GetTicks(double minium, double maximum, double availableWidth, SpacingOptions spacingOptions, IList<RangeTick<double>> ticks)
+        {
+            var majorInterval = AxisUtilities.CalculateActualIntervalLinear(availableWidth, spacingOptions.MaximumIntervalSize, maximum - minium);
+
+            var tickValues = AxisUtilities.CreateTickValues(minium - majorInterval, maximum, majorInterval, spacingOptions.MaximumTickCount);
+
+            foreach (var t in tickValues)
+                ticks.Add(new RangeTick<double>(t, t + majorInterval, Format(t)));
         }
     }
 
@@ -733,7 +860,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets the ticks rendered by this band.
         /// </summary>
         /// <remarks>
-        /// Updated by <see cref="Update"/>
+        /// Updated by <see cref="Measure"/>
         /// </remarks>
         public List<Tick<TData>> MajorTicks { get; }
 
@@ -741,7 +868,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets the ticks rendered by this band.
         /// </summary>
         /// <remarks>
-        /// Updated by <see cref="Update"/>
+        /// Updated by <see cref="Measure"/>
         /// </remarks>
         public List<Tick<TData>> MinorTicks { get; }
 
@@ -758,7 +885,7 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             UpdateTicks(location.Width);
 
-            var renderHelper = TickRenderHelper<TData>.PrepareHorizontalVertial(Axis);
+            var renderHelper = TickRenderHelperPreparer<TData>.PrepareHorizontalVertial(Axis);
             var majorExcesses = renderHelper.MeasureTicks(renderContext, location, MajorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MajorTickSize, Axis.MajorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
             var minorExcesses = renderHelper.MeasureTicks(renderContext, location, MajorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MinorTickSize, Axis.MinorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
             Excesses = BandExcesses.Max(majorExcesses, minorExcesses);
@@ -768,7 +895,7 @@ namespace OxyPlot.Axes.ComposableAxis
         public override void Render(IRenderContext renderContext, BandLocation location)
         {
             // TODO: refit when we change ITickRenderHelper to take a BandLocation
-            var renderHelper = TickRenderHelper<TData>.PrepareHorizontalVertial(Axis);
+            var renderHelper = TickRenderHelperPreparer<TData>.PrepareHorizontalVertial(Axis);
             renderHelper.RenderTicks(renderContext, location, MajorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MajorTickSize, Axis.MajorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
             renderHelper.RenderTicks(renderContext, location, MinorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MinorTickSize, Axis.MinorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
         }
@@ -777,6 +904,120 @@ namespace OxyPlot.Axes.ComposableAxis
         public override void Update()
         {
             // nix: we need to know how big we are before we can do anything
+        }
+    }
+
+    /// <summary>
+    /// A band that renders axis ticks for color axes.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    public class ColorTickBand<TData> : BandBase<TData>
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ColorTickBand{TData}" /> class.
+        /// </summary>
+        /// <param name="tickLocator"></param>
+        /// <param name="spacingOptions"></param>
+        public ColorTickBand(IRangeTickLocator<TData> tickLocator, SpacingOptions spacingOptions)
+        {
+            this.TickLocator = tickLocator ?? throw new ArgumentNullException(nameof(tickLocator));
+            this.SpacingOptions = spacingOptions ?? throw new ArgumentNullException(nameof(spacingOptions));
+
+            this.BandPosition = BandPosition.Inline;
+            this.BandTier = 0;
+            this.IsBandVisible = true;
+
+            this.RangeTicks = new List<RangeTick<TData>>();
+            this.ColorRangeTicks = new List<ColorRangeTick<TData>>();
+        }
+
+        /// <summary>
+        /// Gets or sets the <see cref="IColorRangeTickLocator{TData}"/> for this band.
+        /// </summary>
+        public IRangeTickLocator<TData> TickLocator { get; set; }
+
+        /// <summary>
+        /// Gets or sets the <see cref="SpacingOptions"/>  for this band.
+        /// </summary>
+        public SpacingOptions SpacingOptions { get; set; }
+
+        /// <summary>
+        /// Gets the ticks rendered by this band.
+        /// </summary>
+        /// <remarks>
+        /// Updated by <see cref="Measure"/>
+        /// </remarks>
+        private List<RangeTick<TData>> RangeTicks { get; }
+
+        /// <summary>
+        /// Gets the ticks rendered by this band.
+        /// </summary>
+        /// <remarks>
+        /// Updated by <see cref="Measure"/>
+        /// </remarks>
+        public List<ColorRangeTick<TData>> ColorRangeTicks { get; }
+
+        /// <summary>
+        /// The axis associated with this band.
+        /// </summary>
+        /// <remarks>
+        /// Updated by <see cref="AssociateAxis(AxisBase)"/>
+        /// </remarks>
+        protected IColorAxis<TData> ColorAxis { get; private set; }
+
+        /// <inheritdoc/>
+        public override void AssociateAxis(AxisBase axis)
+        {
+            base.AssociateAxis(axis);
+
+            if (axis is IColorAxis<TData> typed)
+            {
+                ColorAxis = typed;
+            }
+            else
+            {
+                throw new InvalidOperationException($"{this.GetType().Name} cannot be associated with an axis of type {axis.GetType().Name}. The axis must implement IColorAxis<{typeof(TData).Name}>.");
+            }
+        }
+
+        private void UpdateTicks(double availableWidth)
+        {
+            RangeTicks.Clear();
+            ColorRangeTicks.Clear();
+
+            TickLocator.GetTicks(Axis.ClipMinimum, Axis.ClipMaximum, availableWidth, SpacingOptions, RangeTicks);
+            var colorHelper = ColorHelperPreparer<TData>.Prepare(ColorAxis);
+
+            foreach (var tick in RangeTicks)
+                ColorRangeTicks.Add(new ColorRangeTick<TData>(tick.Minimum, tick.Maximum, colorHelper.Transform(tick.Minimum)));
+        }
+
+        /// <inheritdoc/>
+        public override void Measure(IRenderContext renderContext, BandLocation location)
+        {
+            UpdateTicks(location.Width);
+
+            var renderHelper = TickRenderHelperPreparer<TData>.PrepareHorizontalVertial(Axis);
+
+            var barWidth = Axis.MajorTickSize;
+
+            Excesses = renderHelper.MeasureColorRangeTicks(renderContext, location, ColorRangeTicks.AsReadOnlyList(), Axis.TickStyle, Axis.MajorTickSize, ColorAxis.LowColor, ColorAxis.HighColor, barWidth);
+        }
+
+        /// <inheritdoc/>
+        public override void Render(IRenderContext renderContext, BandLocation location)
+        {
+            var renderHelper = TickRenderHelperPreparer<TData>.PrepareHorizontalVertial(Axis);
+
+            var barWidth = Axis.MajorTickSize;
+
+            renderHelper.RenderColorRangeTicks(renderContext, location, ColorRangeTicks.AsReadOnlyList(), Axis.TickStyle, Axis.MajorTickSize, ColorAxis.LowColor, ColorAxis.HighColor, barWidth);
+        }
+
+        /// <inheritdoc/>
+        public override void Update()
+        {
+            // nix
         }
     }
 

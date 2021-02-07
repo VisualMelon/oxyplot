@@ -63,6 +63,37 @@ namespace ExampleLibrary
             return plot;
         }
 
+        public static PlotModel SimpleLinearXY()
+        {
+            var plot = new PlotModel();
+
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            {
+                Position = AxisPosition.Bottom,
+                Title = "X Axis",
+                Key = "X",
+            };
+
+            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
+            xaxis.Bands.Add(xticks);
+
+            plot.Axes.Add(xaxis);
+
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            {
+                Position = AxisPosition.Left,
+                Title = "Y Axis",
+                Key = "Y",
+            };
+
+            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
+            yaxis.Bands.Add(yticks);
+
+            plot.Axes.Add(yaxis);
+
+            return plot;
+        }
+
         [Example("Logarithmic XY")]
         public static PlotModel LogarithmicXY()
         {
@@ -218,7 +249,8 @@ namespace ExampleLibrary
         [Example("LineSeries on immitation default Axes")]
         public static PlotModel LineOnimmitationDefaultAxis()
         {
-            var plot = new PlotModel() { Subtitle = "The axes are immitations of the default axes" };
+            var plot = SimpleLinearXY();
+            plot.Subtitle = "The axes are immitations of the default axes";
 
             var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
             {
@@ -324,6 +356,49 @@ namespace ExampleLibrary
             }
 
             plot.Series.Add(lines);
+
+            plot.Legends.Add(new Legend());
+
+            return plot;
+        }
+
+        [Example("ScatterSeries")]
+        public static PlotModel ScatterSeries()
+        {
+            var plot = SimpleLinearXY();
+
+            var caxis = new ColorAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
+            {
+                LowColor = OxyColors.Blue,
+                HighColor = OxyColors.Red,
+                DefaultViewRange = new Range<double>(0, 1),
+                Title = "Color Axis",
+                Key = "C",
+            };
+
+            // TODO: need to think about this more
+            var ccolorrangetickband = new ColorTickBand<double>(new LinearDoubleRangeTickLocator(), new SpacingOptions() { MaximumIntervalSize = 5, MinimumIntervalSize = 2 });
+            caxis.Bands.Add(ccolorrangetickband); // CRT first, so we can see the ticks themselves
+            var ctickband = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
+            caxis.Bands.Add(ctickband);
+
+            plot.Axes.Add(caxis);
+
+            var scatter = new OxyPlot.Axes.ComposableAxis.SeriesExamples.ScatterSeries<DataPoint, double, double, double, DataPointXYSampleProvider, DelegateValueProvider<DataPoint, double>, ConstantProvider<DataPoint, double>, AcceptAllFilter<DataPoint>>(default, new DelegateValueProvider<DataPoint, double>(dp => Math.Sin(dp.X + dp.Y)), new ConstantProvider<DataPoint, double>(5), default)
+            {
+                Title = "Scatter",
+                XAxisKey = "X",
+                YAxisKey = "Y",
+                VAxisKey = "C"
+            };
+
+            var rnd = new Random();
+            for (int i = 0; i < 100; i++)
+            {
+                scatter.Samples.Add(new DataPoint(rnd.NextDouble(), rnd.NextDouble()));
+            }
+
+            plot.Series.Add(scatter);
 
             plot.Legends.Add(new Legend());
 
