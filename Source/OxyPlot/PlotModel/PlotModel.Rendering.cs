@@ -262,7 +262,7 @@ namespace OxyPlot
 
                 maxValueOfPositionTier += maxSizeOfPositionTier;
 
-                foreach (var axis in axesOfPositionTier)
+                foreach (IPrettyAxis axis in axesOfPositionTier)
                 {
                     axis.PositionTierSize = maxSizeOfPositionTier;
                     axis.PositionTierMinShift = minValueOfPositionTier;

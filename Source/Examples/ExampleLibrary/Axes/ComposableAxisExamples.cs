@@ -122,6 +122,30 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
+            // x2
+            var x2axis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            {
+                Position = AxisPosition.Bottom,
+                PositionTier = 1,
+                Title = "X2 Axis",
+                Key = "X2",
+                TicklineColor = OxyColors.Green,
+                TextColor = OxyColors.Green,
+                TitleColor = OxyColors.DarkGreen,
+                DefaultViewRange = new Range<double>(-2 * Math.PI, +2 * Math.PI),
+                TickStyle = TickStyle.Crossing,
+            };
+
+            x2axis.Bands.Clear();
+            var x2title = new TitleBand() { BandPosition = BandPosition.InlineNear };
+            x2axis.Bands.Add(x2title);
+            x2title = new TitleBand() { BandPosition = BandPosition.InlineFar };
+            x2axis.Bands.Add(x2title);
+            var x2ticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
+            x2axis.Bands.Add(x2ticks);
+
+            plot.Axes.Add(x2axis);
+
             // y
             var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
             {
@@ -160,10 +184,7 @@ namespace ExampleLibrary
                 DefaultViewRange = new Range<double>(0, 100),
             };
 
-            //yaxis2.Bands.Clear();
-            //var y2title = new TitleBand() { BandPosition = BandPosition.InlineNear };
-            //yaxis2.Bands.Add(y2title);
-            var yticks2 = new TickBand<double>(new LinearDoubleTickLocator() { FormatString = "###%" }, new SpacingOptions());
+            var yticks2 = new TickBand<double>(new LinearDoubleTickLocator() { FormatString = "E3" }, new SpacingOptions());
             yaxis2.Bands.Add(yticks2);
 
             plot.Axes.Add(yaxis2);

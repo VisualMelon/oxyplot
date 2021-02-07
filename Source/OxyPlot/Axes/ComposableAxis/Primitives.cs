@@ -86,7 +86,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// The location of a band.
     /// </summary>
-    public struct BandLocation
+    public class BandLocation
     {
         /// <summary>
         /// Initialises an instance of the <see cref="BandLocation"/> struct.
@@ -525,30 +525,34 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets the Band Excessess
         /// </summary>
         /// <remarks>
-        /// Updated by <see cref="Measure(IRenderContext, double)"/>.
+        /// Updated by <see cref="Measure(IRenderContext, BandLocation)"/>.
         /// </remarks>
         BandExcesses Excesses { get; }
 
         /// <summary>
         /// Associates the given axis with this band.
+        /// Will be called before <see cref="Update"/>.
         /// </summary>
         /// <param name="axis"></param>
         void AssociateAxis(AxisBase axis);
 
         /// <summary>
         /// Updates the visibility and other state of the band.
+        /// Called once per frame, before all calls to <see cref="Measure(IRenderContext, BandLocation)"/>.
         /// </summary>
         void Update();
 
         /// <summary>
         /// Measures the band, setting the <see cref="Excesses"/> accordingly.
+        /// May be called many times each frame.
         /// </summary>
         /// <param name="renderContext">The render context.</param>
-        /// <param name="width">The ideal of the band.</param>
-        void Measure(IRenderContext renderContext, double width);
+        /// <param name="zeroReferenceLocation">A band location with a meaningless <see cref="BandLocation.Reference"/> decribing the size and orientation of the band.</param>
+        void Measure(IRenderContext renderContext, BandLocation zeroReferenceLocation);
 
         /// <summary>
         /// Renders the band.
+        /// Called one per frame, after all calls to <see cref="Measure(IRenderContext, BandLocation)"/>.
         /// </summary>
         /// <param name="renderContext">The render context.</param>
         /// <param name="location">The location where the band should be rendered</param>
@@ -598,7 +602,7 @@ namespace OxyPlot.Axes.ComposableAxis
         public abstract void Update();
 
         /// <inheritdoc/>
-        public abstract void Measure(IRenderContext renderContext, double width);
+        public abstract void Measure(IRenderContext renderContext, BandLocation zeroReferenceLocation);
 
         /// <inheritdoc/>
         public abstract void Render(IRenderContext renderContext, BandLocation location);
@@ -654,19 +658,19 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
-        public override void Measure(IRenderContext renderContext, double width)
+        public override void Measure(IRenderContext renderContext, BandLocation zeroReferenceLocation)
         {
             var titleTextSize = renderContext.MeasureText(Axis.ActualTitle, Axis.ActualTitleFont, Axis.ActualTitleFontSize, Axis.ActualTitleFontWeight);
 
             if (titleTextSize.Height > 0)
             {
                 var top = Axis.AxisTitleDistance + titleTextSize.Height;
-                double middle = width * Axis.TitlePosition;
+                double middle = zeroReferenceLocation.Width * Axis.TitlePosition;
 
                 var left = middle - titleTextSize.Width / 2;
                 var right = middle - titleTextSize.Width / 2;
 
-                Excesses = new BandExcesses(-left, top, right - width, 0);
+                Excesses = new BandExcesses(-left, top, right - zeroReferenceLocation.Width, 0);
             }
             else
             {
@@ -750,13 +754,13 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
-        public override void Measure(IRenderContext renderContext, double width)
+        public override void Measure(IRenderContext renderContext, BandLocation location)
         {
-            UpdateTicks(width);
+            UpdateTicks(location.Width);
 
             var renderHelper = TickRenderHelper<TData>.PrepareHorizontalVertial(Axis);
-            var majorExcesses = renderHelper.MeasureTicks(renderContext, MajorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MajorTickSize, Axis.MajorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
-            var minorExcesses = renderHelper.MeasureTicks(renderContext, MajorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MinorTickSize, Axis.MinorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
+            var majorExcesses = renderHelper.MeasureTicks(renderContext, location, MajorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MajorTickSize, Axis.MajorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
+            var minorExcesses = renderHelper.MeasureTicks(renderContext, location, MajorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MinorTickSize, Axis.MinorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
             Excesses = BandExcesses.Max(majorExcesses, minorExcesses);
         }
 
@@ -765,13 +769,14 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             // TODO: refit when we change ITickRenderHelper to take a BandLocation
             var renderHelper = TickRenderHelper<TData>.PrepareHorizontalVertial(Axis);
-            renderHelper.RenderTicks(renderContext, MajorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MajorTickSize, Axis.MajorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
-            renderHelper.RenderTicks(renderContext, MinorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MinorTickSize, Axis.MinorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
+            renderHelper.RenderTicks(renderContext, location, MajorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MajorTickSize, Axis.MajorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
+            renderHelper.RenderTicks(renderContext, location, MinorTicks.AsReadOnlyList(), TickStyle.Outside, Axis.MinorTickSize, Axis.MinorGridlineThickness, OxyColors.Black, ((AxisBase)Axis).ActualFont, ((AxisBase)Axis).ActualFontSize, ((AxisBase)Axis).ActualFontWeight, ((AxisBase)Axis).ActualTextColor, 0, Axis.AxisTickToLabelDistance);
         }
 
         /// <inheritdoc/>
         public override void Update()
         {
+            // nix: we need to know how big we are before we can do anything
         }
     }
 

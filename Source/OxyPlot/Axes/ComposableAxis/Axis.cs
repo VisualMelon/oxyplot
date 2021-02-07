@@ -189,7 +189,40 @@ namespace OxyPlot.Axes.ComposableAxis
             this.AxisDistance = 0;
             this.AxisTitleDistance = 4;
             this.AxisTickToLabelDistance = 4;
+
+            this.PositionTier = 0;
+            ((IPrettyAxis)this).PositionTierMaxShift = 0;
+            ((IPrettyAxis)this).PositionTierMinShift = 0;
+            ((IPrettyAxis)this).PositionTierSize = 0;
         }
+
+        /// <inheritdoc/>
+        public int PositionTier { get; set; }
+
+        // internal things make me sad; the idea is that these should only be assigned by PlotModel
+        /// <inheritdoc/>
+        double IPrettyAxis.PositionTierMaxShift { get; set; }
+
+        /// <inheritdoc/>
+        double IPrettyAxis.PositionTierMinShift { get; set; }
+
+        /// <inheritdoc/>
+        double IPrettyAxis.PositionTierSize { get; set; }
+
+        /// <summary>
+        /// Gets the <see cref="IPrettyAxis.PositionTierMaxShift"/>.
+        /// </summary>
+        internal double PositionTierMaxShift => ((IPrettyAxis)this).PositionTierMaxShift;
+
+        /// <summary>
+        /// Gets the <see cref="IPrettyAxis.PositionTierMinShift"/>.
+        /// </summary>
+        internal double PositionTierMinShift => ((IPrettyAxis)this).PositionTierMinShift;
+
+        /// <summary>
+        /// Gets the <see cref="IPrettyAxis.PositionTierSize"/>.
+        /// </summary>
+        internal double PositionTierSize => ((IPrettyAxis)this).PositionTierSize;
 
         /// <inheritdoc/>
         public TickStyle TickStyle { get; set; }
@@ -508,27 +541,6 @@ namespace OxyPlot.Axes.ComposableAxis
         public OxyThickness DesiredMargin { get; protected set; }
 
         /// <summary>
-        /// Gets or sets the position tier max shift.
-        /// </summary>
-        internal double PositionTierMaxShift { get; set; }
-
-        /// <summary>
-        /// Gets or sets the position tier min shift.
-        /// </summary>
-        internal double PositionTierMinShift { get; set; }
-
-        /// <summary>
-        /// Gets or sets the size of the position tier.
-        /// </summary>
-        internal double PositionTierSize { get; set; }
-
-        /// <summary>
-        /// Gets or sets the position tier which defines in which tier the axis is displayed. The default value is <c>0</c>.
-        /// </summary>
-        /// <remarks>The bigger the value the further afar is the axis from the graph.</remarks>
-        public int PositionTier { get; set; }
-
-        /// <summary>
         /// Gets or sets the 'padding' fraction of the minimum value. The default value is <c>0.01</c>.
         /// </summary>
         /// <remarks>A value of 0.01 gives 1% more space on the minimum end of the axis. This property is not used if an explicit minimum is set.</remarks>
@@ -758,6 +770,27 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets or sets the distance from the end of the tick lines to the labels. The default value is <c>4</c>.
         /// </summary>
         double AxisTickToLabelDistance { get; set; }
+
+        /// <summary>
+        /// Gets or sets the position tier max shift.
+        /// </summary>
+        internal double PositionTierMaxShift { get; set; }
+
+        /// <summary>
+        /// Gets or sets the position tier min shift.
+        /// </summary>
+        internal double PositionTierMinShift { get; set; }
+
+        /// <summary>
+        /// Gets or sets the size of the position tier.
+        /// </summary>
+        internal double PositionTierSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the position tier which defines in which tier the axis is displayed. The default value is <c>0</c>.
+        /// </summary>
+        /// <remarks>The bigger the value the further afar is the axis from the graph.</remarks>
+        int PositionTier { get; set; }
     }
 
     /// <summary>
@@ -1305,6 +1338,9 @@ namespace OxyPlot.Axes.ComposableAxis
                 leftMargin += farHeight;
             }
 
+            var shift = this.AxisDistance;
+            topMargin += shift;
+
             this.DesiredMargin = this.Position switch
             {
                 AxisPosition.Left => new OxyThickness(topMargin, rightMargin, 0.0, leftMargin),
@@ -1357,12 +1393,14 @@ namespace OxyPlot.Axes.ComposableAxis
             }
             else
             {
+                var shift = this.AxisDistance + this.PositionTierMinShift;
+
                 inlineOffset = new ScreenReal(this.Position switch
                 {
-                    AxisPosition.Left => this.ScreenMin.X - this.AxisDistance,
-                    AxisPosition.Top => this.ScreenMin.Y - this.AxisDistance,
-                    AxisPosition.Right => this.ScreenMax.X + this.AxisDistance,
-                    AxisPosition.Bottom => this.ScreenMax.Y + this.AxisDistance,
+                    AxisPosition.Left => this.ScreenMin.X - shift,
+                    AxisPosition.Top => this.ScreenMin.Y - shift,
+                    AxisPosition.Right => this.ScreenMax.X + shift,
+                    AxisPosition.Bottom => this.ScreenMax.Y + shift,
                     _ => throw new NotImplementedException(),
                 });
             }
@@ -1407,53 +1445,62 @@ namespace OxyPlot.Axes.ComposableAxis
                 _ => throw new NotImplementedException(),
             });
 
-            var nearFakeAxisPosition = this.Position switch
-            {
-                AxisPosition.Left => AxisPosition.Top,
-                AxisPosition.Top => AxisPosition.Left,
-                AxisPosition.Right => AxisPosition.Top,
-                AxisPosition.Bottom => AxisPosition.Left,
-                _ => throw new NotImplementedException(),
-            };
+            var nearFakeAxisPosition = NearBandFakePosition(this.Position);
+            var farFakeAxisPosition = FarBandFakePosition(this.Position);
 
-            var farFakeAxisPosition = this.Position switch
-            {
-                AxisPosition.Left => AxisPosition.Bottom,
-                AxisPosition.Top => AxisPosition.Right,
-                AxisPosition.Right => AxisPosition.Bottom,
-                AxisPosition.Bottom => AxisPosition.Right,
-                _ => throw new NotImplementedException(),
-            };
-
-            ScreenPoint inlineReference(double s)
+            ScreenPoint inlineNearReference(double s)
             {
                 return this.Position switch
                 {
                     AxisPosition.Left => new ScreenPoint(inlineOffset.Value - inlineTotalHeight, s),
-                    AxisPosition.Top => new ScreenPoint(s, inlineOffset.Value - inlineTotalHeight),
-                    AxisPosition.Right => new ScreenPoint(inlineOffset.Value + inlineTotalHeight, s),
+                    AxisPosition.Top => new ScreenPoint(s, inlineOffset.Value),
+                    AxisPosition.Right => new ScreenPoint(inlineOffset.Value, s),
                     AxisPosition.Bottom => new ScreenPoint(s, inlineOffset.Value + inlineTotalHeight),
                     _ => throw new NotImplementedException(),
                 };
             }
 
-            inlineNearLocations = Layout(inlineNearExcesses, nearFakeAxisPosition, inlineReference(nearOffset.Value), inlineTotalHeight);
-            inlineFarLocations = Layout(inlineFarExcesses, farFakeAxisPosition, inlineReference(farOffset.Value), inlineTotalHeight);
+            ScreenPoint inlineFarReference(double s)
+            {
+                return this.Position switch
+                {
+                    AxisPosition.Left => new ScreenPoint(inlineOffset.Value, s),
+                    AxisPosition.Top => new ScreenPoint(s, inlineOffset.Value - inlineTotalHeight),
+                    AxisPosition.Right => new ScreenPoint(inlineOffset.Value + inlineTotalHeight, s),
+                    AxisPosition.Bottom => new ScreenPoint(s, inlineOffset.Value),
+                    _ => throw new NotImplementedException(),
+                };
+            }
 
-            ScreenPoint sideReference(double s)
+            inlineNearLocations = Layout(inlineNearExcesses, nearFakeAxisPosition, inlineNearReference(nearOffset.Value), inlineTotalHeight);
+            inlineFarLocations = Layout(inlineFarExcesses, farFakeAxisPosition, inlineFarReference(farOffset.Value), inlineTotalHeight);
+
+            ScreenPoint sideNearReference(double s)
             {
                 return this.Position switch
                 {
                     AxisPosition.Left => new ScreenPoint(sideOffset.Value - sideTotalHeight, s),
-                    AxisPosition.Top => new ScreenPoint(s, sideOffset.Value - sideTotalHeight),
-                    AxisPosition.Right => new ScreenPoint(sideOffset.Value + sideTotalHeight, s),
+                    AxisPosition.Top => new ScreenPoint(s, sideOffset.Value),
+                    AxisPosition.Right => new ScreenPoint(sideOffset.Value, s),
                     AxisPosition.Bottom => new ScreenPoint(s, sideOffset.Value + sideTotalHeight),
                     _ => throw new NotImplementedException(),
                 };
             }
 
-            sideNearLocations = Layout(sideNearExcesses, nearFakeAxisPosition, sideReference(nearOffset.Value), sideTotalHeight);
-            sideFarLocations = Layout(sideFarExcesses, farFakeAxisPosition, sideReference(farOffset.Value), sideTotalHeight);
+            ScreenPoint sideFarReference(double s)
+            {
+                return this.Position switch
+                {
+                    AxisPosition.Left => new ScreenPoint(sideOffset.Value, s),
+                    AxisPosition.Top => new ScreenPoint(s, sideOffset.Value - sideTotalHeight),
+                    AxisPosition.Right => new ScreenPoint(sideOffset.Value + sideTotalHeight, s),
+                    AxisPosition.Bottom => new ScreenPoint(s, sideOffset.Value),
+                    _ => throw new NotImplementedException(),
+                };
+            }
+
+            sideNearLocations = Layout(sideNearExcesses, nearFakeAxisPosition, sideNearReference(nearOffset.Value), sideTotalHeight);
+            sideFarLocations = Layout(sideFarExcesses, farFakeAxisPosition, sideFarReference(farOffset.Value), sideTotalHeight);
         }
 
         // layout state
@@ -1494,8 +1541,22 @@ namespace OxyPlot.Axes.ComposableAxis
 
             foreach (var b in bands)
             {
+                var fakePosition = b.BandPosition switch
+                {
+                    BandPosition.Inline => this.Position,
+                    BandPosition.Side => this.Position,
+                    BandPosition.SideNear => NearBandFakePosition(this.Position),
+                    BandPosition.SideFar => FarBandFakePosition(this.Position),
+                    BandPosition.InlineNear => NearBandFakePosition(this.Position),
+                    BandPosition.InlineFar => FarBandFakePosition(this.Position),
+                    _ => throw new NotImplementedException(),
+                };
+
+                var parallel = BandUnitParallel(fakePosition) * width;
+                var normal = BandUnitNormal(fakePosition);
+
                 var index = b.BandTier;
-                b.Measure(rc, width);
+                b.Measure(rc, new BandLocation(new ScreenPoint(0, 0), parallel, normal));
 
                 if (res.TryGetValue(index, out var found))
                 {
@@ -1510,9 +1571,33 @@ namespace OxyPlot.Axes.ComposableAxis
             return res;
         }
 
-        private Dictionary<int, BandLocation> Layout(Dictionary<int, BandExcesses> excesses, AxisPosition position, ScreenPoint minReference, double width)
+        private static AxisPosition NearBandFakePosition(AxisPosition position)
         {
-            var unitPerpendicular = position switch
+            return position switch
+            {
+                AxisPosition.Left => AxisPosition.Top,
+                AxisPosition.Top => AxisPosition.Left,
+                AxisPosition.Right => AxisPosition.Top,
+                AxisPosition.Bottom => AxisPosition.Left,
+                _ => throw new NotImplementedException(),
+            };
+        }
+
+        private static AxisPosition FarBandFakePosition(AxisPosition position)
+        {
+            return position switch
+            {
+                AxisPosition.Left => AxisPosition.Bottom,
+                AxisPosition.Top => AxisPosition.Right,
+                AxisPosition.Right => AxisPosition.Bottom,
+                AxisPosition.Bottom => AxisPosition.Right,
+                _ => throw new NotImplementedException(),
+            };
+        }
+
+        private static ScreenVector BandUnitParallel(AxisPosition position)
+        {
+            return position switch
             {
                 AxisPosition.Left => new ScreenVector(0, -1),
                 AxisPosition.Top => new ScreenVector(1, 0),
@@ -1520,8 +1605,11 @@ namespace OxyPlot.Axes.ComposableAxis
                 AxisPosition.Bottom => new ScreenVector(-1, 0),
                 _ => throw new NotImplementedException(),
             };
+        }
 
-            var unitNormal = position switch
+        private static ScreenVector BandUnitNormal(AxisPosition position)
+        {
+            return position switch
             {
                 AxisPosition.Left => new ScreenVector(-1, 0),
                 AxisPosition.Top => new ScreenVector(0, -1),
@@ -1529,6 +1617,12 @@ namespace OxyPlot.Axes.ComposableAxis
                 AxisPosition.Bottom => new ScreenVector(0, 1),
                 _ => throw new NotImplementedException(),
             };
+        }
+
+        private Dictionary<int, BandLocation> Layout(Dictionary<int, BandExcesses> excesses, AxisPosition position, ScreenPoint minReference, double width)
+        {
+            var unitPerpendicular = BandUnitParallel(position);
+            var unitNormal = BandUnitNormal(position);
 
             var tiers = excesses.Keys.OrderBy(x => x).ToArray();
 
@@ -1578,6 +1672,21 @@ namespace OxyPlot.Axes.ComposableAxis
                 var location = table[band.BandTier];
 
                 band.Render(rc, location);
+
+                // just for debug, the band bounds
+                var r = location.Parallel;
+                r.Normalize();
+                var u = location.Normal;
+                var p0 = location.Reference - r * band.Excesses.Left - u * band.Excesses.Bottom;
+                var p1 = location.Reference - r * band.Excesses.Left + u * band.Excesses.Top;
+                var p2 = location.Reference + location.Parallel + r * band.Excesses.Left + u * band.Excesses.Top;
+                var p3 = location.Reference + location.Parallel + r * band.Excesses.Left - u * band.Excesses.Bottom;
+                
+                rc.DrawLine(new[] { p0, p1, p2, p3, p0 }, OxyColors.DarkGray, 1, EdgeRenderingMode.Automatic);
+
+                // parallel and normal
+                rc.DrawLine(new[] { location.Reference, location.Reference + location.Parallel }, OxyColors.Orange, 1, EdgeRenderingMode.Automatic);
+                rc.DrawLine(new[] { location.Reference + location.Parallel * 0.5, location.Reference + location.Parallel * 0.5 + location.Normal * 5 }, OxyColors.Red, 1, EdgeRenderingMode.Automatic);
             }
         }
     }

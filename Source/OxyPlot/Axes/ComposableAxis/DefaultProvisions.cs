@@ -1668,6 +1668,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Renders a whole load of ticks.
         /// </summary>
         /// <param name="renderContext"></param>
+        /// <param name="bandLocation"></param>
         /// <param name="ticks"></param>
         /// <param name="tickStyle"></param>
         /// <param name="tickLength"></param>
@@ -1679,12 +1680,13 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="labelColor"></param>
         /// <param name="labelAngle"></param>
         /// <param name="AxisTickToLabelDistance"></param>
-        void RenderTicks(IRenderContext renderContext, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance);
+        void RenderTicks(IRenderContext renderContext, BandLocation bandLocation, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance);
 
         /// <summary>
         /// Measures the excesses of a whole load of ticks.
         /// </summary>
         /// <param name="renderContext"></param>
+        /// <param name="bandLocation"></param>
         /// <param name="ticks"></param>
         /// <param name="tickStyle"></param>
         /// <param name="tickLength"></param>
@@ -1696,7 +1698,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="labelColor"></param>
         /// <param name="labelAngle"></param>
         /// <param name="AxisTickToLabelDistance"></param>
-        BandExcesses MeasureTicks(IRenderContext renderContext, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance);
+        BandExcesses MeasureTicks(IRenderContext renderContext, BandLocation bandLocation, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance);
     }
 
     /// <summary>
@@ -1750,23 +1752,26 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Transforms the given value onto the axis line.
         /// </summary>
         /// <param name="value"></param>
+        /// <param name="bandLocation"></param>
         /// <returns></returns>
-        public ScreenPoint Transform(TData value)
+        public ScreenPoint Transform(TData value, BandLocation bandLocation)
         {
             var s = AxisScreenTransformation.Transform(value);
 
+            // TODO: we can get away with this for HorizontalVertical axis; to be more general, we need a second reference which tells us how to interpret s
+            // for example, on a magnitude axis, s will NOT be a screen-space axis aligned variable: it will be a screen-space distance along the parallel
             if (IsVertical)
             {
-                return new ScreenPoint(TheOtherCoordinate.Value, s.Value);
+                return new ScreenPoint(bandLocation.Reference.X, s.Value);
             }
             else
             {
-                return new ScreenPoint(s.Value, TheOtherCoordinate.Value);
+                return new ScreenPoint(s.Value, bandLocation.Reference.Y);
             }
         }
 
         /// <inheritdoc/>
-        public void RenderTicks(IRenderContext renderContext, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance)
+        public void RenderTicks(IRenderContext renderContext, BandLocation bandLocation, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance)
         {
             var vnominal = AxisPosition switch
             {
@@ -1806,7 +1811,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 if (this.AxisScreenTransformation.IsDiscontinuous(tick.Value, tick.Value))
                     continue;
 
-                var s = this.Transform(tick.Value);
+                var s = this.Transform(tick.Value, bandLocation);
 
                 var s0 = s + v0;
                 var s1 = s + v1;
@@ -1823,15 +1828,14 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
-        public BandExcesses MeasureTicks(IRenderContext renderContext, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance)
+        public BandExcesses MeasureTicks(IRenderContext renderContext, BandLocation zeroReferenceBandLocation, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance)
         {
+            // TODO: should consider e.g. band angle
+
             var top = tickStyle == TickStyle.Crossing || tickStyle == TickStyle.Outside ? tickLength : 0;
             var bottom = tickStyle == TickStyle.Crossing || tickStyle == TickStyle.Inside ? tickLength : 0;
             var left = 0.0;
             var right = 0.0;
-
-            var clip0 = AxisScreenTransformation.Transform(AxisScreenTransformation.ClipMinimum);
-            var clip1 = AxisScreenTransformation.Transform(AxisScreenTransformation.ClipMaximum);
 
             var vnominal = AxisPosition switch
             {
@@ -1866,7 +1870,7 @@ namespace OxyPlot.Axes.ComposableAxis
             {
                 if (!string.IsNullOrWhiteSpace(tick.Label))
                 {
-                    var s = this.Transform(tick.Value);
+                    var s = this.Transform(tick.Value, zeroReferenceBandLocation);
                     var st = s + vt;
 
                     var labelSize = renderContext.MeasureText(tick.Label, labelFont, labelFontSize, labelFontWeight, labelAngle);
