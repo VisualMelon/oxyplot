@@ -133,7 +133,7 @@ namespace ExampleLibrary
         [Example("Axis Formatting")]
         public static PlotModel AxisFormatting()
         {
-            var plot = new PlotModel();
+            var plot = new PlotModel() { Title = "Mindless formatting" };
 
             // x
             var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
@@ -143,6 +143,8 @@ namespace ExampleLibrary
                 Key = "X",
                 TicklineColor = OxyColors.Blue,
                 TextColor = OxyColors.Blue,
+                AxislineStyle = LineStyle.Solid,
+                AxislineColor = OxyColors.Blue,
                 TitleColor = OxyColors.DarkBlue,
                 AxisDistance = 10,
                 DefaultViewRange = new Range<double>(-1, 1),
@@ -162,12 +164,15 @@ namespace ExampleLibrary
                 Key = "X2",
                 TicklineColor = OxyColors.Green,
                 TextColor = OxyColors.Green,
+                AxislineStyle = LineStyle.Solid,
+                AxislineColor = OxyColors.Green,
                 TitleColor = OxyColors.DarkGreen,
                 DefaultViewRange = new Range<double>(-2 * Math.PI, +2 * Math.PI),
                 TickStyle = TickStyle.Crossing,
             };
 
             x2axis.Bands.Clear();
+            x2axis.Bands.Add(new AxisLineBand());
             var x2title = new TitleBand() { BandPosition = BandPosition.InlineNear };
             x2axis.Bands.Add(x2title);
             x2title = new TitleBand() { BandPosition = BandPosition.InlineFar };
@@ -185,6 +190,8 @@ namespace ExampleLibrary
                 Key = "Y",
                 TicklineColor = OxyColors.Red,
                 TextColor = OxyColors.Red,
+                AxislineStyle = LineStyle.Solid,
+                AxislineColor = OxyColors.Red,
                 TitleColor = OxyColors.DarkRed,
                 AxisDistance = 10,
                 Angle = 45,
@@ -192,6 +199,7 @@ namespace ExampleLibrary
             };
 
             yaxis.Bands.Clear();
+            yaxis.Bands.Add(new AxisLineBand());
             var ytitle = new TitleBand() { BandPosition = BandPosition.InlineNear };
             yaxis.Bands.Add(ytitle);
             ytitle = new TitleBand() { BandPosition = BandPosition.InlineFar };
@@ -209,6 +217,8 @@ namespace ExampleLibrary
                 Key = "Y2",
                 TicklineColor = OxyColors.Orange,
                 TextColor = OxyColors.Orange,
+                AxislineStyle = LineStyle.Solid,
+                AxislineColor = OxyColors.Orange,
                 TitleColor = OxyColors.DarkOrange,
                 AxisDistance = 10,
                 Angle = -45,
@@ -249,8 +259,10 @@ namespace ExampleLibrary
         [Example("LineSeries on immitation default Axes")]
         public static PlotModel LineOnimmitationDefaultAxis()
         {
-            var plot = SimpleLinearXY();
-            plot.Subtitle = "The axes are immitations of the default axes";
+            var plot = new PlotModel()
+            {
+                Subtitle = "The axes are immitations of the default axes",
+            };
 
             var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
             {
@@ -374,6 +386,7 @@ namespace ExampleLibrary
                 DefaultViewRange = new Range<double>(0, 1),
                 Title = "Color Axis",
                 Key = "C",
+                Palette = OxyPalettes.Viridis(100),
             };
 
             // TODO: need to think about this more
@@ -389,7 +402,7 @@ namespace ExampleLibrary
                 Title = "Scatter",
                 XAxisKey = "X",
                 YAxisKey = "Y",
-                VAxisKey = "C"
+                VAxisKey = "C",
             };
 
             var rnd = new Random();

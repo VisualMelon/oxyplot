@@ -189,21 +189,6 @@ namespace OxyPlot.Axes
         public string ActualStringFormat { get; protected set; }
 
         /// <summary>
-        /// Gets or sets the color of the axis line. The default value is <see cref="OxyColors.Black" />.
-        /// </summary>
-        public OxyColor AxislineColor { get; set; }
-
-        /// <summary>
-        /// Gets or sets the line style of the axis line. The default value is <see cref="LineStyle.None" />.
-        /// </summary>
-        public LineStyle AxislineStyle { get; set; }
-
-        /// <summary>
-        /// Gets or sets the thickness of the axis line. The default value is <c>1</c>.
-        /// </summary>
-        public double AxislineThickness { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether to crop gridlines with perpendicular axes Start/EndPositions. The default value is <c>false</c>.
         /// </summary>
         public bool CropGridlines { get; set; }

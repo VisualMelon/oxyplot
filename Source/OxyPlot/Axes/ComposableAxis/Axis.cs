@@ -218,6 +218,10 @@ namespace OxyPlot.Axes.ComposableAxis
             this.MinorGridlineColor = OxyColor.FromArgb(0x20, 0, 0, 0x00);
             this.MinorGridlineThickness = 1;
 
+            this.AxislineStyle = LineStyle.None;
+            this.AxislineColor = OxyColors.Black;
+            this.AxislineThickness = 1.0;
+
             this.AxisDistance = 0;
             this.AxisTitleDistance = 4;
             this.AxisTickToLabelDistance = 4;
@@ -288,6 +292,15 @@ namespace OxyPlot.Axes.ComposableAxis
 
         /// <inheritdoc/>
         public double MajorGridlineThickness { get; set; }
+
+        /// <inheritdoc/>
+        public OxyColor AxislineColor { get; set; }
+
+        /// <inheritdoc/>
+        public LineStyle AxislineStyle { get; set; }
+
+        /// <inheritdoc/>
+        public double AxislineThickness { get; set; }
 
         /// <inheritdoc/>
         public double Angle { get; set; }
@@ -792,6 +805,21 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets or sets the thickness of the major gridlines. The default value is <c>1</c>.
         /// </summary>
         double MajorGridlineThickness { get; set; }
+
+        /// <summary>
+        /// Gets or sets the color of the axis line. The default value is <see cref="OxyColors.Black" />.
+        /// </summary>
+        OxyColor AxislineColor { get; set; }
+
+        /// <summary>
+        /// Gets or sets the line style of the axis line. The default value is <see cref="LineStyle.None" />.
+        /// </summary>
+        LineStyle AxislineStyle { get; set; }
+
+        /// <summary>
+        /// Gets or sets the thickness of the axis line. The default value is <c>1</c>.
+        /// </summary>
+        double AxislineThickness { get; set; }
 
         /// <summary>
         /// Gets or sets the orientation angle (degrees) for the axis labels. The default value is <c>0</c>.
@@ -1710,7 +1738,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// A list of bands used by this <see cref="HorizontalVerticalAxis{TData, TDataProvider, TDataTransformation, TDataFilter, TDataOptional, TDataOptionalProvider}"/>.
         /// </summary>
-        public List<IBand> Bands { get; } = new List<IBand>() { new TitleBand() };
+        public List<IBand> Bands { get; } = new List<IBand>() { new AxisLineBand(), new TitleBand() };
 
         /// <inheritdoc/>
         public override void Render(IRenderContext rc, AxisRenderPass pass)
@@ -1740,7 +1768,8 @@ namespace OxyPlot.Axes.ComposableAxis
                 var location = table[band.BandTier];
 
                 band.Render(rc, location);
-
+            
+#if DEBUG
                 // just for debug, the band bounds
                 var r = location.Parallel;
                 r.Normalize();
@@ -1755,6 +1784,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 // parallel and normal
                 rc.DrawLine(new[] { location.Reference, location.Reference + location.Parallel }, OxyColors.Orange, 1, EdgeRenderingMode.Automatic);
                 rc.DrawLine(new[] { location.Reference + location.Parallel * 0.5, location.Reference + location.Parallel * 0.5 + location.Normal * 5 }, OxyColors.Red, 1, EdgeRenderingMode.Automatic);
+#endif
             }
         }
     }
