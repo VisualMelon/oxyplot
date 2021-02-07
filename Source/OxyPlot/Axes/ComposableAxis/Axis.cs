@@ -1387,6 +1387,73 @@ namespace OxyPlot.Axes.ComposableAxis
 
             inlineLocations = Layout(inlineExcesses, this.Position, reference(inlineOffset.Value), inlineAndSideWidth);
             sideLocations = Layout(sideExcesses, this.Position, reference(sideOffset.Value), inlineAndSideWidth);
+
+            // TODO: should these consider the Left/Right excesses of the inline/side bands?
+            nearOffset = new ScreenReal(this.Position switch
+            {
+                AxisPosition.Left => Math.Min(this.ScreenMin.Y, this.ScreenMax.Y),
+                AxisPosition.Top => Math.Min(this.ScreenMin.X, this.ScreenMax.X),
+                AxisPosition.Right => Math.Min(this.ScreenMin.Y, this.ScreenMax.Y),
+                AxisPosition.Bottom => Math.Min(this.ScreenMin.X, this.ScreenMax.X),
+                _ => throw new NotImplementedException(),
+            });
+
+            farOffset = new ScreenReal(this.Position switch
+            {
+                AxisPosition.Left => Math.Max(this.ScreenMin.Y, this.ScreenMax.Y),
+                AxisPosition.Top => Math.Max(this.ScreenMin.X, this.ScreenMax.X),
+                AxisPosition.Right => Math.Max(this.ScreenMin.Y, this.ScreenMax.Y),
+                AxisPosition.Bottom => Math.Max(this.ScreenMin.X, this.ScreenMax.X),
+                _ => throw new NotImplementedException(),
+            });
+
+            var nearFakeAxisPosition = this.Position switch
+            {
+                AxisPosition.Left => AxisPosition.Top,
+                AxisPosition.Top => AxisPosition.Left,
+                AxisPosition.Right => AxisPosition.Top,
+                AxisPosition.Bottom => AxisPosition.Left,
+                _ => throw new NotImplementedException(),
+            };
+
+            var farFakeAxisPosition = this.Position switch
+            {
+                AxisPosition.Left => AxisPosition.Bottom,
+                AxisPosition.Top => AxisPosition.Right,
+                AxisPosition.Right => AxisPosition.Bottom,
+                AxisPosition.Bottom => AxisPosition.Right,
+                _ => throw new NotImplementedException(),
+            };
+
+            ScreenPoint inlineReference(double s)
+            {
+                return this.Position switch
+                {
+                    AxisPosition.Left => new ScreenPoint(inlineOffset.Value - inlineTotalHeight, s),
+                    AxisPosition.Top => new ScreenPoint(s, inlineOffset.Value - inlineTotalHeight),
+                    AxisPosition.Right => new ScreenPoint(inlineOffset.Value + inlineTotalHeight, s),
+                    AxisPosition.Bottom => new ScreenPoint(s, inlineOffset.Value + inlineTotalHeight),
+                    _ => throw new NotImplementedException(),
+                };
+            }
+
+            inlineNearLocations = Layout(inlineNearExcesses, nearFakeAxisPosition, inlineReference(nearOffset.Value), inlineTotalHeight);
+            inlineFarLocations = Layout(inlineFarExcesses, farFakeAxisPosition, inlineReference(farOffset.Value), inlineTotalHeight);
+
+            ScreenPoint sideReference(double s)
+            {
+                return this.Position switch
+                {
+                    AxisPosition.Left => new ScreenPoint(sideOffset.Value - sideTotalHeight, s),
+                    AxisPosition.Top => new ScreenPoint(s, sideOffset.Value - sideTotalHeight),
+                    AxisPosition.Right => new ScreenPoint(sideOffset.Value + sideTotalHeight, s),
+                    AxisPosition.Bottom => new ScreenPoint(s, sideOffset.Value + sideTotalHeight),
+                    _ => throw new NotImplementedException(),
+                };
+            }
+
+            sideNearLocations = Layout(sideNearExcesses, nearFakeAxisPosition, sideReference(nearOffset.Value), sideTotalHeight);
+            sideFarLocations = Layout(sideFarExcesses, farFakeAxisPosition, sideReference(farOffset.Value), sideTotalHeight);
         }
 
         // layout state
@@ -1401,10 +1468,16 @@ namespace OxyPlot.Axes.ComposableAxis
         private Dictionary<int, BandExcesses> sideFarExcesses;
         private ScreenReal inlineOffset;
         private ScreenReal sideOffset;
+        private ScreenReal nearOffset;
+        private ScreenReal farOffset;
 
         // actually useful layout state
         private Dictionary<int, BandLocation> inlineLocations;
         private Dictionary<int, BandLocation> sideLocations;
+        private Dictionary<int, BandLocation> inlineNearLocations;
+        private Dictionary<int, BandLocation> inlineFarLocations;
+        private Dictionary<int, BandLocation> sideNearLocations;
+        private Dictionary<int, BandLocation> sideFarLocations;
 
         private Dictionary<int, BandExcesses> Measure(IRenderContext rc, BandPosition position, double width)
         {
@@ -1439,7 +1512,7 @@ namespace OxyPlot.Axes.ComposableAxis
 
         private Dictionary<int, BandLocation> Layout(Dictionary<int, BandExcesses> excesses, AxisPosition position, ScreenPoint minReference, double width)
         {
-            var unitPerpendicular = this.Position switch
+            var unitPerpendicular = position switch
             {
                 AxisPosition.Left => new ScreenVector(0, -1),
                 AxisPosition.Top => new ScreenVector(1, 0),
@@ -1448,7 +1521,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 _ => throw new NotImplementedException(),
             };
 
-            var unitNormal = this.Position switch
+            var unitNormal = position switch
             {
                 AxisPosition.Left => new ScreenVector(-1, 0),
                 AxisPosition.Top => new ScreenVector(0, -1),
@@ -1495,6 +1568,10 @@ namespace OxyPlot.Axes.ComposableAxis
                 {
                     BandPosition.Inline => inlineLocations,
                     BandPosition.Side => sideLocations,
+                    BandPosition.InlineNear => inlineNearLocations,
+                    BandPosition.SideNear => sideNearLocations,
+                    BandPosition.InlineFar => inlineFarLocations,
+                    BandPosition.SideFar => sideFarLocations,
                     _ => throw new NotImplementedException(),
                 };
 

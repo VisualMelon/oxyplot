@@ -99,6 +99,78 @@ namespace ExampleLibrary
             return plot;
         }
 
+        [Example("Axis Formatting")]
+        public static PlotModel AxisFormatting()
+        {
+            var plot = new PlotModel();
+
+            // x
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            {
+                Position = AxisPosition.Bottom,
+                Title = "X Axis",
+                Key = "X",
+                TicklineColor = OxyColors.Blue,
+                TextColor = OxyColors.Blue,
+                TitleColor = OxyColors.DarkBlue,
+                AxisDistance = 10,
+                DefaultViewRange = new Range<double>(-1, 1),
+            };
+
+            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
+            xaxis.Bands.Add(xticks);
+
+            plot.Axes.Add(xaxis);
+
+            // y
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            {
+                Position = AxisPosition.Left,
+                Title = "Y Axis",
+                Key = "Y",
+                TicklineColor = OxyColors.Red,
+                TextColor = OxyColors.Red,
+                TitleColor = OxyColors.DarkRed,
+                AxisDistance = 10,
+                Angle = 45,
+                DefaultViewRange = new Range<double>(-10, 10),
+            };
+
+            yaxis.Bands.Clear();
+            var ytitle = new TitleBand() { BandPosition = BandPosition.InlineNear };
+            yaxis.Bands.Add(ytitle);
+            ytitle = new TitleBand() { BandPosition = BandPosition.InlineFar };
+            yaxis.Bands.Add(ytitle);
+            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
+            yaxis.Bands.Add(yticks);
+
+            plot.Axes.Add(yaxis);
+
+            // y2
+            var yaxis2 = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            {
+                Position = AxisPosition.Right,
+                Title = "Y2 Axis",
+                Key = "Y2",
+                TicklineColor = OxyColors.Orange,
+                TextColor = OxyColors.Orange,
+                TitleColor = OxyColors.DarkOrange,
+                AxisDistance = 10,
+                Angle = -45,
+                DefaultViewRange = new Range<double>(0, 100),
+            };
+
+            //yaxis2.Bands.Clear();
+            //var y2title = new TitleBand() { BandPosition = BandPosition.InlineNear };
+            //yaxis2.Bands.Add(y2title);
+            var yticks2 = new TickBand<double>(new LinearDoubleTickLocator() { FormatString = "###%" }, new SpacingOptions());
+            yaxis2.Bands.Add(yticks2);
+
+            plot.Axes.Add(yaxis2);
+
+            return plot;
+        }
+
         [Example("LineSeries on default Axes")]
         public static PlotModel LineOnDefaultAxis()
         {
