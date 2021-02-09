@@ -57,6 +57,7 @@ namespace OxyPlot.Benchmarks
         public void XYRenderHelpers_TypicalLinearDoubleConfiguration_NoBreaks()
         {
             // v-call would be realistic, but can make no real difference, and means we don't get dissassembly
+            // NOTE: these don't do any clipping
             var xyRenderHelper = PrepareUnitTransformHelper(); // PrepareUnitTransformHelper_Interface();
 
             int startIndex = 0;
@@ -66,7 +67,7 @@ namespace OxyPlot.Benchmarks
 
             Broken.Clear();
             Continuous.Clear();
-            xyRenderHelper.ExtractNextContinuousLineSegment<DataPoint, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>>(default, default, Points.AsReadOnlyList(), ref startIndex, endIndex, ref psp, ref pb, Broken, Continuous);
+            xyRenderHelper.ExtractNextContinuousLineSegment<DataPoint, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>, AcceptAllFilter<ScreenPoint>>(default, default, default, Points.AsReadOnlyList(), ref startIndex, endIndex, ref psp, ref pb, Broken, Continuous);
 
             if (Continuous.Count != Points.Count)
                 throw new Exception("xyRenderHelper.ExtractNextContinuousLineSegment doesn't work.");
@@ -99,9 +100,7 @@ namespace OxyPlot.Benchmarks
                     if (sampleProvider.TrySample(samples[sampleIdx++], out var valid))
                     {
                         if (x.Filter(valid.X)
-                            && y.Filter(valid.Y)
-                            && x.WithinClipBounds(valid.X)
-                            && y.WithinClipBounds(valid.Y))
+                            && y.Filter(valid.Y))
                         {
                             Continuous.Add(transformation.Arrange(x.Transform(valid.X),
                                 y.Transform(valid.Y)));
@@ -116,10 +115,6 @@ namespace OxyPlot.Benchmarks
         {
             // atrificial version of XYRenderHelpers_TypicalLinearDoubleConfiguration_NoBreaks which reveals the massive overheads of all the abstractions
             var xyRenderHelper = PrepareUnitTransformHelper();
-            var xmin = xyRenderHelper.XYTransformation.XTransformation.ClipMinimum;
-            var xmax = xyRenderHelper.XYTransformation.XTransformation.ClipMaximum;
-            var ymin = xyRenderHelper.XYTransformation.YTransformation.ClipMinimum;
-            var ymax = xyRenderHelper.XYTransformation.YTransformation.ClipMaximum;
 
             var xfiltermin = double.MinValue;
             var xfiltermax = double.MaxValue;
@@ -138,9 +133,6 @@ namespace OxyPlot.Benchmarks
                     return;
 
                 if (p.X > xfiltermax || p.X < xfiltermin || p.Y > yfiltermax || p.Y < yfiltermin)
-                    continue;
-
-                if (p.X > xmax || p.X < xmin || p.Y > ymax || p.Y < ymin)
                     continue;
 
                 Continuous.Add(new ScreenPoint(p.X * xview.ScreenScale + xview.ScreenOffset.Value, p.Y * yview.ScreenScale + yview.ScreenOffset.Value));
