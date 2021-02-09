@@ -386,11 +386,10 @@ namespace ExampleLibrary
                 DefaultViewRange = new Range<double>(0, 1),
                 Title = "Color Axis",
                 Key = "C",
-                Palette = OxyPalettes.Viridis(100),
+                Palette = OxyPalettes.Viridis(10),
             };
 
-            // TODO: need to think about this more
-            var ccolorrangetickband = new ColorTickBand<double>(new LinearDoubleRangeTickLocator(), new SpacingOptions() { MaximumIntervalSize = 5, MinimumIntervalSize = 2 });
+            var ccolorrangetickband = new ColorTickBand<double>();
             caxis.Bands.Add(ccolorrangetickband); // CRT first, so we can see the ticks themselves
             var ctickband = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
             caxis.Bands.Add(ctickband);
@@ -406,7 +405,7 @@ namespace ExampleLibrary
             };
 
             var rnd = new Random();
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 10000; i++)
             {
                 scatter.Samples.Add(new DataPoint(rnd.NextDouble(), rnd.NextDouble()));
             }

@@ -414,9 +414,11 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <typeparam name="XAxisTransformation"></typeparam>
         /// <typeparam name="YAxisTransformation"></typeparam>
         /// <typeparam name="XYTransformation"></typeparam>
+        /// <typeparam name="ClipFilter"></typeparam>
         /// <param name="sampleProvider"></param>
         /// <param name="sampleFilter"></param>
         /// <param name="transformation"></param>
+        /// <param name="clipFilter"></param>
         /// <param name="samples">Points collection</param>
         /// <param name="sampleIdx">Current sample index</param>
         /// <param name="endIdx">End end index</param>
@@ -427,7 +429,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <returns>
         ///   <c>true</c> if line segments are extracted, <c>false</c> if reached end.
         /// </returns>
-        public static bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYTransformation>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, XYTransformation transformation, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+        public static bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYTransformation, ClipFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, XYTransformation transformation, ClipFilter clipFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
             where TSampleFilter : IFilter<TSample>
             where XDataProvider : IDataProvider<XData>
@@ -435,6 +437,7 @@ namespace OxyPlot.Axes.ComposableAxis
             where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
             where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
             where XYTransformation : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
+            where ClipFilter : IFilter<ScreenPoint>
         {
             // NOTE NOTE: this is barely faster than the equivalent in LineSeries, and it tooks 3 careful pieces of inlining to achieve it:
             //  - inlined IXYAxisTransformation.WithinBounds below
@@ -481,15 +484,13 @@ namespace OxyPlot.Axes.ComposableAxis
                 return false;
             }
 
-            // both inlined for performance reasons
-            var currentSampleWithinClipBounds = x.WithinClipBounds(currentXYSample.X)
-                && y.WithinClipBounds(currentXYSample.Y);
-            var currentPoint = transformation.Arrange(x.Transform(currentXYSample.X),
-                y.Transform(currentXYSample.Y));
+            var currentPoint = transformation.Arrange(x.Transform(currentXYSample.X), y.Transform(currentXYSample.Y));
+            var currentSampleWithinClipBounds = clipFilter.Filter(currentPoint);
 
             // Handle broken line segment if exists
             // Requires that there is a previous segment, and someone is within the clip bounds
-            if (previousContiguousLineSegmentEndPoint.HasValue && (previousContiguousLineSegmentEndPointWithinClipBounds || currentSampleWithinClipBounds))
+            if (previousContiguousLineSegmentEndPoint.HasValue
+                && (previousContiguousLineSegmentEndPointWithinClipBounds || currentSampleWithinClipBounds))
             {
                 // TODO: we should check for discontenuity also, but can't with current API: should ref a TSample? rather than ScreenPoint?
                 broken.Add(previousContiguousLineSegmentEndPoint.Value);
@@ -531,13 +532,8 @@ namespace OxyPlot.Axes.ComposableAxis
                     break;
                 }
 
-                // inlined for performance reasons
-                currentSampleWithinClipBounds = x.WithinClipBounds(currentXYSample.X)
-                    && y.WithinClipBounds(currentXYSample.Y);
-                currentPoint = transformation.Arrange(x.Transform(currentXYSample.X),
-                    y.Transform(currentXYSample.Y));
-                // original: currentSampleWithinClipBounds = transformation.WithinClipBounds(currentXYSample);
-                // original: currentPoint = transformation.Transform(currentXYSample);
+                currentPoint = transformation.Arrange(x.Transform(currentXYSample.X), y.Transform(currentXYSample.Y));
+                currentSampleWithinClipBounds = clipFilter.Filter(currentPoint);
 
                 if (haveLast)
                 {
@@ -635,7 +631,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 return;
 
             foreach (var s in dataSamples)
-                screenPoints.Add(transformation.Transform(s));
+                screenPoints.Add(transformation.ArrangeTransform(s));
         }
 
         /// <summary>
@@ -675,14 +671,14 @@ namespace OxyPlot.Axes.ComposableAxis
             if (bothLinear && bothContinuous)
             {
                 foreach (var s in dataSamples)
-                    screenPoints.Add(transformation.Transform(s));
+                    screenPoints.Add(transformation.ArrangeTransform(s));
             }
             else
             {
                 // all-powerful path
 
                 var s1 = dataSamples[0];
-                var p1 = transformation.Transform(s1);
+                var p1 = transformation.ArrangeTransform(s1);
                 int si = 0;
 
                 bool omitFirst = false;
@@ -696,7 +692,7 @@ namespace OxyPlot.Axes.ComposableAxis
                     si++;
 
                     s1 = dataSamples[si];
-                    p1 = transformation.Transform(s1);
+                    p1 = transformation.ArrangeTransform(s1);
 
                     InterpolateLine<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYTransformation>(transformation, s0, s1, minSegmentLength, screenPoints, omitFirst, true);
                 }
@@ -739,8 +735,8 @@ namespace OxyPlot.Axes.ComposableAxis
 
             var minLengthSquared = minSegmentLength * minSegmentLength;
 
-            var p0 = transformation.Transform(s0);
-            var p1 = transformation.Transform(s1);
+            var p0 = transformation.ArrangeTransform(s0);
+            var p1 = transformation.ArrangeTransform(s1);
 
             if (!omitFirst)
                 screenPoints.Add(p0);
@@ -776,7 +772,7 @@ namespace OxyPlot.Axes.ComposableAxis
 
                 // NOTE: not a real sample
                 var sm = new DataSample<XData, YData>(transformation.XTransformation.Provider.Interpolate(s0.X, s1.X, c), transformation.YTransformation.Provider.Interpolate(s0.Y, s1.Y, c));
-                var pm = transformation.Transform(sm);
+                var pm = transformation.ArrangeTransform(sm);
 
                 if (p0.DistanceToSquared(pm) < minLengthSquared)
                 {

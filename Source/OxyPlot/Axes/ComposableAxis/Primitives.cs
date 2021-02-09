@@ -911,7 +911,11 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </remarks>
         public List<Tick<TData>> MinorTicks { get; }
 
-        private void UpdateTicks(double availableWidth)
+        /// <summary>
+        /// Updates the <see cref="MajorTicks"/> and <see cref="MinorTicks"/>.
+        /// </summary>
+        /// <param name="availableWidth"></param>
+        protected virtual void UpdateTicks(double availableWidth)
         {
             MajorTicks.Clear();
             MinorTicks.Clear();
@@ -954,13 +958,8 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// Initializes a new instance of the <see cref="ColorTickBand{TData}" /> class.
         /// </summary>
-        /// <param name="tickLocator"></param>
-        /// <param name="spacingOptions"></param>
-        public ColorTickBand(IRangeTickLocator<TData> tickLocator, SpacingOptions spacingOptions)
+        public ColorTickBand()
         {
-            this.TickLocator = tickLocator ?? throw new ArgumentNullException(nameof(tickLocator));
-            this.SpacingOptions = spacingOptions ?? throw new ArgumentNullException(nameof(spacingOptions));
-
             this.BandPosition = BandPosition.Inline;
             this.BandTier = 0;
             this.IsBandVisible = true;
@@ -968,16 +967,6 @@ namespace OxyPlot.Axes.ComposableAxis
             this.RangeTicks = new List<RangeTick<TData>>();
             this.ColorRangeTicks = new List<ColorRangeTick<TData>>();
         }
-
-        /// <summary>
-        /// Gets or sets the <see cref="IRangeTickLocator{TData}"/> for this band.
-        /// </summary>
-        public IRangeTickLocator<TData> TickLocator { get; set; }
-
-        /// <summary>
-        /// Gets or sets the <see cref="SpacingOptions"/>  for this band.
-        /// </summary>
-        public SpacingOptions SpacingOptions { get; set; }
 
         /// <summary>
         /// Gets the ticks rendered by this band.
@@ -1018,22 +1007,20 @@ namespace OxyPlot.Axes.ComposableAxis
             }
         }
 
-        private void UpdateTicks(double availableWidth)
+        /// <summary>
+        /// Updates the <see cref="ColorRangeTicks"/>.
+        /// </summary>
+        protected virtual void UpdateTicks()
         {
-            RangeTicks.Clear();
             ColorRangeTicks.Clear();
-
-            TickLocator.GetTicks(Axis.ClipMinimum, Axis.ClipMaximum, availableWidth, SpacingOptions, RangeTicks);
             var colorHelper = ColorHelperPreparer<TData>.Prepare(ColorAxis);
-
-            foreach (var tick in RangeTicks)
-                ColorRangeTicks.Add(new ColorRangeTick<TData>(tick.Minimum, tick.Maximum, colorHelper.Transform(tick.Minimum)));
+            colorHelper.ColorTransformation.GetColorRanges(Axis.ClipMinimum, Axis.ClipMaximum, ColorRangeTicks);
         }
 
         /// <inheritdoc/>
         public override void Measure(IRenderContext renderContext, BandLocation location)
         {
-            UpdateTicks(location.Width);
+            UpdateTicks();
 
             var renderHelper = TickRenderHelperPreparer<TData>.PrepareHorizontalVertial(Axis);
 

@@ -584,7 +584,12 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
 
             int sampleIdx = startIdx;
 
-            while (xyRenderHelper.ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter>(SampleProvider, SampleFilter, Samples.AsReadOnlyList(), ref sampleIdx, endIdx, ref lp, ref lpb, brokenBuffer, continuousBuffer))
+            var clipRect = this.GetClippingRect();
+
+            // inflate the clip rect so that in includes the stroke thickness
+            var adjustedClipRect = clipRect.Inflate(new OxyThickness(this.StrokeThickness));
+
+            while (xyRenderHelper.ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, RectangleFilter>(SampleProvider, SampleFilter, new RectangleFilter(adjustedClipRect), Samples.AsReadOnlyList(), ref sampleIdx, endIdx, ref lp, ref lpb, brokenBuffer, continuousBuffer))
             {
                 if (areBrokenLinesRendered)
                 {

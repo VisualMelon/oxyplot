@@ -1835,12 +1835,12 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public virtual void ConsumeTransformation(IAxisColorTransformationConsumer<TData> consumer)
         {
-            consumer.Consume<TDataProvider, AxisColorTransformation<TData, TDataProvider, TDataTransformation>>(GetTypedColorTransformation());
+            consumer.Consume<TDataProvider, AxisColorTransformation<TData, TDataProvider, TDataTransformation, TDataFilter>>(GetTypedColorTransformation());
         }
 
-        private AxisColorTransformation<TData, TDataProvider, TDataTransformation> GetTypedColorTransformation()
+        private AxisColorTransformation<TData, TDataProvider, TDataTransformation, TDataFilter> GetTypedColorTransformation()
         {
-            return new AxisColorTransformation<TData, TDataProvider, TDataTransformation>(Palette, DataTransformation, LowColor, HighColor, ClipInteractionMinimum, ClipInteractionMaximum);
+            return new AxisColorTransformation<TData, TDataProvider, TDataTransformation, TDataFilter>(Palette, DataTransformation, Filter, LowColor, HighColor, ClipInteractionMinimum, ClipInteractionMaximum);
         }
 
         /// <inheritdoc/>

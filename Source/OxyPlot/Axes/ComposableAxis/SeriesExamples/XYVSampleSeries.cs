@@ -275,6 +275,8 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
 
             base.FindWindow(out var startIdx, out var endIdx);
 
+            var clipRect = this.GetClippingRect();
+
             // let's do this one slowly... to check that it is easy, and see how slow it is
             var x = xyRenderHelper.XTransformation;
             var y = xyRenderHelper.YTransformation;
@@ -286,18 +288,32 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
                 if (!SampleFilter.Filter(currentSample)
                     || !SampleProvider.TrySample(currentSample, out var currentXYSample)
                     || !x.Filter(currentXYSample.X)
-                    || !y.Filter(currentXYSample.Y)
-                    || !x.WithinClipBounds(currentXYSample.X)
-                    || !y.WithinClipBounds(currentXYSample.Y))
+                    || !y.Filter(currentXYSample.Y))
                 {
                     // skip
                     continue;
                 }
 
-                var currentPoint = xyRenderHelper.TransformSample(currentXYSample);
                 var currentValue = ValueProvider.Sample(currentSample);
+                var currentColor = OxyColors.Automatic;
+                if (colorHelper != null)
+                {
+                    if (!colorHelper.ColorTransformation.Filter(currentValue))
+                    {
+                        continue;
+                    }
+
+                    currentColor = colorHelper.Transform(currentValue);
+                }
+
+                var currentPoint = xyRenderHelper.TransformSample(currentXYSample);
                 var currentSize = SizeProvider.Sample(currentSample);
-                var currentColor = colorHelper?.Transform(currentValue) ?? OxyColors.Automatic;
+                var adjustedClipRect = clipRect.Inflate(new OxyThickness(currentSize));
+                if (!adjustedClipRect.Contains(currentPoint))
+                {
+                    continue;
+                }
+
                 var fill = currentColor.IsAutomatic() ? this.ActualMarkerFillColor : currentColor;
                 var stroke = currentColor.IsAutomatic() ? this.MarkerStroke : currentColor;
 

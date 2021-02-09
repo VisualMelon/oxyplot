@@ -405,9 +405,11 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="TData"></typeparam>
     /// <typeparam name="TDataProvider"></typeparam>
     /// <typeparam name="TDataTransformation"></typeparam>
-    public readonly struct AxisColorTransformation<TData, TDataProvider, TDataTransformation> : IAxisColorTransformation<TData, TDataProvider>
+    /// <typeparam name="TDataFilter"></typeparam>
+    public readonly struct AxisColorTransformation<TData, TDataProvider, TDataTransformation, TDataFilter> : IAxisColorTransformation<TData, TDataProvider>
         where TDataProvider : IDataProvider<TData>
         where TDataTransformation : IDataTransformation<TData, TDataProvider>
+        where TDataFilter : IFilter<TData>
     {
         private readonly OxyPalette Palette;
         private readonly TDataTransformation _Transformation;
@@ -418,18 +420,20 @@ namespace OxyPlot.Axes.ComposableAxis
         private readonly InteractionReal InteractionMax;
 
         /// <summary>
-        /// Initialises an <see cref="AxisColorTransformation{TData, TDataProvider, TDataTransformation}"/>.
+        /// Initialises an <see cref="AxisColorTransformation{TData, TDataProvider, TDataTransformation, TDataFilter}"/>.
         /// </summary>
         /// <param name="palette"></param>
         /// <param name="transformation"></param>
+        /// <param name="filter"></param>
         /// <param name="lowColor"></param>
         /// <param name="highColor"></param>
         /// <param name="interactionMin"></param>
         /// <param name="interactionMax"></param>
-        public AxisColorTransformation(OxyPalette palette, TDataTransformation transformation, OxyColor lowColor, OxyColor highColor, InteractionReal interactionMin, InteractionReal interactionMax)
+        public AxisColorTransformation(OxyPalette palette, TDataTransformation transformation, TDataFilter filter, OxyColor lowColor, OxyColor highColor, InteractionReal interactionMin, InteractionReal interactionMax)
         {
             Palette = palette ?? throw new ArgumentNullException(nameof(palette));
             _Transformation = transformation;
+            _Filter = filter;
             LowColor = lowColor;
             HighColor = highColor;
             InteractionMin = interactionMin;
@@ -439,10 +443,15 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public TDataProvider Provider => _Transformation.Provider;
 
+        /// <summary>
+        /// The filter.
+        /// </summary>
+        private readonly TDataFilter _Filter;
+
         /// <inheritdoc/>
         public bool Filter(TData data)
         {
-            throw new NotImplementedException();
+            return _Filter.Filter(data);
         }
 
         /// <inheritdoc/>
@@ -464,6 +473,73 @@ namespace OxyPlot.Axes.ComposableAxis
             var c = (i - InteractionMin).Value / (InteractionMax - InteractionMin).Value;
 
             return (int)(c * this.Palette.Colors.Count);
+        }
+
+        private ColorRangeTick<TData> GetRange(int index)
+        {
+            var c0 = (double)index / this.Palette.Colors.Count;
+            var i0 = (InteractionMax - InteractionMin) * c0 + InteractionMin;
+            var c1 = (double)(index + 1) / this.Palette.Colors.Count;
+            var i1 = (InteractionMax - InteractionMin) * c1 + InteractionMin;
+
+            var min = _Transformation.InverseTransform(i0);
+            var max = _Transformation.InverseTransform(i1);
+
+            return new ColorRangeTick<TData>(min, max, Palette.Colors[index]);
+        }
+
+        /// <inheritdoc/>
+        public void GetColorRanges(TData minimum, TData maximum, IList<ColorRangeTick<TData>> ticks)
+        {
+            // this is hideous... it does all the work in iteraction space, and projects back for the result...
+            // exactly what I didn't want to do for ticks
+
+            var imin = this._Transformation.Transform(minimum);
+            var imax = this._Transformation.Transform(minimum);
+
+            if (imin > this.InteractionMax)
+            {
+                ticks.Add(new ColorRangeTick<TData>(
+                    this._Transformation.InverseTransform(imin),
+                    this._Transformation.InverseTransform(imax),
+                    this.HighColor));
+                return;
+            }
+
+            if (imax < this.InteractionMin)
+            {
+                ticks.Add(new ColorRangeTick<TData>(
+                    this._Transformation.InverseTransform(imin),
+                    this._Transformation.InverseTransform(imax),
+                    this.LowColor));
+                return;
+            }
+
+            var s = Math.Max(0, this.GetIndex(minimum));
+            var e = Math.Min(Palette.Colors.Count - 1, this.GetIndex(maximum));
+
+            for (int index = s; index <= e; index++)
+            {
+                var r = GetRange(index);
+
+                if (index == s)
+                {
+                    r = new ColorRangeTick<TData>(
+                        minimum,
+                        r.Maximum,
+                        r.Color);
+                }
+
+                if (index == e)
+                {
+                    r = new ColorRangeTick<TData>(
+                        r.Minimum,
+                        maximum,
+                        r.Color);
+                }
+
+                ticks.Add(r);
+            }
         }
     }
 
@@ -724,6 +800,11 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="value"></param>
         /// <returns></returns>
         OxyColor Transform(VData value);
+
+        /// <summary>
+        /// Gets the underlying color transform.
+        /// </summary>
+        IAxisColorTransformation<VData> ColorTransformation { get; }
     }
 
     /// <summary>
@@ -819,8 +900,10 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <typeparam name="TSample"></typeparam>
         /// <typeparam name="TSampleProvider"></typeparam>
         /// <typeparam name="TSampleFilter"></typeparam>
+        /// <typeparam name="ClipFilter"></typeparam>
         /// <param name="sampleProvider"></param>
         /// <param name="sampleFilter"></param>
+        /// <param name="clipFilter"></param>
         /// <param name="samples">Points collection</param>
         /// <param name="sampleIdx">Current sample index</param>
         /// <param name="endIdx">End index</param>
@@ -831,9 +914,10 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <returns>
         ///   <c>true</c> if line segments are extracted, <c>false</c> if reached end.
         /// </returns>
-        bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+        public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, ClipFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, ClipFilter clipFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
-            where TSampleFilter : IFilter<TSample>;
+            where TSampleFilter : IFilter<TSample>
+            where ClipFilter : IFilter<ScreenPoint>;
 
         /// <summary>
         /// Tries to find the sample that is closest to the given <see cref="ScreenPoint"/> in screen space.
@@ -989,18 +1073,21 @@ namespace OxyPlot.Axes.ComposableAxis
         public ColorHelper(VAxisColorTransformation transformation)
             : base(transformation.Provider)
         {
-            Transformation = transformation;
+            _Transformation = transformation;
         }
 
         /// <summary>
-        /// The axis color transformation.
+        /// Gets the underlying color transform.
         /// </summary>
-        public VAxisColorTransformation Transformation { get; }
+        public VAxisColorTransformation _Transformation { get; }
+
+        /// <inheritdoc/>
+        public IAxisColorTransformation<VData> ColorTransformation => _Transformation;
 
         /// <inheritdoc/>
         public OxyColor Transform(VData value)
         {
-            return Transformation.Transform(value);
+            return _Transformation.Transform(value);
         }
     }
 
@@ -1209,22 +1296,16 @@ namespace OxyPlot.Axes.ComposableAxis
         public YAxisTransformation YTransformation => _YTransformation;
 
         /// <inheritdoc/>
-        public DataSample<XData, YData> InverseTransform(ScreenPoint screenPoint)
+        public DataSample<XData, YData> InverseArrangeTransform(ScreenPoint screenPoint)
         {
             InverseArrange(screenPoint, out var x, out var y);
             return new DataSample<XData, YData>(_XTransformation.InverseTransform(x), _YTransformation.InverseTransform(y));
         }
 
         /// <inheritdoc/>
-        public ScreenPoint Transform(DataSample<XData, YData> sample)
+        public ScreenPoint ArrangeTransform(DataSample<XData, YData> sample)
         {
             return Arrange(_XTransformation.Transform(sample.X), _YTransformation.Transform(sample.Y));
-        }
-
-        /// <inheritdoc/>
-        public bool WithinClipBounds(DataSample<XData, YData> sample)
-        {
-            return _XTransformation.WithinClipBounds(sample.X) && _YTransformation.WithinClipBounds(sample.Y);
         }
 
         /// <inheritdoc/>
@@ -1288,22 +1369,16 @@ namespace OxyPlot.Axes.ComposableAxis
         public YAxisTransformation YTransformation => _YTransformation;
 
         /// <inheritdoc/>
-        public DataSample<XData, YData> InverseTransform(ScreenPoint screenPoint)
+        public DataSample<XData, YData> InverseArrangeTransform(ScreenPoint screenPoint)
         {
             InverseArrange(screenPoint, out var x, out var y);
             return new DataSample<XData, YData>(_XTransformation.InverseTransform(x), _YTransformation.InverseTransform(y));
         }
 
         /// <inheritdoc/>
-        public ScreenPoint Transform(DataSample<XData, YData> sample)
+        public ScreenPoint ArrangeTransform(DataSample<XData, YData> sample)
         {
             return Arrange(_XTransformation.Transform(sample.X), _YTransformation.Transform(sample.Y));
-        }
-
-        /// <inheritdoc/>
-        public bool WithinClipBounds(DataSample<XData, YData> sample)
-        {
-            return _XTransformation.WithinClipBounds(sample.X) && _YTransformation.WithinClipBounds(sample.Y);
         }
 
         /// <inheritdoc/>
@@ -1393,6 +1468,29 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Filters <see cref="ScreenPoint"/> to a given rectangle.
+    /// </summary>
+    public readonly struct RectangleFilter : IFilter<ScreenPoint>
+    {
+        private readonly OxyRect Rect;
+
+        /// <summary>
+        /// Initialises a new <see cref="RectangleFilter"/> with the given <see cref="OxyRect"/>.
+        /// </summary>
+        /// <param name="rect"></param>
+        public RectangleFilter(OxyRect rect)
+        {
+            Rect = rect;
+        }
+
+        /// <inheritdoc/>
+        public bool Filter(ScreenPoint value)
+        {
+            return Rect.Contains(value);
+        }
+    }
+
+    /// <summary>
     /// A filter that defers judgement to a delegate.
     /// </summary>
     public readonly struct DelegateFilter<TData> : IFilter<TData>
@@ -1477,11 +1575,12 @@ namespace OxyPlot.Axes.ComposableAxis
         IAxisScreenTransformation<YData> IXYRenderHelper<XData, YData>.YTransformation => _XYTransformation.YTransformation;
 
         /// <inheritdoc/>
-        public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+        public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, ClipFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, ClipFilter clipFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
             where TSampleFilter : IFilter<TSample>
+            where ClipFilter : IFilter<ScreenPoint>
         {
-            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation>(sampleProvider, sampleFilter, _XYTransformation, samples, ref sampleIdx, endIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
+            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation, ClipFilter>(sampleProvider, sampleFilter, _XYTransformation, clipFilter, samples, ref sampleIdx, endIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
         }
 
         /// <inheritdoc/>
@@ -1506,13 +1605,13 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public ScreenPoint TransformSample(DataSample<XData, YData> sample)
         {
-            return XYTransformation.Transform(sample);
+            return XYTransformation.ArrangeTransform(sample);
         }
 
         /// <inheritdoc/>
         public DataSample<XData, YData> InverseTransform(ScreenPoint screenPoint)
         {
-            return XYTransformation.InverseTransform(screenPoint);
+            return XYTransformation.InverseArrangeTransform(screenPoint);
         }
     }
 

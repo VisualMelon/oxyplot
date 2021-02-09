@@ -194,19 +194,14 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <param name="sample"></param>
         /// <returns></returns>
-        ScreenPoint Transform(DataSample<XData, YData> sample);
+        ScreenPoint ArrangeTransform(DataSample<XData, YData> sample);
 
         /// <summary>
         /// Transforms the given screen point into data space.
         /// </summary>
         /// <param name="screenPoint"></param>
         /// <returns></returns>
-        DataSample<XData, YData> InverseTransform(ScreenPoint screenPoint);
-
-        /// <summary>
-        /// Determines whether the given sample is within the clip bounds.
-        /// </summary>
-        bool WithinClipBounds(DataSample<XData, YData> sample);
+        DataSample<XData, YData> InverseArrangeTransform(ScreenPoint screenPoint);
     }
 
     /// <summary>
@@ -264,6 +259,14 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="data">The value to test</param>
         /// <returns><c>true</c> if the value should be presented, otherwise <c>false</c>.</returns>
         bool Filter(TData data);
+
+        /// <summary>
+        /// Gets the color ranges within the given region.
+        /// </summary>
+        /// <param name="minimum"></param>
+        /// <param name="maximum"></param>
+        /// <param name="ticks"></param>
+        void GetColorRanges(TData minimum, TData maximum, IList<ColorRangeTick<TData>> ticks);
     }
 
     /// <summary>
