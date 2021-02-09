@@ -5,7 +5,248 @@ using System.Text;
 namespace OxyPlot.Axes.ComposableAxis
 {
     /// <summary>
-    /// Provides methods to help working with axis.
+    /// Provides methods to help working with values.
+    /// </summary>
+    public static class ValueHelpers
+    {
+        /// <summary>
+        /// Computes the minimum and maximum values for the given samples.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TValueProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
+        /// <typeparam name="VData"></typeparam>
+        /// <typeparam name="VDataProvider"></typeparam>
+        /// <param name="valueProvider"></param>
+        /// <param name="sampleFilter"></param>
+        /// <param name="dataProvider"></param>
+        /// <param name="samples"></param>
+        /// <param name="minV"></param>
+        /// <param name="maxV"></param>
+        /// <returns></returns>
+        public static bool FindMinMax<TSample, TValueProvider, TSampleFilter, VData, VDataProvider>(TValueProvider valueProvider, TSampleFilter sampleFilter, VDataProvider dataProvider, IReadOnlyList<TSample> samples, out VData minV, out VData maxV)
+            where TValueProvider : IValueSampler<TSample, VData>
+            where TSampleFilter : IFilter<TSample>
+            where VDataProvider : IDataProvider<VData>
+        {
+            var v = new SequenceHelper<VData, VDataProvider>(dataProvider);
+
+            foreach (var sample in samples)
+            {
+                if (sampleFilter.Filter(sample)
+                    && valueProvider.TrySample(sample, out var value))
+                {
+                    v.Next(value);
+                }
+            }
+
+            minV = v.Minimum;
+            maxV = v.Maximum;
+
+            return !v.IsEmpty;
+        }
+
+        /// <summary>
+        /// Computes the minimum and maximum values for the given samples.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TValueProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
+        /// <typeparam name="VData"></typeparam>
+        /// <typeparam name="VDataProvider"></typeparam>
+        /// <param name="valueProvider"></param>
+        /// <param name="sampleFilter"></param>
+        /// <param name="dataProvider"></param>
+        /// <param name="samples"></param>
+        /// <param name="minV"></param>
+        /// <param name="maxV"></param>
+        /// <param name="vMonotonicity"></param>
+        /// <returns></returns>
+        public static bool FindMinMax<TSample, TValueProvider, TSampleFilter, VData, VDataProvider>(TValueProvider valueProvider, TSampleFilter sampleFilter, VDataProvider dataProvider, IReadOnlyList<TSample> samples, out VData minV, out VData maxV, out Monotonicity vMonotonicity)
+            where TValueProvider : IValueSampler<TSample, VData>
+            where TSampleFilter : IFilter<TSample>
+            where VDataProvider : IDataProvider<VData>
+        {
+            var v = new SequenceHelper<VData, VDataProvider>(dataProvider);
+
+            foreach (var sample in samples)
+            {
+                if (sampleFilter.Filter(sample)
+                    && valueProvider.TrySample(sample, out var value))
+                {
+                    v.Next(value);
+                }
+            }
+
+            minV = v.Minimum;
+            maxV = v.Maximum;
+            vMonotonicity = v.Monotonicity;
+
+            return !v.IsEmpty;
+        }
+
+        /// <summary>
+        /// Finds a window in some monotonic data.
+        /// </summary>
+        public static bool FindWindow<TSample, TValueProvider, TSampleFilter, VData, VDataProvider>(TValueProvider sampleProvider, TSampleFilter sampleFilter, VDataProvider dataProvider, IReadOnlyList<TSample> samples, VData start, VData end, Monotonicity monotonicity, out int startIndex, out int endIndex)
+            where TValueProvider : IValueSampler<TSample, VData>
+            where TSampleFilter : IFilter<TSample>
+            where VDataProvider : IDataProvider<VData>
+        {
+            int sign = monotonicity.IsNonDecreasing && !monotonicity.IsConstant ? 1 : monotonicity.IsNonIncreasing ? -1 : 0;
+
+            if (sign == 0)
+            {
+                startIndex = 0;
+                endIndex = samples.Count - 1;
+                throw new ArgumentException("The values must be monotonic and non-constant");
+            }
+
+            bool startOk = FindWindowStart<TSample, TValueProvider, TSampleFilter, VData, VDataProvider>(sampleProvider, sampleFilter, dataProvider, samples, start, monotonicity, out startIndex);
+            bool endOk = FindWindowEnd<TSample, TValueProvider, TSampleFilter, VData, VDataProvider>(sampleProvider, sampleFilter, dataProvider, samples, end, monotonicity, out endIndex);
+
+            return startOk && endOk;
+        }
+
+        /// <summary>
+        /// Finds the start of a window in some monotonic data.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
+        /// <typeparam name="VData"></typeparam>
+        /// <typeparam name="VDataProvider"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
+        /// <param name="dataProvider"></param>
+        /// <param name="samples"></param>
+        /// <param name="start"></param>
+        /// <param name="monotonicity"></param>
+        /// <param name="startIndex"></param>
+        /// <returns></returns>
+        public static bool FindWindowStart<TSample, TSampleProvider, TSampleFilter, VData, VDataProvider>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, VDataProvider dataProvider, IReadOnlyList<TSample> samples, VData start, Monotonicity monotonicity, out int startIndex)
+            where TSampleProvider : IValueSampler<TSample, VData>
+            where TSampleFilter : IFilter<TSample>
+            where VDataProvider : IDataProvider<VData>
+        {
+            int sign = monotonicity.IsNonDecreasing && !monotonicity.IsConstant ? 1 : monotonicity.IsNonIncreasing ? -1 : 0;
+
+            if (sign == 0)
+            {
+                startIndex = 0;
+                throw new ArgumentException("The values must be monotonic and non-constant");
+            }
+
+            int l = 0;
+            int h = samples.Count - 1;
+
+            while (l < h)
+            {
+            cont:
+                int m = (h + l) / 2;
+
+                var i = m;
+                VData candidate; // whatever is at index i
+
+                // now, the hideousness of dealing with NaNs
+                while (!sampleProvider.TrySample(samples[i], out candidate))
+                {
+                    // it was invalid, we'd better scan along a bit
+                    i++;
+
+                    if (i >= h)
+                    {
+                        // oh, we ran out this side... best collapse it 
+                        h = m - 1;
+                        goto cont;
+                    }
+                }
+
+                if (sign != 0 && dataProvider.Compare(candidate, start) * sign >= 0)
+                {
+                    h = i - 1;
+                }
+                else
+                {
+                    l = m + 1;
+                }
+            }
+
+            startIndex = l;
+            return true;
+        }
+
+        /// <summary>
+        /// Finds the end of a window in some monotonic data.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TSampleProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
+        /// <typeparam name="VData"></typeparam>
+        /// <typeparam name="VDataProvider"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
+        /// <param name="dataProvider"></param>
+        /// <param name="samples"></param>
+        /// <param name="end"></param>
+        /// <param name="monotonicity"></param>
+        /// <param name="endIndex"></param>
+        /// <returns></returns>
+        public static bool FindWindowEnd<TSample, TSampleProvider, TSampleFilter, VData, VDataProvider>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, VDataProvider dataProvider, IReadOnlyList<TSample> samples, VData end, Monotonicity monotonicity, out int endIndex)
+            where TSampleProvider : IValueSampler<TSample, VData>
+            where TSampleFilter : IFilter<TSample>
+            where VDataProvider : IDataProvider<VData>
+        {
+            int sign = monotonicity.IsNonDecreasing && !monotonicity.IsConstant ? 1 : monotonicity.IsNonIncreasing ? -1 : 0;
+
+            if (sign == 0)
+            {
+                endIndex = samples.Count - 1;
+                throw new ArgumentException("The values must be monotonic and non-constant");
+            }
+
+            int l = 0;
+            int h = samples.Count - 1;
+
+            while (l < h)
+            {
+            cont:
+                int m = (h + l + 1) / 2;
+
+                var i = m;
+                VData candidate; // whatever is at index i
+
+                // now, the hideousness of dealing with NaNs
+                while (!sampleProvider.TrySample(samples[i], out candidate))
+                {
+                    // it was invalid, we'd better scan along a bit
+                    i++;
+
+                    if (i >= h)
+                    {
+                        // oh, we ran out this side... best collapse it 
+                        h = m - 1;
+                        goto cont;
+                    }
+                }
+
+                if (sign != 0 && dataProvider.Compare(candidate, end) * sign <= 0)
+                {
+                    l = m + 1;
+                }
+                else
+                {
+                    h = i - 1;
+                }
+            }
+
+            endIndex = h;
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Provides methods to help working with XY axis.
     /// </summary>
     public static class XYHelpers
     {

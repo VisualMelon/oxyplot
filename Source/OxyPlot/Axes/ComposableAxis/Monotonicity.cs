@@ -60,6 +60,11 @@ namespace OxyPlot.Axes.ComposableAxis
         public static Monotonicity Decreasing => new Monotonicity(Decrease);
 
         /// <summary>
+        /// The monotonicty of a sequence of strictly decreasing values.
+        /// </summary>
+        public static Monotonicity None => new Monotonicity(Decrease | Increase | Repeat);
+
+        /// <summary>
         /// Gets a value indiciating whether the monotonicity is monotone.
         /// </summary>
         public bool IsEmpty => Flags == _Empty;

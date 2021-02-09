@@ -39,7 +39,8 @@ namespace ExampleLibrary
             double x0 = 100.0,
             double csigma = 0.50,
             double esigma = 0.70,
-            double kappa = 0.01)
+            double kappa = 0.01,
+            int samplePeriod = 1)
         {
             double x = x0;
 
@@ -55,7 +56,7 @@ namespace ExampleLibrary
                 var low = Min(open, close, open + dx_1, open + dx_2);
                 var high = Max(open, close, open + dx_1, open + dx_2);
 
-                var nowT = baseT.AddSeconds(ti);
+                var nowT = baseT.AddSeconds(ti * samplePeriod);
                 var t = DateTimeAxis.ToDouble(nowT);
                 yield return new HighLowItem(t, high, low, open, close);
             }

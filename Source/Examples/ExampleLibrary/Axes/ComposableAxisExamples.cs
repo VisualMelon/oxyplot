@@ -18,6 +18,8 @@ namespace ExampleLibrary
     using OxyPlot.Series;
     using OxyPlot.Legends;
     using OxyPlot.Axes.ComposableAxis;
+    using System.Linq;
+    using OxyPlot.Axes.ComposableAxis.SeriesExamples;
 
     /// <summary>
     /// Provides examples for general axis properties.
@@ -740,6 +742,152 @@ namespace ExampleLibrary
 
             return plot;
         }
+
+        [Example("CandleStick on continuous axis")]
+        public static Example CandleStickContinuous()
+        {
+            var plot = new PlotModel { Title = "Large Data Set (wide window)" };
+
+            var xaxis = new HorizontalVerticalAxis<DateTime, DateTimeProvider, LinearDateTime, AcceptAllFilter<DateTime>, Option<DateTime>, Optional<DateTime>>(default, default, default)
+            {
+                Position = AxisPosition.Bottom,
+                Title = "Date",
+            };
+            var xticks = new TickBand<DateTime>(new LinearDateTimeTickLocator(), new SpacingOptions());
+            xaxis.Bands.Add(xticks);
+
+            plot.Axes.Add(xaxis);
+
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            {
+                Position = AxisPosition.Left,
+                Title = "Price",
+                MinimumDataMargin = new ScreenReal(10),
+                MaximumDataMargin = new ScreenReal(10),
+            };
+
+            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
+            yaxis.Bands.Add(yticks);
+
+            plot.Axes.Add(yaxis);
+
+            // series
+            var n = 1000000;
+            var items = HighLowItemGenerator.MRProcess(n).Select(hli => new HighLowItem<DateTime, double>(DateTimeAxis.ToDateTime(hli.X), hli.High, hli.Low, hli.Open, hli.Close)).ToArray();
+            var series = new CandleStickSeries<HighLowItem<DateTime, double>, DateTime, double, IdentityProvider<HighLowItem<DateTime, double>>, AcceptAllFilter<HighLowItem<DateTime, double>>>(default, default)
+            {
+                Color = OxyColors.Black,
+                IncreasingColor = OxyColors.DarkGreen,
+                DecreasingColor = OxyColors.Red,
+            };
+
+            series.Samples.AddRange(items);
+
+            xaxis.Minimum = Option<DateTime>.Some(items[n - 200].X);
+            xaxis.Maximum = Option<DateTime>.Some(items[n - 130].X);
+
+            yaxis.Minimum = items.Skip(n - 200).Take(70).Select(x => x.Low).Min();
+            yaxis.Maximum = items.Skip(n - 200).Take(70).Select(x => x.High).Max();
+
+            plot.Series.Add(series);
+
+            xaxis.AxisViewChanged += (sender, e) => AdjustYExtent(series, xaxis, yaxis);
+
+            var controller = new PlotController();
+            controller.UnbindAll();
+            controller.BindMouseDown(OxyMouseButton.Left, PlotCommands.PanAt);
+            return new Example(plot, controller);
+        }
+
+        [Example("CandleStick on discontinous axis")]
+        public static Example CandleStickWeekdays()
+        {
+            var plot = new PlotModel { Title = "Open Mon-Fri [8:00, 20:00)" };
+
+            var weekdays = new WeekdayTransformation(8, 20);
+
+            var xaxis = new HorizontalVerticalAxis<DateTime, DateTimeProvider, WeekdayTransformation, AcceptAllFilter<DateTime>, Option<DateTime>, Optional<DateTime>>(weekdays, default, default)
+            {
+                Position = AxisPosition.Bottom,
+                Title = "Date",
+            };
+            var xticks = new TickBand<DateTime>(new LinearDateTimeTickLocator() { FormatString = "MM-dd\nHH:mm" }, new SpacingOptions());
+            xaxis.Bands.Add(xticks);
+
+            plot.Axes.Add(xaxis);
+
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            {
+                Position = AxisPosition.Left,
+                Title = "Price",
+                MinimumDataMargin = new ScreenReal(10),
+                MaximumDataMargin = new ScreenReal(10),
+            };
+
+            var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
+            yaxis.Bands.Add(yticks);
+
+            plot.Axes.Add(yaxis);
+
+            // series
+            var n = 100000;
+            var items = HighLowItemGenerator.MRProcess(n, samplePeriod: 60 * 60)
+                .Select(hli => new HighLowItem<DateTime, double>(DateTimeAxis.ToDateTime(hli.X), hli.High, hli.Low, hli.Open, hli.Close))
+                .Where(hli => !weekdays.IsDiscontinuous(hli.X, hli.X))
+                .ToArray();
+            var series = new CandleStickSeries<HighLowItem<DateTime, double>, DateTime, double, IdentityProvider<HighLowItem<DateTime, double>>, AcceptAllFilter<HighLowItem<DateTime, double>>>(default, default)
+            {
+                Color = OxyColors.Black,
+                IncreasingColor = OxyColors.DarkGreen,
+                DecreasingColor = OxyColors.Red,
+            };
+
+            n = items.Length;
+
+            series.Samples.AddRange(items);
+
+            xaxis.Minimum = Option<DateTime>.Some(items[n - 200].X);
+            xaxis.Maximum = Option<DateTime>.Some(items[n - 130].X);
+
+            yaxis.Minimum = items.Skip(n - 200).Take(70).Select(x => x.Low).Min();
+            yaxis.Maximum = items.Skip(n - 200).Take(70).Select(x => x.High).Max();
+
+            plot.Series.Add(series);
+
+            xaxis.AxisViewChanged += (sender, e) => AdjustYExtent(series, xaxis, yaxis);
+
+            var controller = new PlotController();
+            //controller.UnbindAll();
+            controller.BindMouseDown(OxyMouseButton.Left, PlotCommands.PanAt);
+            return new Example(plot, controller);
+        }
+
+        /// <summary>
+        /// Adjusts the Y extent.
+        /// </summary>
+        /// <param name="series">Series.</param>
+        /// <param name="xaxis">Xaxis.</param>
+        /// <param name="yaxis">Yaxis.</param>
+        private static void AdjustYExtent(CandleStickSeries<HighLowItem<DateTime, double>, DateTime, double, IdentityProvider<HighLowItem<DateTime, double>>, AcceptAllFilter<HighLowItem<DateTime, double>>> series, IAxis<DateTime> xaxis, IAxis<double> yaxis)
+        {
+            var xHelper = ValueHelperPreparer<DateTime>.Prepare(xaxis);
+
+            var xmin = xaxis.ActualMinimum;
+            var xmax = xaxis.ActualMaximum;
+
+            xHelper.FindWindow(new HighLowItemXProvider<DateTime, double>(), new AcceptAllFilter<HighLowItem<DateTime, double>>(), series.Samples, xmin, xmax, series.XMonotonicity, out int startIndex, out int endIndex);
+
+            var ymin = double.MaxValue;
+            var ymax = double.MinValue;
+            for (int i = startIndex; i <= endIndex; i++)
+            {
+                var bar = series.Samples[i];
+                ymin = Math.Min(ymin, bar.Low);
+                ymax = Math.Max(ymax, bar.High);
+            }
+
+            yaxis.ZoomTo(ymin, ymax);
+        }
     }
 
     /// <summary>
@@ -749,6 +897,9 @@ namespace ExampleLibrary
     {
         /// <inheritdoc/>
         public DateTimeProvider Provider => default;
+
+        /// <inheritdoc/>
+        public IDataProvider<DateTime> DataProvider => Provider;
 
         /// <inheritdoc/>
         public bool IsNonDiscontinuous => false;
@@ -791,6 +942,7 @@ namespace ExampleLibrary
         /// The hour that everything closed.
         /// </summary>
         public double CloseHour => InternalCloseHour + 24;
+
         private double CloseSubDay => CloseHour / 24;
 
         /// <summary>
@@ -868,8 +1020,8 @@ namespace ExampleLibrary
             else
             {
                 return a.Date != b.Date
-                    || a.Hour < OpenHour || a.Hour > CloseHour
-                    || b.Hour < OpenHour || b.Hour > CloseHour
+                    || a.Hour < OpenHour || a.Hour >= CloseHour
+                    || b.Hour < OpenHour || b.Hour >= CloseHour
                     || a.DayOfWeek == DayOfWeek.Sunday || a.DayOfWeek == DayOfWeek.Saturday
                     || b.DayOfWeek == DayOfWeek.Sunday || b.DayOfWeek == DayOfWeek.Saturday;
             }
@@ -885,5 +1037,4 @@ namespace ExampleLibrary
             return new InteractionReal(weeks * 5 + days + subday);
         }
     }
-
 }

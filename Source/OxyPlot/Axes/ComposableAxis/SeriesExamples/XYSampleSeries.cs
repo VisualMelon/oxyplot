@@ -7,44 +7,28 @@ using OxyPlot.Series;
 namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
 {
     /// <summary>
-    /// Represents a series that works on samples?
-    /// </summary>
-    public abstract class SampleSeries : Series.Series
-    {
-    }
-
-    /// <summary>
-    /// Represents a series of XY Samples.
+    /// Represents a series of on a pair of X and Y axes.
     /// </summary>
     /// <typeparam name="TSample"></typeparam>
     /// <typeparam name="XData"></typeparam>
     /// <typeparam name="YData"></typeparam>
-    /// <typeparam name="TSampleProvider"></typeparam>
     /// <typeparam name="TSampleFilter"></typeparam>
-    public abstract class XYSampleSeries<TSample, XData, YData, TSampleProvider, TSampleFilter> : SampleSeries // TODO: we want these transposable, but we can't implement ITransposablePlotElement at the moment
-        where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+    public abstract class XYSeries<TSample, XData, YData, TSampleFilter> : Series.Series
         where TSampleFilter : IFilter<TSample>
     {
         /// <summary>
-        /// Initializes an instance of the <see cref="AxisBase"/> class.
+        /// Initializes an instance of the <see cref="XYSeries{TSample, XData, YData, TSampleFilter}"/> class.
         /// </summary>
-        protected XYSampleSeries(TSampleProvider sampleProvider, TSampleFilter sampleFilter)
+        protected XYSeries(TSampleFilter sampleFilter)
         {
-            this.SampleProvider = sampleProvider;
             this.SampleFilter = sampleFilter;
             Samples = new List<TSample>();
-            CanTrackerInterpolatePoints = false;
         }
 
         /// <summary>
         /// The samples to be used by this series.
         /// </summary>
         public List<TSample> Samples { get; set; }
-
-        /// <summary>
-        /// Gets or sets the sample provider.
-        /// </summary>
-        public TSampleProvider SampleProvider { get; }
 
         /// <summary>
         /// Gets or sets the sample filter.
@@ -122,28 +106,6 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         public bool HasMeaningfulDataRange { get; protected set; }
 
         /// <summary>
-        /// Updates the minX, maxX, minY, and maxY values.
-        /// </summary>
-        protected virtual void UpdateMinAndMax()
-        {
-            if (Samples.Count == 0)
-                return; // bail before we crash
-
-            ResolveAxes();
-            var xyHelper = GetHelper();
-
-            HasMeaningfulDataRange = xyHelper.FindMinMax(SampleProvider, SampleFilter, Samples.AsReadOnlyList(), out var minX, out var minY, out var maxX, out var maxY, out var xm, out var ym);
-            MinX = minX;
-            MinY = minY;
-            MaxX = maxX;
-            MaxY = maxY;
-            XMonotonicity = xm;
-            YMonotonicity = ym;
-
-            // TODO: use DataRange<XData> instead of MinX/MinY: it already has a concept of empty, so we can ditch HasMeaningfulDataRange
-        }
-
-        /// <summary>
         /// Resolves axes from the axis keys.
         /// </summary>
         protected virtual void ResolveAxes()
@@ -155,31 +117,6 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         }
 
         /// <summary>
-        /// Finds a window of sample that are within the clip bounds if the data are monotonic.
-        /// </summary>
-        /// <param name="startIndex">The first index, inclusive.</param>
-        /// <param name="endIndex">The last index, inclusive.</param>
-        protected void FindWindow(out int startIndex, out int endIndex)
-        {
-            var xyRenderHelper = GetRenderHelper();
-
-            var xtransformation = xyRenderHelper.XTransformation;
-            var ytransformation = xyRenderHelper.YTransformation;
-
-            if (XMonotonicity.IsMonotone || YMonotonicity.IsMonotone)
-            {
-                var minSample = new DataSample<XData, YData>(xtransformation.ClipMinimum, ytransformation.ClipMinimum);
-                var maxSample = new DataSample<XData, YData>(xtransformation.ClipMaximum, ytransformation.ClipMaximum);
-                xyRenderHelper.FindWindow(SampleProvider, SampleFilter, Samples.AsReadOnlyList(), minSample, maxSample, XMonotonicity, YMonotonicity, out startIndex, out endIndex);
-            }
-            else
-            {
-                startIndex = 0;
-                endIndex = Samples.Count - 1;
-            }
-        }
-
-        /// <summary>
         /// Gets an <see cref="IXYHelper{XData, YData}"/> for the current axis, which does not depend on the view state.
         /// </summary>
         /// <returns></returns>
@@ -187,6 +124,24 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         {
             var transpose = XAxis.Position == AxisPosition.Left || XAxis.Position == AxisPosition.Right;
             return XYHelperPreparer<XData, YData>.PrepareHorizontalVertial(Collator, transpose);
+        }
+
+        /// <summary>
+        /// Gets an <see cref="IAxisScreenValueHelper{XData}"/> for the current X axis.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual IAxisScreenValueHelper<XData> GetXHelper()
+        {
+            return AxisValueHelperPreparer<XData>.Prepare(XAxis);
+        }
+
+        /// <summary>
+        /// Gets an <see cref="IAxisScreenValueHelper{YData}"/> for the current X axis.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual IAxisScreenValueHelper<YData> GetYHelper()
+        {
+            return AxisValueHelperPreparer<YData>.Prepare(YAxis);
         }
 
         /// <summary>
@@ -227,16 +182,97 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         }
 
         /// <inheritdoc/>
+        public override OxyRect GetClippingRect()
+        {
+            var xrect = new OxyRect(XAxis.ScreenMin, XAxis.ScreenMax);
+            var yrect = new OxyRect(YAxis.ScreenMin, YAxis.ScreenMax);
+            return xrect.Intersect(yrect);
+        }
+    }
+
+    /// <summary>
+    /// Represents a series of XY Samples.
+    /// </summary>
+    /// <typeparam name="TSample"></typeparam>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    /// <typeparam name="TSampleProvider"></typeparam>
+    /// <typeparam name="TSampleFilter"></typeparam>
+    public abstract class XYSampleSeries<TSample, XData, YData, TSampleProvider, TSampleFilter> : XYSeries<TSample, XData, YData, TSampleFilter> // TODO: we want these transposable, but we can't implement ITransposablePlotElement at the moment
+        where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
+        where TSampleFilter : IFilter<TSample>
+    {
+        /// <summary>
+        /// Initializes an instance of the <see cref="XYSampleSeries{TSample, XData, YData, TSampleProvider, TSampleFilter}"/> class.
+        /// </summary>
+        protected XYSampleSeries(TSampleProvider sampleProvider, TSampleFilter sampleFilter)
+             : base(sampleFilter)
+        {
+            this.SampleProvider = sampleProvider;
+            CanTrackerInterpolatePoints = false;
+        }
+
+        /// <summary>
+        /// Gets or sets the sample provider.
+        /// </summary>
+        public TSampleProvider SampleProvider { get; }
+
+        /// <summary>
+        /// Finds a window of sample that are within the clip bounds if the data are monotonic.
+        /// </summary>
+        /// <param name="startIndex">The first index, inclusive.</param>
+        /// <param name="endIndex">The last index, inclusive.</param>
+        protected void FindWindow(out int startIndex, out int endIndex)
+        {
+            var xyRenderHelper = GetRenderHelper();
+
+            var xtransformation = xyRenderHelper.XTransformation;
+            var ytransformation = xyRenderHelper.YTransformation;
+
+            if (XMonotonicity.IsMonotone || YMonotonicity.IsMonotone)
+            {
+                var minSample = new DataSample<XData, YData>(xtransformation.ClipMinimum, ytransformation.ClipMinimum);
+                var maxSample = new DataSample<XData, YData>(xtransformation.ClipMaximum, ytransformation.ClipMaximum);
+                xyRenderHelper.FindWindow(SampleProvider, SampleFilter, Samples.AsReadOnlyList(), minSample, maxSample, XMonotonicity, YMonotonicity, out startIndex, out endIndex);
+            }
+            else
+            {
+                startIndex = 0;
+                endIndex = Samples.Count - 1;
+            }
+        }
+
+        /// <inheritdoc/>
         protected internal override void UpdateData()
         {
             // We don't have an ItemSource, so we have nothing to do here
             // If we do add an ItemSource (e.g. for convience, that maps to an XYSample`2) then we update the actual samples collection here
         }
 
+        /// <summary>
+        /// Updates the minimum and maximum values
+        /// </summary>
+        protected virtual void UpdateMinMax()
+        {
+            if (Samples.Count == 0)
+                return; // bail before we crash
+
+            ResolveAxes();
+            var xyHelper = GetHelper();
+
+            HasMeaningfulDataRange = xyHelper.FindMinMax(SampleProvider, SampleFilter, Samples.AsReadOnlyList(), out var minX, out var minY, out var maxX, out var maxY, out var xm, out var ym);
+            MinX = minX;
+            MinY = minY;
+            MaxX = maxX;
+            MaxY = maxY;
+            XMonotonicity = xm;
+            YMonotonicity = ym;
+        }
+
         /// <inheritdoc/>
         protected internal override void UpdateMaxMin()
         {
-            this.UpdateMinAndMax();
+            this.UpdateMinMax();
         }
 
         /// <summary>
@@ -717,14 +753,6 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             {
                 this.defaultLineStyle = this.PlotModel.GetDefaultLineStyle();
             }
-        }
-
-        /// <inheritdoc/>
-        public override OxyRect GetClippingRect()
-        {
-            var xrect = new OxyRect(XAxis.ScreenMin, XAxis.ScreenMax);
-            var yrect = new OxyRect(YAxis.ScreenMin, YAxis.ScreenMax);
-            return xrect.Intersect(yrect);
         }
     }
 }

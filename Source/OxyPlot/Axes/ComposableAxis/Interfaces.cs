@@ -40,7 +40,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// </summary>
     /// <typeparam name="TSample"></typeparam>
     /// <typeparam name="VData"></typeparam>
-    public interface IValueProvider<TSample, VData>
+    public interface IValueSampler<TSample, VData>
     {
         /// <summary>
         /// Extracts a <typeparamref name="VData"/> from a <typeparamref name="TSample"/>.
@@ -48,14 +48,29 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="sample"></param>
         /// <returns></returns>
         VData Sample(TSample sample);
+
+        /// <summary>
+        /// Trys to extract a sample from a sample.
+        /// </summary>
+        /// <param name="sample"></param>
+        /// <param name="result"></param>
+        /// <returns><c>true</c> if the sample was valid.</returns>
+        bool TrySample(TSample sample, out VData result);
+
+        /// <summary>
+        /// Determines whether the given sample is an invalid sample.
+        /// </summary>
+        /// <param name="sample"></param>
+        /// <returns><c>true</c> if the sample is valid, otherwise <c>false</c>.</returns>
+        bool IsInvalid(TSample sample);
     }
 
     /// <summary>
-    /// A <see cref="IValueProvider{TSample, VData}"/> that just returns a constant.
+    /// A <see cref="IValueSampler{TSample, VData}"/> that just returns a constant.
     /// </summary>
     /// <typeparam name="TSample"></typeparam>
     /// <typeparam name="VData"></typeparam>
-    public readonly struct ConstantProvider<TSample, VData> : IValueProvider<TSample, VData>
+    public readonly struct ConstantProvider<TSample, VData> : IValueSampler<TSample, VData>
     {
         /// <summary>
         /// The constant.
@@ -72,9 +87,48 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
+        public bool IsInvalid(TSample sample)
+        {
+            return false;
+        }
+
+        /// <inheritdoc/>
         public VData Sample(TSample sample)
         {
             return Constant;
+        }
+
+        /// <inheritdoc/>
+        public bool TrySample(TSample sample, out VData result)
+        {
+            result = Constant;
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// A <see cref="IValueSampler{T, T}"/> that just returns the input.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public readonly struct IdentityProvider<T> : IValueSampler<T, T>
+    {
+        /// <inheritdoc/>
+        public bool IsInvalid(T sample)
+        {
+            return false;
+        }
+
+        /// <inheritdoc/>
+        public T Sample(T sample)
+        {
+            return sample;
+        }
+
+        /// <inheritdoc/>
+        public bool TrySample(T sample, out T result)
+        {
+            result = sample;
+            return true;
         }
     }
 
@@ -139,13 +193,12 @@ namespace OxyPlot.Axes.ComposableAxis
     /// Provides methods to transform between Data space and Interaction space
     /// </summary>
     /// <typeparam name="TData"></typeparam>
-    /// <typeparam name="TDataProvider"></typeparam>
-    public interface IDataTransformation<TData, TDataProvider> where TDataProvider : IDataProvider<TData>
+    public interface IDataTransformation<TData>
     {
         /// <summary>
         /// Gets the <see cref="IDataPointProvider"/> for <typeparamref name="TData"/>.
         /// </summary>
-        public TDataProvider Provider { get; }
+        IDataProvider<TData> DataProvider { get; }
 
         /// <summary>
         /// Gets a value indicating whether the transformation is non-discontinuous.
@@ -178,6 +231,20 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="b"></param>
         /// <returns><c>true</c> if there is a discontenuity between the two values.</returns>
         bool IsDiscontinuous(TData a, TData b);
+    }
+
+    /// <summary>
+    /// Provides methods to transform between Data space and Interaction space
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    /// <typeparam name="TDataProvider"></typeparam>
+    public interface IDataTransformation<TData, TDataProvider> : IDataTransformation<TData>
+        where TDataProvider : IDataProvider<TData>
+    {
+        /// <summary>
+        /// Gets the underlying <typeparamref name="TDataProvider"/>.
+        /// </summary>
+        TDataProvider Provider { get; }
     }
 
     /// <summary>
@@ -317,19 +384,24 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// Gets the minimum clip value.
         /// </summary>
-        public TData ClipMinimum { get; }
+        TData ClipMinimum { get; }
 
         /// <summary>
         /// Gets the maximum clip value.
         /// </summary>
-        public TData ClipMaximum { get; }
+        TData ClipMaximum { get; }
 
         /// <summary>
         /// Determines whether the value <paramref name="v"/> is within the clip bounds.
         /// </summary>
         /// <param name="v"></param>
         /// <returns><c>true</c> if the value is within the axis clip bounds.</returns>
-        public bool WithinClipBounds(TData v);
+        bool WithinClipBounds(TData v);
+
+        /// <summary>
+        /// Gets the ViewInfo.
+        /// </summary>
+        ViewInfo ViewInfo { get; }
     }
 
     /// <summary>
@@ -419,14 +491,14 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// Generates ticks between the given minimum and maximum data values.
         /// </summary>
-        /// <param name="minium"></param>
+        /// <param name="minimum"></param>
         /// <param name="maximum"></param>
         /// <param name="availableWidth"></param>
         /// <param name="spacingOptions"></param>
         /// <param name="majorTicks"></param>
         /// <param name="minorTicks"></param>
         /// <returns></returns>
-        void GetTicks(TData minium, TData maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<TData>> majorTicks, IList<Tick<TData>> minorTicks);
+        void GetTicks(TData minimum, TData maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<TData>> majorTicks, IList<Tick<TData>> minorTicks);
     }
 
     /// <summary>

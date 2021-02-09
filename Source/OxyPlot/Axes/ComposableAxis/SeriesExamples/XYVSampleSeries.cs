@@ -17,7 +17,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
     public abstract class XYVSampleSeries<TSample, XData, YData, VData, TSampleProvider, TValueProvider, TSampleFilter> : XYSampleSeries<TSample, XData, YData, TSampleProvider, TSampleFilter>
         where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         where TSampleFilter : IFilter<TSample>
-        where TValueProvider : IValueProvider<TSample, VData>
+        where TValueProvider : IValueSampler<TSample, VData>
     {
         /// <summary>
         /// Initializes an instance of the <see cref="AxisBase"/> class.
@@ -81,9 +81,9 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// <summary>
         /// Updates the minX, maxX, minY, and maxY values.
         /// </summary>
-        protected override void UpdateMinAndMax()
+        protected override void UpdateMinMax()
         {
-            base.UpdateMinAndMax();
+            base.UpdateMinMax();
 
             if (Samples.Count == 0)
                 return; // bail before we crash
@@ -97,8 +97,6 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             MinV = minV;
             MaxV = maxV;
             VMonotonicity = vm;
-
-            // TODO: use DataRange<XData> instead of MinX/MinY: it already has a concept of empty, so we can ditch HasMeaningfulDataRange
         }
 
         /// <summary>
@@ -142,8 +140,8 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
     public class ScatterSeries<TSample, XData, YData, VData, TSampleProvider, TValueProvider, TSizeProvider, TSampleFilter> : XYVSampleSeries<TSample, XData, YData, VData, TSampleProvider, TValueProvider, TSampleFilter>
         where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
         where TSampleFilter : IFilter<TSample>
-        where TValueProvider : IValueProvider<TSample, VData>
-        where TSizeProvider : IValueProvider<TSample, double>
+        where TValueProvider : IValueSampler<TSample, VData>
+        where TSizeProvider : IValueSampler<TSample, double>
     {
         /// <summary>
         /// The default marker fill color.
@@ -266,6 +264,8 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             if (Samples.Count == 0)
                 return; // bail before we crash
 
+            ResolveAxes();
+
             // check if any item of the series is selected
             bool isSelected = this.IsSelected();
 
@@ -347,14 +347,6 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             {
                 this.defaultMarkerFillColor = this.PlotModel.GetDefaultColor();
             }
-        }
-
-        /// <inheritdoc/>
-        public override OxyRect GetClippingRect()
-        {
-            var xrect = new OxyRect(XAxis.ScreenMin, XAxis.ScreenMax);
-            var yrect = new OxyRect(YAxis.ScreenMin, YAxis.ScreenMax);
-            return xrect.Intersect(yrect);
         }
     }
 }

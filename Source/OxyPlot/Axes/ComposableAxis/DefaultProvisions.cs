@@ -87,6 +87,9 @@ namespace OxyPlot.Axes.ComposableAxis
         public DoubleProvider Provider => default;
 
         /// <inheritdoc/>
+        public IDataProvider<double> DataProvider => Provider;
+
+        /// <inheritdoc/>
         public double InverseTransform(InteractionReal x)
         {
             return x.Value;
@@ -96,6 +99,16 @@ namespace OxyPlot.Axes.ComposableAxis
         public InteractionReal Transform(double data)
         {
             return new InteractionReal(data);
+        }
+
+        /// <summary>
+        /// Scales the given data value into interaction units.
+        /// </summary>
+        /// <param name="delta"></param>
+        /// <returns></returns>
+        public InteractionReal Scale(double delta)
+        {
+            return new InteractionReal(delta);
         }
 
         /// <inheritdoc/>
@@ -136,6 +149,9 @@ namespace OxyPlot.Axes.ComposableAxis
 
         /// <inheritdoc/>
         public DoubleProvider Provider => default;
+
+        /// <inheritdoc/>
+        public IDataProvider<double> DataProvider => Provider;
 
         private readonly double _Base;
 
@@ -188,6 +204,9 @@ namespace OxyPlot.Axes.ComposableAxis
         public DoubleProvider Provider => default;
 
         /// <inheritdoc/>
+        public IDataProvider<double> DataProvider => Provider;
+
+        /// <inheritdoc/>
         public double InverseTransform(InteractionReal x)
         {
             return Math.Exp(x.Value);
@@ -229,6 +248,9 @@ namespace OxyPlot.Axes.ComposableAxis
 
         /// <inheritdoc/>
         public DoubleProvider Provider => default;
+
+        /// <inheritdoc/>
+        public IDataProvider<double> DataProvider => Provider;
 
         /// <inheritdoc/>
         public double InverseTransform(InteractionReal x)
@@ -313,6 +335,9 @@ namespace OxyPlot.Axes.ComposableAxis
         public DateTimeProvider Provider => default;
 
         /// <inheritdoc/>
+        public IDataProvider<DateTime> DataProvider => Provider;
+
+        /// <inheritdoc/>
         public DateTime InverseTransform(InteractionReal x)
         {
             return DateTimeAxis.ToDateTime(x.Value);
@@ -322,6 +347,16 @@ namespace OxyPlot.Axes.ComposableAxis
         public InteractionReal Transform(DateTime data)
         {
             return new InteractionReal(DateTimeAxis.ToDouble(data));
+        }
+
+        /// <summary>
+        /// Scales the given delta into interaction units.
+        /// </summary>
+        /// <param name="delta"></param>
+        /// <returns></returns>
+        public InteractionReal Scale(TimeSpan delta)
+        {
+            return new InteractionReal(TimeSpanAxis.ToDouble(delta));
         }
 
         /// <inheritdoc/>
@@ -565,7 +600,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="clipMaximum">The maximum bound of the clipping region.</param>
         public AxisScreenTransformation(TDataTransformation dataTransformation, TDataFilter filter, ViewInfo viewInfo, TData clipMinimum, TData clipMaximum)
         {
-            DataTransformation = dataTransformation;
+            _DataTransformation = dataTransformation;
             _Filter = filter;
             _ViewInfo = viewInfo;
             ClipMinimum = clipMinimum;
@@ -575,7 +610,10 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// The <typeparamref name="TDataProvider"/>.
         /// </summary>
-        private readonly TDataTransformation DataTransformation;
+        private readonly TDataTransformation _DataTransformation;
+
+        /// <inheritdoc/>
+        public IDataTransformation<TData, TDataProvider> DataTransformation => _DataTransformation;
 
         /// <summary>
         /// The <typeparamref name="TDataFilter"/>.
@@ -587,10 +625,8 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         private readonly ViewInfo _ViewInfo;
 
-        /// <summary>
-        /// Gets the ViewInfo.
-        /// </summary>
-        public ViewInfo ViewInfo => _ViewInfo; // intentionally not made this part of the interface... just public here for testing
+        /// <inheritdoc/>
+        public ViewInfo ViewInfo => _ViewInfo;
 
         /// <inheritdoc/>
         public TData ClipMinimum { get; }
@@ -605,31 +641,31 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
-        public TDataProvider Provider => DataTransformation.Provider;
+        public TDataProvider Provider => _DataTransformation.Provider;
 
         /// <inheritdoc/>
-        public bool IsNonDiscontinuous => DataTransformation.IsNonDiscontinuous;
+        public bool IsNonDiscontinuous => _DataTransformation.IsNonDiscontinuous;
 
         /// <inheritdoc/>
-        public bool IsLinear => DataTransformation.IsLinear;
+        public bool IsLinear => _DataTransformation.IsLinear;
 
         /// <inheritdoc/>
         public TData InverseTransform(ScreenReal s)
         {
-            return DataTransformation.InverseTransform(_ViewInfo.InverseTransform(s));
+            return _DataTransformation.InverseTransform(_ViewInfo.InverseTransform(s));
         }
 
         /// <inheritdoc/>
         public bool IsDiscontinuous(TData a, TData b)
         {
-            return DataTransformation.IsDiscontinuous(a, b);
+            return _DataTransformation.IsDiscontinuous(a, b);
         }
 
         /// <inheritdoc/>
         public ScreenReal Transform(TData data)
         {
             // inlined for perf
-            return new ScreenReal(_ViewInfo.ScreenOffset.Value + DataTransformation.Transform(data).Value * _ViewInfo.ScreenScale);
+            return new ScreenReal(_ViewInfo.ScreenOffset.Value + _DataTransformation.Transform(data).Value * _ViewInfo.ScreenScale);
             // original: return ViewInfo.Transform(DataTransformation.Transform(data));
         }
 
@@ -683,7 +719,7 @@ namespace OxyPlot.Axes.ComposableAxis
         private Option(TData value)
         {
             Value = value;
-            _HasValue = false;
+            _HasValue = true;
         }
 
         /// <summary>
@@ -749,7 +785,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// Provides basic methods process value.
     /// </summary>
     /// <typeparam name="VData"></typeparam>
-    public interface IVHelper<VData>
+    public interface IValueHelper<VData>
     {
         /// <summary>
         /// Finds the minimum and maximum values in the samples.
@@ -763,7 +799,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="minV"></param>
         /// <param name="maxV"></param>
         bool FindMinMax<TSample, TValueProvider, TSampleFilter>(TValueProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, out VData minV, out VData maxV)
-            where TValueProvider : IValueProvider<TSample, VData>
+            where TValueProvider : IValueSampler<TSample, VData>
             where TSampleFilter : IFilter<TSample>;
 
         /// <summary>
@@ -779,7 +815,27 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="maxV"></param>
         /// <param name="vMonotonicity"></param>
         bool FindMinMax<TSample, TValueProvider, TSampleFilter>(TValueProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, out VData minV, out VData maxV, out Monotonicity vMonotonicity)
-            where TValueProvider : IValueProvider<TSample, VData>
+            where TValueProvider : IValueSampler<TSample, VData>
+            where TSampleFilter : IFilter<TSample>;
+
+        /// <summary>
+        /// Finds the start and end indexs of a window in some data.
+        /// Throws if the data is not monotonic.
+        /// </summary>
+        /// <typeparam name="TSample"></typeparam>
+        /// <typeparam name="TValueProvider"></typeparam>
+        /// <typeparam name="TSampleFilter"></typeparam>
+        /// <param name="sampleProvider"></param>
+        /// <param name="sampleFilter"></param>
+        /// <param name="samples"></param>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <param name="monotonicity"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="endIndex"></param>
+        /// <returns></returns>
+        bool FindWindow<TSample, TValueProvider, TSampleFilter>(TValueProvider sampleProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, VData start, VData end, Monotonicity monotonicity, out int startIndex, out int endIndex)
+            where TValueProvider : IValueSampler<TSample, VData>
             where TSampleFilter : IFilter<TSample>;
 
         /// <summary>
@@ -789,10 +845,22 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// Provides basic methods process value.
+    /// </summary>
+    /// <typeparam name="VData"></typeparam>
+    public interface IAxisScreenValueHelper<VData> : IValueHelper<VData>
+    {
+        /// <summary>
+        /// The the underlying transformation.
+        /// </summary>
+        IAxisScreenTransformation<VData> Transformation { get; }
+    }
+
+    /// <summary>
     /// Provides basic methods to help with colors.
     /// </summary>
     /// <typeparam name="VData"></typeparam>
-    public interface IColorHelper<VData> : IVHelper<VData>
+    public interface IColorHelper<VData> : IValueHelper<VData>
     {
         /// <summary>
         /// 
@@ -969,7 +1037,77 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
-    /// Prepares instances of <see cref="IVHelper{VData}"/>.
+    /// Prepares instances of <see cref="IValueHelper{VData}"/>.
+    /// </summary>
+    /// <typeparam name="VData"></typeparam>
+    public class ValueHelperPreparer<VData>
+    {
+        private class Generator : IAxisScreenTransformationConsumer<VData>
+        {
+            public Generator()
+            {
+            }
+
+            public void Consume<VDataProvider, TAxisScreenTransformation>(TAxisScreenTransformation transformation)
+                where VDataProvider : IDataProvider<VData>
+                where TAxisScreenTransformation : IAxisScreenTransformation<VData, VDataProvider>
+            {
+                Result = new ValueHelper<VData, VDataProvider>(transformation.Provider);
+            }
+
+            public IValueHelper<VData> Result { get; private set; }
+        }
+
+        /// <summary>
+        /// Prepares a <see cref="IAxisScreenValueHelper{VData}"/> for an axis.
+        /// </summary>
+        /// <param name="axis"></param>
+        /// <returns></returns>
+        public static IValueHelper<VData> Prepare(IAxis<VData> axis)
+        {
+            var generator = new Generator();
+            axis.ConsumeTransformation(generator);
+            return generator.Result;
+        }
+    }
+
+    /// <summary>
+    /// Prepares instances of <see cref="IValueHelper{VData}"/>.
+    /// </summary>
+    /// <typeparam name="VData"></typeparam>
+    public class AxisValueHelperPreparer<VData>
+    {
+        private class Generator : IAxisScreenTransformationConsumer<VData>
+        {
+            public Generator()
+            {
+            }
+
+            public void Consume<VDataProvider, TAxisScreenTransformation>(TAxisScreenTransformation transformation)
+                where VDataProvider : IDataProvider<VData>
+                where TAxisScreenTransformation : IAxisScreenTransformation<VData, VDataProvider>
+            {
+                Result = new AxisValueHelper<VData, VDataProvider, TAxisScreenTransformation>(transformation);
+            }
+
+            public IAxisScreenValueHelper<VData> Result { get; private set; }
+        }
+
+        /// <summary>
+        /// Prepares a <see cref="IAxisScreenValueHelper{VData}"/> for an axis.
+        /// </summary>
+        /// <param name="axis"></param>
+        /// <returns></returns>
+        public static IAxisScreenValueHelper<VData> Prepare(IAxis<VData> axis)
+        {
+            var generator = new Generator();
+            axis.ConsumeTransformation(generator);
+            return generator.Result;
+        }
+    }
+
+    /// <summary>
+    /// Prepares instances of <see cref="IValueHelper{VData}"/>.
     /// </summary>
     /// <typeparam name="VData"></typeparam>
     public class ColorHelperPreparer<VData>
@@ -1008,7 +1146,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// </summary>
     /// <typeparam name="VData"></typeparam>
     /// <typeparam name="VDataProvider"></typeparam>
-    public class ValueHelper<VData, VDataProvider> : IVHelper<VData>
+    public class ValueHelper<VData, VDataProvider> : IValueHelper<VData>
         where VDataProvider : IDataProvider<VData>
     {
         private readonly VDataProvider _VDataProvider;
@@ -1027,33 +1165,56 @@ namespace OxyPlot.Axes.ComposableAxis
 
         /// <inheritdoc/>
         public bool FindMinMax<TSample, TValueProvider, TSampleFilter>(TValueProvider valueProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, out VData minV, out VData maxV)
-            where TValueProvider : IValueProvider<TSample, VData>
+            where TValueProvider : IValueSampler<TSample, VData>
             where TSampleFilter : IFilter<TSample>
         {
-            return this.FindMinMax(valueProvider, sampleFilter, samples, out minV, out maxV, out _);
+            return ValueHelpers.FindMinMax(valueProvider, sampleFilter, _VDataProvider, samples, out minV, out maxV);
         }
 
         /// <inheritdoc/>
         public bool FindMinMax<TSample, TValueProvider, TSampleFilter>(TValueProvider valueProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, out VData minV, out VData maxV, out Monotonicity vMonotonicity)
-            where TValueProvider : IValueProvider<TSample, VData>
+            where TValueProvider : IValueSampler<TSample, VData>
             where TSampleFilter : IFilter<TSample>
         {
-            var v = new SequenceHelper<VData, VDataProvider>(_VDataProvider);
-
-            foreach (var sample in samples)
-            {
-                if (sampleFilter.Filter(sample))
-                {
-                    v.Next(valueProvider.Sample(sample));
-                }
-            }
-
-            minV = v.Minimum;
-            maxV = v.Maximum;
-            vMonotonicity = v.Monotonicity;
-
-            return !v.IsEmpty;
+            return ValueHelpers.FindMinMax(valueProvider, sampleFilter, _VDataProvider, samples, out minV, out maxV, out vMonotonicity);
         }
+
+        /// <inheritdoc/>
+        public bool FindWindow<TSample, TValueProvider, TSampleFilter>(TValueProvider valueProvider, TSampleFilter sampleFilter, IReadOnlyList<TSample> samples, VData start, VData end, Monotonicity monotonicity, out int startIndex, out int endIndex)
+            where TValueProvider : IValueSampler<TSample, VData>
+            where TSampleFilter : IFilter<TSample>
+        {
+            return ValueHelpers.FindWindow(valueProvider, sampleFilter, _VDataProvider, samples, start, end, monotonicity, out startIndex, out endIndex);
+        }
+    }
+
+    /// <summary>
+    /// Value helper
+    /// </summary>
+    /// <typeparam name="VData"></typeparam>
+    /// <typeparam name="VDataProvider"></typeparam>
+    /// <typeparam name="VDataTransformation"></typeparam>
+    public class AxisValueHelper<VData, VDataProvider, VDataTransformation> : ValueHelper<VData, VDataProvider>, IAxisScreenValueHelper<VData>
+        where VDataProvider : IDataProvider<VData>
+        where VDataTransformation : IAxisScreenTransformation<VData, VDataProvider>
+    {
+        /// <summary>
+        /// Initialises an isntance of the <see cref="AxisValueHelper{VData, VDataProvider, VDataTransformation}"/> class.
+        /// </summary>
+        /// <param name="transformation"></param>
+        public AxisValueHelper(VDataTransformation transformation)
+            : base(transformation.Provider)
+        {
+            _Transformation = transformation;
+        }
+
+        /// <summary>
+        /// Gets the underlying transformation.
+        /// </summary>
+        public VDataTransformation _Transformation { get; }
+
+        /// <inheritdoc/>
+        public IAxisScreenTransformation<VData> Transformation => _Transformation;
     }
 
     /// <summary>
@@ -1515,7 +1676,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// A filter that defers judgement to a delegate.
     /// </summary>
-    public readonly struct DelegateValueProvider<TSample, VData> : IValueProvider<TSample, VData>
+    public readonly struct DelegateValueProvider<TSample, VData> : IValueSampler<TSample, VData>
     {
         /// <summary>
         /// Initialises an instance of the <see cref="DelegateValueProvider{TSample, VData}"/> struct.
@@ -1528,9 +1689,22 @@ namespace OxyPlot.Axes.ComposableAxis
         private readonly Func<TSample, VData> Mapping { get; }
 
         /// <inheritdoc/>
+        public bool IsInvalid(TSample sample)
+        {
+            return false;
+        }
+
+        /// <inheritdoc/>
         public VData Sample(TSample sample)
         {
             return Mapping(sample);
+        }
+
+        /// <inheritdoc/>
+        public bool TrySample(TSample sample, out VData result)
+        {
+            result = Mapping(sample);
+            return true;
         }
     }
 
@@ -2163,14 +2337,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public void RenderTicks(IRenderContext renderContext, BandLocation bandLocation, IReadOnlyList<Tick<TData>> ticks, TickStyle tickStyle, double tickLength, double strokeThickness, OxyColor color, string labelFont, double labelFontSize, double labelFontWeight, OxyColor labelColor, double labelAngle, double AxisTickToLabelDistance)
         {
-            var vnominal = AxisPosition switch
-            {
-                AxisPosition.Left => new ScreenVector(-1, 0),
-                AxisPosition.Top => new ScreenVector(0, -1),
-                AxisPosition.Right => new ScreenVector(1, 0),
-                AxisPosition.Bottom => new ScreenVector(0, 1),
-                _ => throw new NotImplementedException(),
-            };
+            var vnormal = bandLocation.Normal;
 
             var textHAlign = AxisPosition switch
             {
@@ -2190,9 +2357,9 @@ namespace OxyPlot.Axes.ComposableAxis
                 _ => throw new NotImplementedException(),
             };
 
-            var v0 = tickStyle == TickStyle.Crossing || tickStyle == TickStyle.Outside ? vnominal * tickLength : new ScreenVector(0, 0);
-            var v1 = tickStyle == TickStyle.Crossing || tickStyle == TickStyle.Inside ? vnominal * -tickLength : new ScreenVector(0, 0);
-            var vt = vnominal * (AxisTickToLabelDistance + tickLength);
+            var v0 = tickStyle == TickStyle.Crossing || tickStyle == TickStyle.Outside ? vnormal * tickLength : new ScreenVector(0, 0);
+            var v1 = tickStyle == TickStyle.Crossing || tickStyle == TickStyle.Inside ? vnormal * -tickLength : new ScreenVector(0, 0);
+            var vt = vnormal * (AxisTickToLabelDistance + tickLength);
 
             var pen = new OxyPen(color, strokeThickness);
 

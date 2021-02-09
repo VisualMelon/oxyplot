@@ -351,13 +351,13 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
-        public void GetTicks(double minium, double maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<double>> majorTicks, IList<Tick<double>> minorTicks)
+        public void GetTicks(double minimum, double maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<double>> majorTicks, IList<Tick<double>> minorTicks)
         {
-            minium = Math.Log(minium);
+            minimum = Math.Log(minimum);
             maximum = Math.Log(maximum);
 
             // TODO: proper implementation
-            var upperBound = (maximum - minium) / spacingOptions.MaximumTickCount;
+            var upperBound = (maximum - minimum) / spacingOptions.MaximumTickCount;
             var niceLog = Math.Floor(Math.Log10(upperBound));
             var candidate = Math.Pow(10, niceLog);
             if (candidate * 5 < upperBound)
@@ -365,8 +365,8 @@ namespace OxyPlot.Axes.ComposableAxis
             if (candidate * 2 < upperBound)
                 candidate *= 2;
 
-            var next = Math.Round((minium - Offset) / candidate) * candidate;
-            while (next < minium)
+            var next = Math.Round((minimum - Offset) / candidate) * candidate;
+            while (next < minimum)
                 next += candidate;
 
             do
@@ -414,13 +414,13 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
-        public void GetTicks(double minium, double maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<double>> majorTicks, IList<Tick<double>> minorTicks)
+        public void GetTicks(double minimum, double maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<double>> majorTicks, IList<Tick<double>> minorTicks)
         {
-            var majorInterval = AxisUtilities.CalculateActualIntervalLinear(availableWidth, spacingOptions.MaximumIntervalSize, maximum - minium);
+            var majorInterval = AxisUtilities.CalculateActualIntervalLinear(availableWidth, spacingOptions.MaximumIntervalSize, maximum - minimum);
             var minorInterval = AxisUtilities.CalculateMinorInterval(majorInterval);
 
-            var majorTickValues = AxisUtilities.CreateTickValues(minium, maximum, majorInterval, spacingOptions.MaximumTickCount);
-            var minorTickValues = AxisUtilities.CreateTickValues(minium, maximum, minorInterval, spacingOptions.MaximumTickCount);
+            var majorTickValues = AxisUtilities.CreateTickValues(minimum, maximum, majorInterval, spacingOptions.MaximumTickCount);
+            var minorTickValues = AxisUtilities.CreateTickValues(minimum, maximum, minorInterval, spacingOptions.MaximumTickCount);
             minorTickValues = AxisUtilities.FilterRedundantMinorTicks(majorTickValues, minorTickValues);
 
             foreach (var t in majorTickValues)
@@ -491,11 +491,11 @@ namespace OxyPlot.Axes.ComposableAxis
         public string FormatString { get; set; } = null;
 
         /// <inheritdoc/>
-        public void GetTicks(DateTime minium, DateTime maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<DateTime>> majorTicks, IList<Tick<DateTime>> minorTicks)
+        public void GetTicks(DateTime minimum, DateTime maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<DateTime>> majorTicks, IList<Tick<DateTime>> minorTicks)
         {
             // TODO: proper implementation
 
-            var diff = (maximum - minium).TotalDays;
+            var diff = 2 * (maximum - minimum).TotalDays * spacingOptions.MaximumIntervalSize * spacingOptions.MinimumTickCount / availableWidth;
 
             DateTime x0;
             DateTime x1;
@@ -506,7 +506,7 @@ namespace OxyPlot.Axes.ComposableAxis
             if (diff > 2000)
             {
                 // years
-                x0 = new DateTime(minium.Year + 1, 1, 1);
+                x0 = new DateTime(minimum.Year + 1, 1, 1);
                 x1 = new DateTime(maximum.Year, 1, 1);
                 inc = dt => dt.AddYears(1);
                 formatter ??= dt => dt.ToString("yyyy");
@@ -514,7 +514,7 @@ namespace OxyPlot.Axes.ComposableAxis
             else if (diff > 100)
             {
                 // months
-                x0 = new DateTime(minium.Year, minium.Month + 1, 1);
+                x0 = new DateTime(minimum.Year, (minimum.Month + 1) % 12, 1);
                 x1 = new DateTime(maximum.Year, maximum.Month, 1);
                 inc = dt => dt.AddYears(1);
                 formatter ??= dt => dt.ToString("yyyy-MMM");
@@ -522,15 +522,23 @@ namespace OxyPlot.Axes.ComposableAxis
             else if (diff > 5)
             {
                 // days
-                x0 = new DateTime(minium.Year, minium.Month, minium.Day + 1);
+                x0 = new DateTime(minimum.Year, minimum.Month, minimum.Day);
                 x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day);
                 inc = dt => dt.AddDays(1);
                 formatter ??= dt => dt.ToString("yyyy-MMM-dd");
             }
+            else if (diff > 2)
+            {
+                // 8 hours
+                x0 = new DateTime(minimum.Year, minimum.Month, minimum.Day, ((minimum.Hour / 8 + 1) * 8) % 24, 0, 0);
+                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, 0, 0);
+                inc = dt => dt.AddHours(8);
+                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH");
+            }
             else if (diff > 1)
             {
                 // 4 hours
-                x0 = new DateTime(minium.Year, minium.Month, minium.Day, (minium.Hour / 4 + 1) * 4, 0, 0);
+                x0 = new DateTime(minimum.Year, minimum.Month, minimum.Day, ((minimum.Hour / 4 + 1) * 4) % 24, 0, 0);
                 x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, 0, 0);
                 inc = dt => dt.AddHours(4);
                 formatter ??= dt => dt.ToString("yyyy-MM-ddTHH");
@@ -538,40 +546,56 @@ namespace OxyPlot.Axes.ComposableAxis
             else if (diff > 0.2)
             {
                 // hours
-                x0 = new DateTime(minium.Year, minium.Month, minium.Day, minium.Hour + 1, 0, 0);
+                x0 = new DateTime(minimum.Year, minimum.Month, minimum.Day, (minimum.Hour + 1) % 24, 0, 0);
                 x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, 0, 0);
                 inc = dt => dt.AddHours(1);
                 formatter ??= dt => dt.ToString("yyyy-MM-ddTHH");
             }
+            else if (diff > 0.02)
+            {
+                // 15 minutes
+                x0 = new DateTime(minimum.Year, minimum.Month, minimum.Day, minimum.Hour, ((minimum.Minute / 15 + 1) * 15) % 60, 0);
+                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, minimum.Minute, 0);
+                inc = dt => dt.AddMinutes(15);
+                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH:mm");
+            }
             else if (diff > 0.002)
             {
                 // minutes
-                x0 = new DateTime(minium.Year, minium.Month, minium.Day, minium.Hour, minium.Minute + 1, 0);
-                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, minium.Minute, 0);
+                x0 = new DateTime(minimum.Year, minimum.Month, minimum.Day, minimum.Hour, (minimum.Minute + 1) % 60, 0);
+                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, minimum.Minute, 0);
                 inc = dt => dt.AddMinutes(1);
-                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH-mm");
+                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH:mm");
+            }
+            else if (diff > 0.0001)
+            {
+                // 15 seconds
+                x0 = new DateTime(minimum.Year, minimum.Month, minimum.Day, minimum.Hour, minimum.Minute, ((minimum.Second / 15 + 1) * 15) % 60);
+                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, maximum.Minute, maximum.Second);
+                inc = dt => dt.AddSeconds(15);
+                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH:mm:ss");
             }
             else if (diff > 0.00001)
             {
                 // seconds
-                x0 = new DateTime(minium.Year, minium.Month, minium.Day, minium.Hour, minium.Minute, minium.Second + 1);
-                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, minium.Minute, maximum.Second);
-                inc = dt => dt.AddMinutes(1);
-                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH-mm-SS");
+                x0 = new DateTime(minimum.Year, minimum.Month, minimum.Day, minimum.Hour, minimum.Minute, (minimum.Second + 1) % 60);
+                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, maximum.Minute, maximum.Second);
+                inc = dt => dt.AddSeconds(1);
+                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH:mm:ss");
             }
             else if (diff > 0.00000001)
             {
                 // milliseconds
-                x0 = new DateTime(minium.Year, minium.Month, minium.Day, minium.Hour, minium.Minute, minium.Second, minium.Millisecond + 1);
-                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, minium.Minute, maximum.Second, maximum.Millisecond);
+                x0 = new DateTime(minimum.Year, minimum.Month, minimum.Day, minimum.Hour, minimum.Minute, minimum.Second, (minimum.Millisecond + 1) % 1000);
+                x1 = new DateTime(maximum.Year, maximum.Month, maximum.Day, maximum.Hour, maximum.Minute, maximum.Second, maximum.Millisecond);
                 inc = dt => dt.AddMinutes(1);
-                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH-mm-SS fff");
+                formatter ??= dt => dt.ToString("yyyy-MM-ddTHH:mm:ss.fff");
             }
             else
             {
-                var t = (maximum - minium).Ticks / 10;
+                var t = (maximum - minimum).Ticks / 10;
                 // ticks
-                x0 = minium;
+                x0 = minimum;
                 x1 = maximum;
                 inc = dt => dt.AddTicks(t);
                 formatter ??= dt => dt.ToString("O");
@@ -767,17 +791,52 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <summary>
     /// A band that renders the axis title.
     /// </summary>
-    public class TitleBand : BandBase
+    public class LabelBand : BandBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TitleBand" /> class.
+        /// Initializes a new instance of the <see cref="LabelBand" /> class.
         /// </summary>
-        public TitleBand()
+        public LabelBand()
         {
             this.BandPosition = BandPosition.Inline;
             this.BandTier = 1;
             this.IsBandVisible = true;
         }
+
+        /// <summary>
+        /// Gets or sets the label text.
+        /// </summary>
+        public string Text { get; set; }
+        /// <summary>
+        /// Gets or sets the label text.
+        /// </summary>
+        public string Font { get; set; }
+
+        /// <summary>
+        /// Gets or sets the label text.
+        /// </summary>
+        public double FontSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the label text.
+        /// </summary>
+        public double FontWeight { get; set; }
+
+        /// <summary>
+        /// Gets or sets the label padding.
+        /// </summary>
+        public OxyThickness Padding { get; set; }
+
+        /// <summary>
+        /// Gets or sets the label position.
+        /// A value in the range [0, 1].
+        /// </summary>
+        public double LabelPosition { get; set; }
+
+        /// <summary>
+        /// The text color.
+        /// </summary>
+        public OxyColor TextColor { get; set; }
 
         /// <inheritdoc/>
         public override void Update()
@@ -787,17 +846,17 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public override void Measure(IRenderContext renderContext, BandLocation zeroReferenceLocation)
         {
-            var titleTextSize = renderContext.MeasureText(Axis.ActualTitle, Axis.ActualTitleFont, Axis.ActualTitleFontSize, Axis.ActualTitleFontWeight);
+            var titleTextSize = renderContext.MeasureText(Text, Font, FontSize, FontWeight);
 
             if (titleTextSize.Height > 0)
             {
-                var top = Axis.AxisTitleDistance + titleTextSize.Height;
-                double middle = zeroReferenceLocation.Width * Axis.TitlePosition;
+                var top = Padding.Bottom + titleTextSize.Height;
+                double middle = zeroReferenceLocation.Width * this.LabelPosition;
 
                 var left = middle - titleTextSize.Width / 2;
                 var right = middle - titleTextSize.Width / 2;
 
-                Excesses = new BandExcesses(-left, top, right - zeroReferenceLocation.Width, 0);
+                Excesses = new BandExcesses(-left, top + Padding.Top - Padding.Bottom, right - zeroReferenceLocation.Width, Padding.Bottom);
             }
             else
             {
@@ -808,20 +867,45 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public override void Render(IRenderContext renderContext, BandLocation location)
         {
-            var titleTextSize = renderContext.MeasureText(Axis.ActualTitle, Axis.ActualTitleFont, Axis.ActualTitleFontSize, Axis.ActualTitleFontWeight);
+            var titleTextSize = renderContext.MeasureText(Text, Font, FontSize, FontWeight);
 
             if (titleTextSize.Height > 0)
             {
                 var offset = location.Reference
                     + location.Parallel * Axis.TitlePosition
-                    + location.Normal * (Axis.AxisTitleDistance + titleTextSize.Height / 2);
+                    + location.Normal * (Padding.Bottom + titleTextSize.Height / 2);
 
                 var rot = location.RotationDegrees;
                 if (rot < -90 || rot > 90)
                     rot = 0;
-                
-                renderContext.DrawText(offset, Axis.ActualTitle, Axis.ActualTitleColor, Axis.ActualTitleFont, Axis.ActualTitleFontSize, Axis.ActualTitleFontWeight, rot, HorizontalAlignment.Center, VerticalAlignment.Middle, null);
+
+                renderContext.DrawText(offset, Text, TextColor, Font, FontSize, FontWeight, rot, HorizontalAlignment.Center, VerticalAlignment.Middle, null);
             }
+        }
+    }
+
+    /// <summary>
+    /// A band that renders the axis title.
+    /// </summary>
+    public class TitleBand : LabelBand
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TitleBand" /> class.
+        /// </summary>
+        public TitleBand()
+        {
+        }
+
+        /// <inheritdoc/>
+        public override void Update()
+        {
+            this.Text = Axis.ActualTitle;
+            this.Font = Axis.ActualFont;
+            this.FontSize = Axis.ActualFontSize;
+            this.FontWeight = Axis.ActualFontWeight;
+            this.Padding = new OxyThickness(0, 0, 0, Axis.AxisTitleDistance);
+            this.LabelPosition = Axis.TitlePosition;
+            this.TextColor = Axis.ActualTextColor;
         }
     }
 

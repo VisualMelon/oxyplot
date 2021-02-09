@@ -329,11 +329,6 @@ namespace OxyPlot.Axes.ComposableAxis
         public abstract double Offset { get; } // the other half of the ViewInfo from Scale
 
         /// <summary>
-        /// The Scale and Offset, with some meaningful behaviour bolted on for good measure.
-        /// </summary>
-        public abstract ViewInfo ViewInfo { get; }
-
-        /// <summary>
         /// Gets or sets the key of the axis. This can be used to specify an axis if you have defined multiple axes in a plot. The default value is <c>null</c>.
         /// </summary>
         public string Key { get; set; }
@@ -621,6 +616,9 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <value>The number of device independent units to be left empty between the axis and the <see cref="ComposableAxis.AxisBase.StartPosition"/>.</value>
         public ScreenReal MaximumMargin { get; set; }
 
+        /// <inheritdoc/>
+        public abstract ViewInfo ViewInfo { get; }
+
         /// <summary>
         /// Updates the scale and offset properties of the transform from the specified boundary rectangle.
         /// </summary>
@@ -742,6 +740,11 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets or sets the screen coordinate of the minimum end of the axis.
         /// </summary>
         ScreenPoint ScreenMin { get; }
+
+        /// <summary>
+        /// The Scale and Offset, with some meaningful behaviour bolted on for good measure.
+        /// </summary>
+        ViewInfo ViewInfo { get; }
     }
 
     /// <summary>
@@ -1227,6 +1230,20 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <summary>
+        /// Called by <see cref="ViewRefreshed"/>.
+        /// This should not exist.
+        /// </summary>
+        public event EventHandler AxisViewChanged;
+
+        /// <summary>
+        /// Called by <see cref="RefreshView"/>.
+        /// </summary>
+        protected virtual void ViewRefreshed()
+        {
+            AxisViewChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
         /// Update the <see cref="ViewInfo"/> and other properties derived from the Actual Interaction Min/Max and the Screen Min/Max.
         /// </summary>
         private void RefreshView()
@@ -1291,6 +1308,7 @@ namespace OxyPlot.Axes.ComposableAxis
             var offset = new ScreenReal(screenMin.Value - ClipInteractionMinimum.Value * scale);
 
             _viewInfo = new ViewInfo(offset, scale);
+            ViewRefreshed();
         }
 
         /// <inheritdoc/>
