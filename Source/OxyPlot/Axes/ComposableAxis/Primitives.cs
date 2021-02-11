@@ -338,6 +338,11 @@ namespace OxyPlot.Axes.ComposableAxis
         public string FormatString { get; set; } = "G5";
 
         /// <summary>
+        /// Gets or sets the Base of the logarithm.
+        /// </summary>
+        public double Base { get; set; } = 10;
+
+        /// <summary>
         /// Formats a tick value.
         /// </summary>
         /// <param name="value">The tick value to format.</param>
@@ -353,30 +358,18 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public void GetTicks(double minimum, double maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<double>> majorTicks, IList<Tick<double>> minorTicks)
         {
-            minimum = Math.Log(minimum);
-            maximum = Math.Log(maximum);
+            var helper = new LogarithmicAxisTickHelper(this.Base, minimum, maximum);
+            helper.GetTickValues(availableWidth, spacingOptions.MaximumIntervalSize, out var _, out var majorTickValues, out var minorTickValues);
 
-            // TODO: proper implementation
-            var upperBound = (maximum - minimum) / spacingOptions.MaximumTickCount;
-            var niceLog = Math.Floor(Math.Log10(upperBound));
-            var candidate = Math.Pow(10, niceLog);
-            if (candidate * 5 < upperBound)
-                candidate *= 5; ;
-            if (candidate * 2 < upperBound)
-                candidate *= 2;
-
-            var next = Math.Round((minimum - Offset) / candidate) * candidate;
-            while (next < minimum)
-                next += candidate;
-
-            do
+            foreach (var t in majorTickValues)
             {
-                var actual = Math.Exp(next);
-                majorTicks.Add(new Tick<double>(actual, Format(actual)));
-
-                next += candidate;
+                majorTicks.Add(new Tick<double>(t, this.Format(t)));
             }
-            while (next < maximum);
+
+            foreach (var t in minorTickValues)
+            {
+                minorTicks.Add(new Tick<double>(t));
+            }
         }
     }
 
