@@ -950,6 +950,23 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <param name="sample"></param>
         void Include(TData sample);
+
+        /// <summary>
+        /// Transforms the specified point to screen coordinates.
+        /// </summary>
+        /// <typeparam name="YData"></typeparam>
+        /// <param name="sample"></param>
+        /// <param name="yaxis"></param>
+        /// <returns></returns>
+        ScreenPoint Transform<YData>(DataSample<TData, YData> sample, IAxis<YData> yaxis);
+
+        /// <summary>
+        /// Gets a render helper for the axis pair.
+        /// </summary>
+        /// <typeparam name="YData"></typeparam>
+        /// <param name="yaxis"></param>
+        /// <returns></returns>
+        IXYRenderHelper<TData, YData> GetHelper<YData>(IAxis<YData> yaxis);
     }
 
     /// <summary>
@@ -1804,6 +1821,19 @@ namespace OxyPlot.Axes.ComposableAxis
                 rc.DrawLine(new[] { location.Reference + location.Parallel * 0.5, location.Reference + location.Parallel * 0.5 + location.Normal * 5 }, OxyColors.Red, 1, EdgeRenderingMode.Automatic);
 #endif
             }
+        }
+
+        /// <inheritdoc/>
+        public ScreenPoint Transform<YData>(DataSample<TData, YData> sample, IAxis<YData> yaxis)
+        {
+            return this.GetHelper<YData>(yaxis).TransformSample(sample);
+        }
+
+        /// <inheritdoc/>
+        public IXYRenderHelper<TData, YData> GetHelper<YData>(IAxis<YData> yaxis)
+        {
+            // assume YAxis is Horizontal/Vertical
+            return XYRenderHelperPreparer<TData, YData>.PrepareHorizontalVertial(XYCollator<TData, YData>.Prepare(this, yaxis), this.IsVertical());
         }
     }
 

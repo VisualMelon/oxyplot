@@ -2280,18 +2280,23 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <param name="axisScreenTransformation"></param>
         /// <param name="axisPosition"></param>
-        /// <param name="theOtherCoordinate"></param>
-        public HorizontalVerticalAxisRenderHelper(TAxisScreenTransformation axisScreenTransformation, AxisPosition axisPosition, ScreenReal theOtherCoordinate)
+        /// <param name="zeroReal"></param>
+        public HorizontalVerticalAxisRenderHelper(TAxisScreenTransformation axisScreenTransformation, AxisPosition axisPosition, ScreenReal zeroReal)
         {
             AxisScreenTransformation = axisScreenTransformation;
             AxisPosition = axisPosition;
-            TheOtherCoordinate = theOtherCoordinate;
+            ZeroReal = zeroReal;
         }
 
         /// <summary>
         /// Whether the axis is vertical
         /// </summary>
         public bool IsVertical => AxisPosition == AxisPosition.Left || AxisPosition == AxisPosition.Right;
+
+        /// <summary>
+        /// Whether the axis is horizontal
+        /// </summary>
+        public bool IsHorizontal => AxisPosition == AxisPosition.Top || AxisPosition == AxisPosition.Bottom;
 
         /// <summary>
         /// The axis transformation.
@@ -2304,13 +2309,9 @@ namespace OxyPlot.Axes.ComposableAxis
         public AxisPosition AxisPosition { get; }
 
         /// <summary>
-        /// The other coordinate in the pair.
+        /// The screen space psuedo-origin
         /// </summary>
-        /// <remarks>
-        /// If <see cref="IsVertical"/> is <c>true</c>, then this is the horizontal coordinate.
-        /// If <see cref="IsVertical"/> is <c>false</c>, then this is the vertical coordinate.
-        /// </remarks>
-        public ScreenReal TheOtherCoordinate { get; }
+        public ScreenReal ZeroReal { get; }
 
         /// <summary>
         /// Transforms the given value onto the axis line.
@@ -2320,17 +2321,20 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <returns></returns>
         public ScreenPoint Transform(TData value, BandLocation bandLocation)
         {
-            var s = AxisScreenTransformation.Transform(value);
+            var s = AxisScreenTransformation.Transform(value) - ZeroReal;
 
-            // TODO: we can get away with this for HorizontalVertical axis; to be more general, we need a second reference which tells us how to interpret s
-            // for example, on a magnitude axis, s will NOT be a screen-space axis aligned variable: it will be a screen-space distance along the parallel
             if (IsVertical)
             {
                 return new ScreenPoint(bandLocation.Reference.X, s.Value);
             }
-            else
+            else if (IsHorizontal)
             {
                 return new ScreenPoint(s.Value, bandLocation.Reference.Y);
+            }
+            else
+            {
+                // for e.g. magnitude axis, where the values are not screen space coordinates
+                return bandLocation.Reference + bandLocation.UnitParallel * s.Value;
             }
         }
 
@@ -2524,22 +2528,22 @@ namespace OxyPlot.Axes.ComposableAxis
     {
         private class Generator : IAxisScreenTransformationConsumer<TData>
         {
-            public Generator(AxisPosition axisPosition, ScreenReal theOtherCoordinate)
+            public Generator(AxisPosition axisPosition, ScreenReal screenReal)
             {
                 AxisPosition = axisPosition;
-                TheOtherCoordinate = theOtherCoordinate;
+                ScreenReal = screenReal;
             }
 
             public void Consume<TDataProvider, TAxisScreenTransformation>(TAxisScreenTransformation transformation)
                 where TDataProvider : IDataProvider<TData>
                 where TAxisScreenTransformation : IAxisScreenTransformation<TData, TDataProvider>
             {
-                Result = new HorizontalVerticalAxisRenderHelper<TData, TDataProvider, TAxisScreenTransformation>(transformation, AxisPosition, TheOtherCoordinate);
+                Result = new HorizontalVerticalAxisRenderHelper<TData, TDataProvider, TAxisScreenTransformation>(transformation, AxisPosition, ScreenReal);
             }
 
             public ITickRenderHelper<TData> Result { get; private set; }
             public AxisPosition AxisPosition { get; }
-            public ScreenReal TheOtherCoordinate { get; }
+            public ScreenReal ScreenReal { get; }
         }
 
         /// <summary>
@@ -2549,16 +2553,8 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <returns></returns>
         public static ITickRenderHelper<TData> PrepareHorizontalVertial(IAxis<TData> axis)
         {
-            var s = axis.Position switch
-            {
-                AxisPosition.Left => axis.ScreenMin.X,
-                AxisPosition.Top => axis.ScreenMin.Y,
-                AxisPosition.Right => axis.ScreenMax.X,
-                AxisPosition.Bottom => axis.ScreenMax.Y,
-                _ => throw new NotImplementedException(),
-            };
-
-            var generator = new Generator(axis.Position, new ScreenReal(s));
+            var zeroReal = new ScreenReal(0); // these are already screen coordinates
+            var generator = new Generator(axis.Position, zeroReal);
             axis.ConsumeTransformation(generator);
             return generator.Result;
         }

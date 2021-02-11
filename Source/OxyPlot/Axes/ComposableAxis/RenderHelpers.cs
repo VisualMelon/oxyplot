@@ -680,18 +680,9 @@ namespace OxyPlot.Axes.ComposableAxis
             where XYTransformation : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
             where ClipFilter : IFilter<ScreenPoint>
         {
-            // NOTE NOTE: this is barely faster than the equivalent in LineSeries, and it tooks 3 careful pieces of inlining to achieve it:
-            //  - inlined IXYAxisTransformation.WithinBounds below
-            //  - inlined IXYAxisTransformation.Transform below
-            //  - inlined ViewInfo.Transform in AxisScreenTransformation.Transform
-            // This inlining helps to cut down on method calls, which avoids the method call overhead
-            // (even though they should all be static calls, calling a method which calls another method means lots of stack work we want to avoid)
-
             // TODO: revise the IXYAxisTransformation interface, since we are currently bypassing everything except `Arrange` (like Orient in classic LineSeries) at the moment
 
-            // Need to:
-            //  - reject invalid points, forming broken line segments as necessary
-            //  - reject points outside the axis bounds
+            // TODO: we can't clip like this... it will remove lines that pass 'across' the screen
 
             // putting these in locals seems to make a surprising difference to the generated asm:
             // should probably investigate why this is the case, but for now let's do the faster thing

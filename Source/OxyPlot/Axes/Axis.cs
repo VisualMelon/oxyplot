@@ -733,6 +733,19 @@ namespace OxyPlot.Axes
                 this.ActualMajorStep);
         }
 
+        /// <inheritdoc/>
+        public ScreenPoint Transform<YData>(DataSample<double, YData> sample, IAxis<YData> yaxis)
+        {
+            return this.GetHelper<YData>(yaxis).TransformSample(sample);
+        }
+
+        /// <inheritdoc/>
+        public IXYRenderHelper<double, YData> GetHelper<YData>(IAxis<YData> yaxis)
+        {
+            // assume YAxis is Horizontal/Vertical
+            return XYRenderHelperPreparer<double, YData>.PrepareHorizontalVertial(XYCollator<double, YData>.Prepare(this, yaxis), this.IsVertical());
+        }
+
         /// <summary>
         /// Transforms the specified point to screen coordinates.
         /// </summary>

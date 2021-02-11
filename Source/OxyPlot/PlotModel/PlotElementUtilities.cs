@@ -64,7 +64,10 @@ namespace OxyPlot
         /// <returns>A screen point.</returns>
         public static ScreenPoint TransformOrientated(ITransposablePlotElement element, DataPoint p)
         {
-            return element.Orientate(Transform(element, p));
+            //return element.Orientate(Transform(element, p));
+
+            // This seems to work, but is of course horrendouly slow
+            return element.XAxis.Transform<double>(new Axes.ComposableAxis.DataSample<double, double>(p.X, p.Y), element.YAxis);
         }
     }
 }

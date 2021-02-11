@@ -177,6 +177,9 @@ namespace OxyPlot.Axes.ComposableAxis
         {
             Reference = reference;
             Parallel = parallel;
+
+            // NOTE: currently the normal is always a 90CC rotation of parallelUnit,
+            // so we could do that here if that doesn't change
             Normal = normal;
         }
 
@@ -189,6 +192,19 @@ namespace OxyPlot.Axes.ComposableAxis
         /// The vector which, along with the <see cref="Reference"/>, describes the ray along which the band exists.
         /// </summary>
         public ScreenVector Parallel { get; }
+
+        /// <summary>
+        /// Gets a normliased version of <see cref="Parallel"/>.
+        /// </summary>
+        public ScreenVector UnitParallel
+        {
+            get
+            {
+                var p = Parallel;
+                p.Normalize();
+                return p;
+            }
+        }
 
         /// <summary>
         /// A unit vector normal to the <see cref="Parallel"/>.
