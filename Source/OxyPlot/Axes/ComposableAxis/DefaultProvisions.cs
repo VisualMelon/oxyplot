@@ -976,16 +976,16 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="sampleIdx">Current sample index</param>
         /// <param name="endIdx">End index</param>
         /// <param name="previousContiguousLineSegmentEndPoint">Initially set to null, but I will update I won't give a broken line if this is null</param>
-        /// <param name="previousContiguousLineSegmentEndPointWithinClipBounds">Where the previous end segment was within the clip bounds</param>
+        /// <param name="previousContiguousLineSegmentEndPointClipInfo">Where the previous end segment was within the clip bounds</param>
         /// <param name="broken">Buffer for the broken segment</param>
         /// <param name="continuous">Buffer for the continuous segment</param>
         /// <returns>
         ///   <c>true</c> if line segments are extracted, <c>false</c> if reached end.
         /// </returns>
-        public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, ClipFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, ClipFilter clipFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+        public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, ClipFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, ClipFilter clipFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref XYClipInfo previousContiguousLineSegmentEndPointClipInfo, List<ScreenPoint> broken, List<ScreenPoint> continuous)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
             where TSampleFilter : IFilter<TSample>
-            where ClipFilter : IFilter<ScreenPoint>;
+            where ClipFilter : IXYClipFilter<ScreenPoint>;
 
         /// <summary>
         /// Tries to find the sample that is closest to the given <see cref="ScreenPoint"/> in screen space.
@@ -1571,6 +1571,62 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// XY Clip Info
+    /// </summary>
+    public readonly struct XYClipInfo
+    {
+        /// <summary>
+        /// Initialises a <see cref="XYClipInfo"/>.
+        /// </summary>
+        /// <param name="xComparison"></param>
+        /// <param name="yComparison"></param>
+        public XYClipInfo(int xComparison, int yComparison)
+        {
+            XComparison = xComparison;
+            YComparison = yComparison;
+        }
+
+        /// <summary>
+        /// The comparison in the X dimension.
+        /// </summary>
+        public readonly int XComparison { get; }
+
+        /// <summary>
+        /// The comparison in the Y dimension.
+        /// </summary>
+        public readonly int YComparison { get; }
+
+        /// <summary>
+        /// Determine whether the given next value should be filtered.
+        /// </summary>
+        /// <param name="next"></param>
+        /// <returns></returns>
+        public bool ShouldReject(XYClipInfo next)
+        {
+            return (this.XComparison != 0 && next.XComparison == this.XComparison) || (this.YComparison != 0 && next.YComparison == this.YComparison);
+        }
+
+        /// <summary>
+        /// Determines whether the clip info describes a point outside the clip bounds.
+        /// </summary>
+        public bool IsOutsideBounds => this.XComparison != 0 || this.YComparison != 0;
+    }
+
+    /// <summary>
+    /// Represents a value filter that determines whether a value is within, below, or above clip values.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public interface IXYClipFilter<T>
+    {
+        /// <summary>
+        /// Compares the value to the clip region.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns><c>0</c> if the value is within the clip region, <c>-1</c> if it is below the clip region, and <c>1</c> if it is above the clip region.</returns>
+        XYClipInfo Compare(T value);
+    }
+
+    /// <summary>
     /// A filter that accepts everything.
     /// </summary>
     /// <typeparam name="TData"></typeparam>
@@ -1648,6 +1704,31 @@ namespace OxyPlot.Axes.ComposableAxis
         public bool Filter(ScreenPoint value)
         {
             return Rect.Contains(value);
+        }
+    }
+
+    /// <summary>
+    /// Filters <see cref="ScreenPoint"/> to a given rectangle.
+    /// </summary>
+    public readonly struct RectangleClipFilter : IXYClipFilter<ScreenPoint>
+    {
+        private readonly OxyRect Rect;
+
+        /// <summary>
+        /// Initialises a new <see cref="RectangleFilter"/> with the given <see cref="OxyRect"/>.
+        /// </summary>
+        /// <param name="rect"></param>
+        public RectangleClipFilter(OxyRect rect)
+        {
+            Rect = rect;
+        }
+
+        /// <inheritdoc/>
+        public XYClipInfo Compare(ScreenPoint value)
+        {
+            var x = value.X < Rect.Left ? -1 : value.X > Rect.Right ? 1 : 0;
+            var y = value.Y < Rect.Top ? -1 : value.Y > Rect.Bottom ? 1 : 0;
+            return new XYClipInfo(x, y);
         }
     }
 
@@ -1749,12 +1830,12 @@ namespace OxyPlot.Axes.ComposableAxis
         IAxisScreenTransformation<YData> IXYRenderHelper<XData, YData>.YTransformation => _XYTransformation.YTransformation;
 
         /// <inheritdoc/>
-        public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, ClipFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, ClipFilter clipFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+        public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, ClipFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, ClipFilter clipFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref XYClipInfo previousContiguousLineSegmentEndPointClipInfo, List<ScreenPoint> broken, List<ScreenPoint> continuous)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
             where TSampleFilter : IFilter<TSample>
-            where ClipFilter : IFilter<ScreenPoint>
+            where ClipFilter : IXYClipFilter<ScreenPoint>
         {
-            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation, ClipFilter>(sampleProvider, sampleFilter, _XYTransformation, clipFilter, samples, ref sampleIdx, endIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointWithinClipBounds, broken, continuous);
+            return RenderHelpers.ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYAxisTransformation, ClipFilter>(sampleProvider, sampleFilter, _XYTransformation, clipFilter, samples, ref sampleIdx, endIdx, ref previousContiguousLineSegmentEndPoint, ref previousContiguousLineSegmentEndPointClipInfo, broken, continuous);
         }
 
         /// <inheritdoc/>

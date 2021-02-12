@@ -614,7 +614,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
             continuousBuffer = continuousBuffer ?? new List<ScreenPoint>();
 
             ScreenPoint? lp = null;
-            bool lpb = default(bool);
+            XYClipInfo lci = default;
 
             base.FindWindow(out var startIdx, out var endIdx);
 
@@ -622,10 +622,12 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
 
             var clipRect = this.GetClippingRect();
 
+            rc.PopClip();
+
             // inflate the clip rect so that in includes the stroke thickness
             var adjustedClipRect = clipRect.Inflate(new OxyThickness(this.StrokeThickness));
 
-            while (xyRenderHelper.ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, RectangleFilter>(SampleProvider, SampleFilter, new RectangleFilter(adjustedClipRect), Samples.AsReadOnlyList(), ref sampleIdx, endIdx, ref lp, ref lpb, brokenBuffer, continuousBuffer))
+            while (xyRenderHelper.ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, RectangleClipFilter>(SampleProvider, SampleFilter, new RectangleClipFilter(adjustedClipRect), Samples.AsReadOnlyList(), ref sampleIdx, endIdx, ref lp, ref lci, brokenBuffer, continuousBuffer))
             {
                 if (areBrokenLinesRendered)
                 {
@@ -667,6 +669,9 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
 
                 this.continuousBuffer.Clear();
             }
+
+            rc.PushClip(clipRect);
+
         }
 
         /// <summary>

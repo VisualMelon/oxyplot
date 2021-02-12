@@ -63,11 +63,11 @@ namespace OxyPlot.Benchmarks
             int startIndex = 0;
             int endIndex = Points.Count - 1;
             ScreenPoint? psp = null;
-            bool pb = false;
+            XYClipInfo pci = default;
 
             Broken.Clear();
             Continuous.Clear();
-            xyRenderHelper.ExtractNextContinuousLineSegment<DataPoint, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>, AcceptAllFilter<ScreenPoint>>(default, default, default, Points.AsReadOnlyList(), ref startIndex, endIndex, ref psp, ref pb, Broken, Continuous);
+            xyRenderHelper.ExtractNextContinuousLineSegment<DataPoint, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>, AcceptAllFilter<ScreenPoint>>(default, default, default, Points.AsReadOnlyList(), ref startIndex, endIndex, ref psp, ref pci, Broken, Continuous);
 
             if (Continuous.Count != Points.Count)
                 throw new Exception("xyRenderHelper.ExtractNextContinuousLineSegment doesn't work.");

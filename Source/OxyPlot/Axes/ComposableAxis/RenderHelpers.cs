@@ -664,13 +664,13 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="sampleIdx">Current sample index</param>
         /// <param name="endIdx">End end index</param>
         /// <param name="previousContiguousLineSegmentEndPoint">Initially set to null, but I will update I won't give a broken line if this is null</param>
-        /// <param name="previousContiguousLineSegmentEndPointWithinClipBounds">Where the previous end segment was within the clip bounds</param>
+        /// <param name="previousContiguousLineSegmentEndPointClipInfo">Where the previous end segment was within the clip bounds</param>
         /// <param name="broken">place to put broken segment</param>
         /// <param name="continuous">place to put contiguous segment</param>
         /// <returns>
         ///   <c>true</c> if line segments are extracted, <c>false</c> if reached end.
         /// </returns>
-        public static bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYTransformation, ClipFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, XYTransformation transformation, ClipFilter clipFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref bool previousContiguousLineSegmentEndPointWithinClipBounds, List<ScreenPoint> broken, List<ScreenPoint> continuous)
+        public static bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation, XYTransformation, ClipFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, XYTransformation transformation, ClipFilter clipFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref XYClipInfo previousContiguousLineSegmentEndPointClipInfo, List<ScreenPoint> broken, List<ScreenPoint> continuous)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
             where TSampleFilter : IFilter<TSample>
             where XDataProvider : IDataProvider<XData>
@@ -678,11 +678,9 @@ namespace OxyPlot.Axes.ComposableAxis
             where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
             where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
             where XYTransformation : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
-            where ClipFilter : IFilter<ScreenPoint>
+            where ClipFilter : IXYClipFilter<ScreenPoint>
         {
-            // TODO: revise the IXYAxisTransformation interface, since we are currently bypassing everything except `Arrange` (like Orient in classic LineSeries) at the moment
-
-            // TODO: we can't clip like this... it will remove lines that pass 'across' the screen
+            // TODO: performance has become crumby again, since I fixed the clipping: can either _not_ do the clipping here, so try to optimise it again
 
             // putting these in locals seems to make a surprising difference to the generated asm:
             // should probably investigate why this is the case, but for now let's do the faster thing
@@ -717,21 +715,21 @@ namespace OxyPlot.Axes.ComposableAxis
             }
 
             var currentPoint = transformation.Arrange(x.Transform(currentXYSample.X), y.Transform(currentXYSample.Y));
-            var currentSampleWithinClipBounds = clipFilter.Filter(currentPoint);
+            var currentSampleClipInfo = clipFilter.Compare(currentPoint);
 
             // Handle broken line segment if exists
             // Requires that there is a previous segment, and someone is within the clip bounds
             if (previousContiguousLineSegmentEndPoint.HasValue
-                && (previousContiguousLineSegmentEndPointWithinClipBounds || currentSampleWithinClipBounds))
+                && !(previousContiguousLineSegmentEndPointClipInfo.ShouldReject(currentSampleClipInfo)))
             {
                 // TODO: we should check for discontenuity also, but can't with current API: should ref a TSample? rather than ScreenPoint?
                 broken.Add(previousContiguousLineSegmentEndPoint.Value);
                 broken.Add(currentPoint);
 
-                if (!currentSampleWithinClipBounds)
+                if (currentSampleClipInfo.IsOutsideBounds)
                 {
                     previousContiguousLineSegmentEndPoint = currentPoint;
-                    previousContiguousLineSegmentEndPointWithinClipBounds = currentSampleWithinClipBounds;
+                    previousContiguousLineSegmentEndPointClipInfo = currentSampleClipInfo;
 
                     sampleIdx++;
 
@@ -744,7 +742,7 @@ namespace OxyPlot.Axes.ComposableAxis
             TSample lastSample = default(TSample);
             DataSample<XData, YData> lastXYSample = default(DataSample<XData, YData>);
             ScreenPoint? lastPoint = default(ScreenPoint?);
-            bool lastSampleWithinClipBounds = default(bool);
+            XYClipInfo lastSampleClipInfo = default;
 
             bool haveLast = false;
             bool firstSample = true;
@@ -765,7 +763,7 @@ namespace OxyPlot.Axes.ComposableAxis
                 }
 
                 currentPoint = transformation.Arrange(x.Transform(currentXYSample.X), y.Transform(currentXYSample.Y));
-                currentSampleWithinClipBounds = clipFilter.Filter(currentPoint);
+                currentSampleClipInfo = clipFilter.Compare(currentPoint);
 
                 if (haveLast)
                 {
@@ -786,39 +784,46 @@ namespace OxyPlot.Axes.ComposableAxis
                     }
                 }
 
-                if (!currentSampleWithinClipBounds)
+                if (haveLast && lastSampleClipInfo.IsOutsideBounds && lastSampleClipInfo.ShouldReject(currentSampleClipInfo))
                 {
-                    if (firstSample)
+                    // two in a row out of bounds: cycle until we are not, and then break
+                    do
                     {
-                        // fine, we just advance
-                    }
-                    else if (haveLast && !lastSampleWithinClipBounds)
-                    {
-                        // two in a row out of bounds: break
-                        break;
-                    }
-                    else
-                    {
-                        // the previous guy was in-bounds, so we need to be added
-                        continuous.Add(currentPoint);
-                        addedSamples = true;
-                    }
-                }
-                else
-                {
-                    if (firstSample)
-                    {
-                        firstSample = false;
-                        if (haveLast)
-                        {
-                            // add the last point
-                            continuous.Add(lastPoint.Value);
-                        }
-                    }
+                        sampleIdx++;
 
-                    continuous.Add(currentPoint);
-                    addedSamples = true;
+                        if (sampleIdx >= samples.Count)
+                            return addedSamples;
+
+                        lastSampleClipInfo = currentSampleClipInfo;
+
+                        currentSample = samples[sampleIdx];
+                        currentSampleIsValid = sampleFilter.Filter(currentSample)
+                            && sampleProvider.TrySample(currentSample, out currentXYSample)
+                            && x.Filter(currentXYSample.X)
+                            && y.Filter(currentXYSample.Y);
+
+                        if (!currentSampleIsValid)
+                            return addedSamples;
+
+                        currentPoint = transformation.Arrange(x.Transform(currentXYSample.X), y.Transform(currentXYSample.Y));
+                        currentSampleClipInfo = clipFilter.Compare(currentPoint);
+                    }
+                    while (lastSampleClipInfo.ShouldReject(currentSampleClipInfo));
+
+                    break;
                 }
+                else if (firstSample)
+                {
+                    firstSample = false;
+                    if (haveLast)
+                    {
+                        // add the last point
+                        continuous.Add(lastPoint.Value);
+                    }
+                }
+
+                continuous.Add(currentPoint);
+                addedSamples = true;
 
                 // advance
                 sampleIdx++;
@@ -826,14 +831,14 @@ namespace OxyPlot.Axes.ComposableAxis
                 lastSample = currentSample;
                 lastPoint = currentPoint;
                 lastXYSample = currentXYSample;
-                lastSampleWithinClipBounds = currentSampleWithinClipBounds;
+                lastSampleClipInfo = currentSampleClipInfo;
                 haveLast = true;
             }
 
             if (addedSamples)
             {
                 previousContiguousLineSegmentEndPoint = lastPoint;
-                previousContiguousLineSegmentEndPointWithinClipBounds = lastSampleWithinClipBounds;
+                previousContiguousLineSegmentEndPointClipInfo = lastSampleClipInfo;
             }
 
             return addedSamples || sampleIdx <= endIdx;

@@ -967,6 +967,16 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="yaxis"></param>
         /// <returns></returns>
         IXYRenderHelper<TData, YData> GetHelper<YData>(IAxis<YData> yaxis);
+
+        /// <summary>
+        /// Gets or sets the minimum value that can be shown using this axis. Values smaller or equal to this value will not be shown.
+        /// </summary>
+        public TData FilterMinValue { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum value that can be shown using this axis. Values greater or equal to this value will not be shown.
+        /// </summary>
+        public TData FilterMaxValue { get; set; }
     }
 
     /// <summary>
@@ -1774,6 +1784,12 @@ namespace OxyPlot.Axes.ComposableAxis
         /// A list of bands used by this <see cref="HorizontalVerticalAxis{TData, TDataProvider, TDataTransformation, TDataFilter, TDataOptional, TDataOptionalProvider}"/>.
         /// </summary>
         public List<IBand> Bands { get; } = new List<IBand>() { new AxisLineBand(), new TitleBand() };
+
+        /// <inheritdoc/>
+        public TData FilterMinValue { get; set; }
+
+        /// <inheritdoc/>
+        public TData FilterMaxValue { get; set; }
 
         /// <inheritdoc/>
         public override void Render(IRenderContext rc, AxisRenderPass pass)
