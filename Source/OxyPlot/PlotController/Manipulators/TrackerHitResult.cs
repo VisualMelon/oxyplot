@@ -9,6 +9,7 @@
 
 namespace OxyPlot
 {
+    using OxyPlot.Axes.ComposableAxis;
     using OxyPlot.Series;
 
     /// <summary>
@@ -62,7 +63,7 @@ namespace OxyPlot
         /// <summary>
         /// Gets the X axis.
         /// </summary>
-        public Axes.Axis XAxis
+        public IPrettyAxis XAxis
         {
             get
             {
@@ -74,7 +75,7 @@ namespace OxyPlot
         /// <summary>
         /// Gets the Y axis.
         /// </summary>
-        public Axes.Axis YAxis
+        public IPrettyAxis YAxis
         {
             get
             {

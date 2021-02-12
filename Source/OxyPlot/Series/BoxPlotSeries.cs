@@ -14,6 +14,7 @@ namespace OxyPlot.Series
     using System.Linq;
 
     using OxyPlot.Axes;
+    using OxyPlot.Axes.ComposableAxis;
 
     /// <summary>
     /// Represents a series for box plots.
@@ -286,7 +287,7 @@ namespace OxyPlot.Series
         /// <param name="xaxis">The x axis.</param>
         /// <param name="yaxis">The y axis.</param>
         /// <returns><c>true</c> if the point is valid; otherwise, <c>false</c> .</returns>
-        public virtual bool IsValidPoint(BoxPlotItem item, Axis xaxis, Axis yaxis)
+        public virtual bool IsValidPoint(BoxPlotItem item, IAxis<double> xaxis, IAxis<double> yaxis)
         {
             return !double.IsNaN(item.X) && !double.IsInfinity(item.X) && !item.Values.Any(double.IsNaN)
                    && !item.Values.Any(double.IsInfinity) && (xaxis != null && xaxis.IsValidValue(item.X))

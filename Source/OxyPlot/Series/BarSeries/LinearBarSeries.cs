@@ -288,7 +288,7 @@ namespace OxyPlot.Series
         /// <returns>The bars width.</returns>
         private double GetBarWidth(List<DataPoint> actualPoints)
         {
-            var minDistance = this.BarWidth / this.XAxis.Scale;
+            var minDistance = this.BarWidth / this.XAxis.ViewInfo.ScreenScale;
             for (var pointIndex = 1; pointIndex < actualPoints.Count; pointIndex++)
             {
                 var distance = actualPoints[pointIndex].X - actualPoints[pointIndex - 1].X;
@@ -298,7 +298,7 @@ namespace OxyPlot.Series
                 }
             }
 
-            return minDistance * this.XAxis.Scale;
+            return minDistance * this.XAxis.ViewInfo.ScreenScale;
         }
 
         /// <summary>

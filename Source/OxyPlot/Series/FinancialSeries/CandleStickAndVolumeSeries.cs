@@ -223,6 +223,16 @@ namespace OxyPlot.Series
             return OhlcvItem.FindIndex(this.data, x, startingIndex);
         }
 
+        /// <summary>
+        /// Gets the X axis.
+        /// </summary>
+        protected new Axis XAxis => (Axis)base.XAxis;
+
+        /// <summary>
+        /// Gets the Y axis.
+        /// </summary>
+        protected new Axis YAxis => (Axis)base.YAxis;
+
         /// <inheritdoc/>
         public override void Render(IRenderContext rc)
         {

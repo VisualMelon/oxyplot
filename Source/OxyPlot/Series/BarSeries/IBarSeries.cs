@@ -7,6 +7,7 @@
 namespace OxyPlot.Series
 {
     using OxyPlot.Axes;
+    using OxyPlot.Axes.ComposableAxis;
     using System.Collections.Generic;
 
     /// <summary>
@@ -42,7 +43,7 @@ namespace OxyPlot.Series
         /// <summary>
         /// Gets the <see cref="ValueAxis"/> the bar series uses.
         /// </summary>
-        Axis ValueAxis { get; }
+        IAxis<double> ValueAxis { get; }
 
         /// <summary>
         /// Updates the valid data.

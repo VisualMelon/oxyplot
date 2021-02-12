@@ -194,6 +194,16 @@ namespace OxyPlot.Series
         }
 
         /// <summary>
+        /// Gets the X axis.
+        /// </summary>
+        protected new Axis XAxis => (Axis)base.XAxis;
+
+        /// <summary>
+        /// Gets the Y axis.
+        /// </summary>
+        protected new Axis YAxis => (Axis)base.YAxis;
+
+        /// <summary>
         /// Renders the series on the specified render context.
         /// </summary>
         /// <param name="rc">The rendering context.</param>

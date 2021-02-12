@@ -10,6 +10,7 @@
 namespace OxyPlot.Annotations
 {
     using OxyPlot.Axes;
+    using OxyPlot.Axes.ComposableAxis;
 
     /// <summary>
     /// Provides an abstract base class for annotations.
@@ -59,7 +60,7 @@ namespace OxyPlot.Annotations
         /// Gets the X axis.
         /// </summary>
         /// <value>The X axis.</value>
-        public Axis XAxis { get; private set; }
+        public IAxis<double> XAxis { get; private set; }
 
         /// <summary>
         /// Gets or sets the X axis key.
@@ -71,7 +72,7 @@ namespace OxyPlot.Annotations
         /// Gets the Y axis.
         /// </summary>
         /// <value>The Y axis.</value>
-        public Axis YAxis { get; private set; }
+        public IAxis<double> YAxis { get; private set; }
         
         /// <summary>
         /// Gets or sets a value indicating whether to clip the annotation by the X axis range.
@@ -91,11 +92,15 @@ namespace OxyPlot.Annotations
         /// <value>The Y axis key.</value>
         public string YAxisKey { get; set; }
 
+        IPrettyAxis IXyAxisPlotElement.XAxis => this.XAxis;
+
+        IPrettyAxis IXyAxisPlotElement.YAxis => this.YAxis;
+
         /// <inheritdoc/>
         public override void EnsureAxes()
         {
-            this.XAxis = (Axis)( this.XAxisKey != null ? this.PlotModel.GetAxis(this.XAxisKey) : this.PlotModel.DefaultXAxis ); // TODO: ... not sure... we need to re-write every single component so that they are typed... so this code won't survive... for now it can assume untyped axes
-            this.YAxis = (Axis)(this.YAxisKey != null ? this.PlotModel.GetAxis(this.YAxisKey) : this.PlotModel.DefaultYAxis ); // ... or (much better): it could assume IAxis<double> (note: that's why I need everything in AxisBase in IAxis... I knew there was a reason for IAxis)
+            this.XAxis = (IAxis<double>)( this.XAxisKey != null ? this.PlotModel.GetAxis(this.XAxisKey) : this.PlotModel.DefaultXAxis ); // TODO: ... not sure... we need to re-write every single component so that they are typed... so this code won't survive... for now it can assume untyped axes
+            this.YAxis = (IAxis<double>)(this.YAxisKey != null ? this.PlotModel.GetAxis(this.YAxisKey) : this.PlotModel.DefaultYAxis ); // ... or (much better): it could assume IAxis<double> (note: that's why I need everything in AxisBase in IAxis... I knew there was a reason for IAxis)
         }
 
         /// <inheritdoc/>
@@ -136,13 +141,14 @@ namespace OxyPlot.Annotations
         /// <inheritdoc/>
         public virtual ScreenPoint Transform(DataPoint p)
         {
-            return PlotElementUtilities.Transform(this, p);
+            return this.XAxis.Transform(new DataSample<double, double>(p.X, p.Y), this.YAxis);
         }
 
         /// <inheritdoc/>
         public virtual DataPoint InverseTransform(ScreenPoint p)
         {
-            return PlotElementUtilities.InverseTransform(this, p);
+            var s = this.XAxis.InverseTransform(p, this.YAxis);
+            return new DataPoint(s.X, s.Y);
         }
     }
 }

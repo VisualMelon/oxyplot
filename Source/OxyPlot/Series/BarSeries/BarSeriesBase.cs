@@ -7,6 +7,7 @@
 namespace OxyPlot.Series
 {
     using OxyPlot.Axes;
+    using OxyPlot.Axes.ComposableAxis;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -63,7 +64,7 @@ namespace OxyPlot.Series
         public List<T> Items { get; } = new List<T>();
 
         /// <inheritdoc/>
-        Axis IBarSeries.ValueAxis => this.XAxis;
+        IAxis<double> IBarSeries.ValueAxis => this.XAxis;
 
         /// <summary>
         /// Gets or sets the items from the items source.

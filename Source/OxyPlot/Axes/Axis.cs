@@ -244,17 +244,6 @@ namespace OxyPlot.Axes
         public double IntervalLength { get; set; }
 
         /// <summary>
-        /// Gets a value indicating whether this axis is reversed. It is reversed if <see cref="ComposableAxis.AxisBase.StartPosition" /> &gt; <see cref="ComposableAxis.AxisBase.EndPosition" />.
-        /// </summary>
-        public bool IsReversed
-        {
-            get
-            {
-                return this.StartPosition > this.EndPosition;
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the formatting function for the labels. The default value is <c>null</c>.
         /// </summary>
         /// <remarks>This function can be used instead of overriding the <see cref="FormatValue" /> method.</remarks>
@@ -737,6 +726,12 @@ namespace OxyPlot.Axes
         public ScreenPoint Transform<YData>(DataSample<double, YData> sample, IAxis<YData> yaxis)
         {
             return this.GetHelper<YData>(yaxis).TransformSample(sample);
+        }
+
+        /// <inheritdoc/>
+        public DataSample<double, YData> InverseTransform<YData>(ScreenPoint point, IAxis<YData> yaxis)
+        {
+            return this.GetHelper<YData>(yaxis).InverseTransform(point);
         }
 
         /// <inheritdoc/>

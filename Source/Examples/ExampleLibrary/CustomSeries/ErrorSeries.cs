@@ -13,6 +13,7 @@ namespace ExampleLibrary
     using System.Collections.Generic;
 
     using OxyPlot;
+    using OxyPlot.Axes;
     using OxyPlot.Series;
 
     /// <summary>
@@ -57,6 +58,16 @@ namespace ExampleLibrary
         /// </summary>
         /// <value>The stroke thickness.</value>
         public double StrokeThickness { get; set; }
+
+        /// <summary>
+        /// Gets the X axis.
+        /// </summary>
+        protected new Axis XAxis => (Axis)base.XAxis;
+
+        /// <summary>
+        /// Gets the Y axis.
+        /// </summary>
+        protected new Axis YAxis => (Axis)base.YAxis;
 
         /// <summary>
         /// Renders the series on the specified render context.

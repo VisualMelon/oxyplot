@@ -40,17 +40,5 @@ namespace OxyPlot.Annotations
             var axisClipRect = new OxyRect(minPoint, maxPoint);
             return rect.Clip(axisClipRect);
         }
-
-        /// <inheritdoc/>
-        public override ScreenPoint Transform(DataPoint p)
-        {
-            return PlotElementUtilities.TransformOrientated(this, p);
-        }
-
-        /// <inheritdoc/>
-        public override DataPoint InverseTransform(ScreenPoint p)
-        {
-            return PlotElementUtilities.InverseTransformOrientated(this, p);
-        }
     }
 }

@@ -516,6 +516,17 @@ namespace OxyPlot.Axes.ComposableAxis
         public bool IsVertical() => this.Position == AxisPosition.Left || this.Position == AxisPosition.Right;
 
         /// <summary>
+        /// Gets a value indicating whether this axis is reversed. It is reversed if <see cref="ComposableAxis.AxisBase.StartPosition" /> &gt; <see cref="ComposableAxis.AxisBase.EndPosition" />.
+        /// </summary>
+        public bool IsReversed
+        {
+            get
+            {
+                return this.StartPosition > this.EndPosition;
+            }
+        }
+
+        /// <summary>
         /// Resets the user's modification (zooming/panning) to minimum and maximum of this axis.
         /// </summary>
         public abstract void Reset();
@@ -753,6 +764,11 @@ namespace OxyPlot.Axes.ComposableAxis
     public interface IPrettyAxis : IAxis
     {
         /// <summary>
+        /// Gets or sets the title of the axis. The default value is <c>null</c>.
+        /// </summary>
+        string Title { get; set; }
+
+        /// <summary>
         /// Gets or sets the tick style for major and minor ticks. The default value is <see cref="OxyPlot.Axes.TickStyle.Outside"/>.
         /// </summary>
         TickStyle TickStyle { get; set; }
@@ -854,6 +870,23 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         /// <remarks>The bigger the value the further afar is the axis from the graph.</remarks>
         int PositionTier { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether the axis is reversed.
+        /// </summary>
+        bool IsReversed { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the axis is vertical.
+        /// </summary>
+        /// <returns><c>true</c> if the axis is vertical; otherwise, <c>false</c> .</returns>
+        bool IsVertical();
+
+        /// <summary>
+        /// Gets a value indicating whether the axis is horizontal.
+        /// </summary>
+        /// <returns><c>true</c> if the axis is horizontal; otherwise, <c>false</c> .</returns>
+        bool IsHorizontal();
     }
 
     /// <summary>
@@ -961,6 +994,15 @@ namespace OxyPlot.Axes.ComposableAxis
         ScreenPoint Transform<YData>(DataSample<TData, YData> sample, IAxis<YData> yaxis);
 
         /// <summary>
+        /// Transforms the specified screen point to a data sample (I should probably rename that type...)
+        /// </summary>
+        /// <typeparam name="YData"></typeparam>
+        /// <param name="point"></param>
+        /// <param name="yaxis"></param>
+        /// <returns></returns>
+        DataSample<TData, YData> InverseTransform<YData>(ScreenPoint point, IAxis<YData> yaxis);
+
+        /// <summary>
         /// Gets a render helper for the axis pair.
         /// </summary>
         /// <typeparam name="YData"></typeparam>
@@ -977,6 +1019,21 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets or sets the maximum value that can be shown using this axis. Values greater or equal to this value will not be shown.
         /// </summary>
         public TData FilterMaxValue { get; set; }
+
+        /// <summary>
+        /// Determines whether the specified value is valid.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns><c>true</c> if the specified value is valid; otherwise, <c>false</c> .</returns>
+        public bool IsValidValue(TData value);
+
+        /// <summary>
+        /// Gets the value from an axis coordinate, converts from a coordinate <see cref="double" /> value to the actual data type.
+        /// </summary>
+        /// <param name="x">The coordinate.</param>
+        /// <returns>The converted value.</returns>
+        /// <remarks>Examples: The <see cref="DateTimeAxis" /> returns the <see cref="DateTime" /> and <see cref="CategoryAxis" /> returns category strings.</remarks>
+        object GetValue(double x);
     }
 
     /// <summary>
@@ -1076,14 +1133,9 @@ namespace OxyPlot.Axes.ComposableAxis
             DataRange = Range<TData>.Empty;
         }
 
-        /// <summary>
-        /// Gets a value indicating whether the axis is reversed.
-        /// </summary>
-        public bool IsReversed => StartPosition > EndPosition;
-
         private ViewInfo _viewInfo;
 
-        private OxyRect PlotBounds { get; set; }
+        private OxyRect PlotBounds;
 
         /// <summary>
         /// The absolute minimum value to be shown (i.e. the minimum value that <see cref="ClipMinimum"/> will take).
@@ -1846,10 +1898,26 @@ namespace OxyPlot.Axes.ComposableAxis
         }
 
         /// <inheritdoc/>
+        public DataSample<TData, YData> InverseTransform<YData>(ScreenPoint screenPoint, IAxis<YData> yaxis)
+        {
+            return this.GetHelper<YData>(yaxis).InverseTransform(screenPoint);
+        }
+
+        /// <inheritdoc/>
         public IXYRenderHelper<TData, YData> GetHelper<YData>(IAxis<YData> yaxis)
         {
             // assume YAxis is Horizontal/Vertical
             return XYRenderHelperPreparer<TData, YData>.PrepareHorizontalVertial(XYCollator<TData, YData>.Prepare(this, yaxis), this.IsVertical());
+        }
+
+        bool IAxis<TData>.IsValidValue(TData value)
+        {
+            return DataProvider.Includes(this.FilterMinValue, this.FilterMaxValue, value);
+        }
+
+        object IAxis<TData>.GetValue(double x)
+        {
+            return x;
         }
     }
 

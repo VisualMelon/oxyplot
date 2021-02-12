@@ -17,12 +17,12 @@ namespace OxyPlot
         /// <summary>
         /// Gets the X axis.
         /// </summary>
-        Axis XAxis { get; }
+        IPrettyAxis XAxis { get; }
 
         /// <summary>
         /// Gets the Y axis.
         /// </summary>
-        Axis YAxis { get; }
+        IPrettyAxis YAxis { get; }
 
         /// <summary>
         /// Transforms the specified data point to a screen point by the axes of the plot element.

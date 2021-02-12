@@ -13,6 +13,7 @@ namespace OxyPlot.Series
     using System.Collections.Generic;
 
     using OxyPlot.Axes;
+    using OxyPlot.Axes.ComposableAxis;
 
     /// <summary>
     /// Represents a series for high-low plots.
@@ -214,7 +215,7 @@ namespace OxyPlot.Series
         /// <param name="xaxis">The x axis.</param>
         /// <param name="yaxis">The y axis.</param>
         /// <returns><c>true</c> if the specified point is valid; otherwise, <c>false</c>.</returns>
-        public virtual bool IsValidItem(HighLowItem pt, Axis xaxis, Axis yaxis)
+        public virtual bool IsValidItem(HighLowItem pt, IAxis<double> xaxis, IAxis<double> yaxis)
         {
             return !double.IsNaN(pt.X) && !double.IsInfinity(pt.X) && !double.IsNaN(pt.High)
                    && !double.IsInfinity(pt.High) && !double.IsNaN(pt.Low) && !double.IsInfinity(pt.Low);

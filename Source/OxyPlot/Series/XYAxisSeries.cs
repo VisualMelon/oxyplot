@@ -14,6 +14,7 @@ namespace OxyPlot.Series
     using System.Linq;
 
     using OxyPlot.Axes;
+    using OxyPlot.Axes.ComposableAxis;
 
     /// <summary>
     /// Provides an abstract base class for series that are related to an X-axis and a Y-axis.
@@ -71,7 +72,7 @@ namespace OxyPlot.Series
         /// Gets the x-axis.
         /// </summary>
         /// <value>The x-axis.</value>
-        public Axis XAxis { get; private set; }
+        public IAxis<double> XAxis { get; private set; }
 
         /// <summary>
         /// Gets or sets the x-axis key. The default is <c>null</c>.
@@ -83,7 +84,7 @@ namespace OxyPlot.Series
         /// Gets the y-axis.
         /// </summary>
         /// <value>The y-axis.</value>
-        public Axis YAxis { get; private set; }
+        public IAxis<double> YAxis { get; private set; }
 
         /// <summary>
         /// Gets or sets the y-axis key. The default is <c>null</c>.
@@ -119,7 +120,8 @@ namespace OxyPlot.Series
         /// <inheritdoc/>
         public DataPoint InverseTransform(ScreenPoint p)
         {
-            return PlotElementUtilities.InverseTransformOrientated(this, p);
+            var s = this.RenderHelper.InverseTransform(p);
+            return new DataPoint(s.X, s.Y);
         }
 
         /// <summary>
@@ -134,7 +136,7 @@ namespace OxyPlot.Series
         /// <inheritdoc/>
         public ScreenPoint Transform(DataPoint p)
         {
-            return PlotElementUtilities.TransformOrientated(this, p);
+            return this.RenderHelper.TransformSample(new DataSample<double, double>(p.X, p.Y));
         }
 
         /// <summary>
@@ -724,6 +726,15 @@ namespace OxyPlot.Series
         }
 
         /// <summary>
+        /// Gets or sets the render helper for this series.
+        /// </summary>
+        protected IXYRenderHelper<double, double> RenderHelper { get; set; }
+
+        IPrettyAxis IXyAxisPlotElement.XAxis => this.XAxis;
+
+        IPrettyAxis IXyAxisPlotElement.YAxis => this.YAxis;
+
+        /// <summary>
         /// Verifies that both axes are defined.
         /// </summary>
         protected void VerifyAxes()
@@ -737,6 +748,8 @@ namespace OxyPlot.Series
             {
                 throw new InvalidOperationException("YAxis not defined.");
             }
+
+            RenderHelper = this.XAxis.GetHelper(this.YAxis);
         }
 
         /// <summary>

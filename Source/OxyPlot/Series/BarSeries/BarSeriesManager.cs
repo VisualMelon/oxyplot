@@ -7,6 +7,7 @@
 namespace OxyPlot.Series
 {
     using OxyPlot.Axes;
+    using OxyPlot.Axes.ComposableAxis;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -62,7 +63,7 @@ namespace OxyPlot.Series
         /// <param name="categoryAxis">The category axis the <paramref name="series"/> belong to.</param>
         /// <param name="valueAxis">The value axis the <paramref name="series"/> belong to.</param>
         /// <param name="series">The bar series this instance should manage.</param>
-        public BarSeriesManager(CategoryAxis categoryAxis, Axis valueAxis, IEnumerable<IBarSeries> series)
+        public BarSeriesManager(CategoryAxis categoryAxis, IAxis<double> valueAxis, IEnumerable<IBarSeries> series)
         {
             this.PlotModel = categoryAxis.PlotModel ?? throw new InvalidOperationException("The category axis must be part of a plot model.");
             this.CategoryAxis = categoryAxis;
@@ -93,7 +94,7 @@ namespace OxyPlot.Series
         /// <summary>
         /// Gets the value <see cref="Axis"/> whose bar series this instance manages.
         /// </summary>
-        public Axis ValueAxis { get; }
+        public IAxis<double> ValueAxis { get; }
 
         /// <summary>
         /// Gets the string representation of the categories.
