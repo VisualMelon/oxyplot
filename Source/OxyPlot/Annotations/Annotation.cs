@@ -11,6 +11,7 @@ namespace OxyPlot.Annotations
 {
     using OxyPlot.Axes;
     using OxyPlot.Axes.ComposableAxis;
+    using System;
 
     /// <summary>
     /// Provides an abstract base class for annotations.
@@ -103,9 +104,39 @@ namespace OxyPlot.Annotations
             this.YAxis = (IAxis<double>)(this.YAxisKey != null ? this.PlotModel.GetAxis(this.YAxisKey) : this.PlotModel.DefaultYAxis ); // ... or (much better): it could assume IAxis<double> (note: that's why I need everything in AxisBase in IAxis... I knew there was a reason for IAxis)
         }
 
+        /// <summary>
+        /// Gets or sets the render helper for this series.
+        /// </summary>
+        protected IXYRenderHelper<double, double> RenderHelper { get; set; }
+
+        /// <summary>
+        /// Gets or sets the transformation for this series.
+        /// </summary>
+        protected IXYAxisTransformation<double, double> Transformation { get; set; }
+
+        /// <summary>
+        /// Verifies that both axes are defined.
+        /// </summary>
+        protected void VerifyAxes()
+        {
+            if (this.XAxis == null)
+            {
+                throw new InvalidOperationException("XAxis not defined.");
+            }
+
+            if (this.YAxis == null)
+            {
+                throw new InvalidOperationException("YAxis not defined.");
+            }
+
+            this.RenderHelper = this.XAxis.GetHelper(this.YAxis);
+            this.Transformation = this.RenderHelper.XYTransformation;
+        }
+
         /// <inheritdoc/>
         public override void Render(IRenderContext rc)
         {
+            this.VerifyAxes();
         }
 
         /// <inheritdoc/>
@@ -139,21 +170,21 @@ namespace OxyPlot.Annotations
         }
 
         /// <inheritdoc/>
-        public virtual ScreenPoint Transform(DataPoint p)
+        public ScreenPoint Transform(DataPoint p)
         {
-            return this.XAxis.Transform(new DataSample<double, double>(p.X, p.Y), this.YAxis);
+            return this.Transformation.ArrangeTransform(new DataSample<double, double>(p.X, p.Y));
         }
 
         /// <inheritdoc/>
-        public virtual ScreenPoint Transform(double x, double y)
+        public ScreenPoint Transform(double x, double y)
         {
-            return this.XAxis.Transform(new DataSample<double, double>(x, y), this.YAxis);
+            return this.Transformation.ArrangeTransform(new DataSample<double, double>(x, y));
         }
 
         /// <inheritdoc/>
-        public virtual DataPoint InverseTransform(ScreenPoint p)
+        public DataPoint InverseTransform(ScreenPoint p)
         {
-            var s = this.XAxis.InverseTransform(p, this.YAxis);
+            var s = this.Transformation.InverseArrangeTransform(p);
             return new DataPoint(s.X, s.Y);
         }
     }

@@ -193,6 +193,74 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// A 2nd order logarithmic data projection over <see cref="System.Double"/>.
+    /// </summary>
+    public readonly struct LogLog : IDataTransformation<double, DoubleProvider>
+    {
+        /// <summary>
+        /// Initialises an instance of the <see cref="LogLog"/> struct.
+        /// </summary>
+        /// <param name="base"></param>
+        public LogLog(double @base)
+        {
+            _Base = @base;
+        }
+
+        /// <inheritdoc/>
+        public bool IsNonDiscontinuous => false;
+
+        /// <inheritdoc/>
+        public bool IsLinear => false;
+
+        /// <inheritdoc/>
+        public bool IsDiscrete => false;
+
+        /// <inheritdoc/>
+        public bool AreEqual(double l, double r)
+        {
+            return l == r;
+        }
+
+        /// <inheritdoc/>
+        public DoubleProvider Provider => default;
+
+        /// <inheritdoc/>
+        public IDataProvider<double> DataProvider => Provider;
+
+        private readonly double _Base;
+
+        /// <summary>
+        /// Gets the base of the logarithm
+        /// </summary>
+        public double Base => _Base;
+
+        /// <inheritdoc/>
+        public double MinimumValue => this.InverseTransform(new InteractionReal(double.MinValue));
+
+        /// <inheritdoc/>
+        public double MaximumValue => this.InverseTransform(new InteractionReal(double.MaxValue));
+
+        /// <inheritdoc/>
+        public double InverseTransform(InteractionReal x)
+        {
+            return Math.Pow(_Base, Math.Pow(_Base, x.Value));
+        }
+
+        /// <inheritdoc/>
+        public InteractionReal Transform(double data)
+        {
+            return new InteractionReal(Math.Log(Math.Log(data, _Base), _Base));
+        }
+
+        /// <inheritdoc/>
+        public bool IsDiscontinuous(double a, double b)
+        {
+            // not sure it makes sense to not throw in this case
+            return a <= 1 || b <= 1;
+        }
+    }
+
+    /// <summary>
     /// A logarithmic data projection over <see cref="System.Double"/>.
     /// </summary>
     public readonly struct LogarithmicNatural : IDataTransformation<double, DoubleProvider>

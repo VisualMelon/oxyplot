@@ -118,9 +118,21 @@ namespace OxyPlot.Series
         }
 
         /// <inheritdoc/>
+        public ScreenPoint Transform(DataPoint p)
+        {
+            return this.Transformation.ArrangeTransform(new DataSample<double, double>(p.X, p.Y));
+        }
+
+        /// <inheritdoc/>
+        public ScreenPoint Transform(double x, double y)
+        {
+            return this.Transformation.ArrangeTransform(new DataSample<double, double>(x, y));
+        }
+
+        /// <inheritdoc/>
         public DataPoint InverseTransform(ScreenPoint p)
         {
-            var s = this.RenderHelper.InverseTransform(p);
+            var s = this.Transformation.InverseArrangeTransform(p);
             return new DataPoint(s.X, s.Y);
         }
 
@@ -131,20 +143,6 @@ namespace OxyPlot.Series
         /// <param name="legendBox">The legend rectangle.</param>
         public override void RenderLegend(IRenderContext rc, OxyRect legendBox)
         {
-        }
-
-        /// <inheritdoc/>
-        public ScreenPoint Transform(DataPoint p)
-        {
-            //return this.RenderHelper.TransformSample(new DataSample<double, double>(p.X, p.Y));
-            return this.Transformation.ArrangeTransform(new DataSample<double, double>(p.X, p.Y));
-        }
-
-        /// <inheritdoc/>
-        public ScreenPoint Transform(double x, double y)
-        {
-            //return this.RenderHelper.TransformSample(new DataSample<double, double>(p.X, p.Y));
-            return this.Transformation.ArrangeTransform(new DataSample<double, double>(x, y));
         }
 
         /// <summary>

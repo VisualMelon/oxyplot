@@ -398,6 +398,50 @@ namespace ExampleLibrary
             return plot;
         }
 
+        [Example("Untyped area series on LogLog")]
+        public static PlotModel UntypedAreaOnLogLog()
+        {
+            var plot = new PlotModel();
+
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
+            {
+                Position = AxisPosition.Bottom,
+                Title = "X Axis",
+                Key = "X",
+            };
+
+            var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
+            xaxis.Bands.Add(xticks);
+
+            plot.Axes.Add(xaxis);
+
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, LogLog, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(new LogLog(2), default, default)
+            {
+                Position = AxisPosition.Left,
+                Title = "Y Axis (LogLog)",
+                Key = "Y",
+            };
+
+            var yticks = new TickBand<double>(new InteractionSpaceTickLocator<double, DoubleProvider, LogLog>(yaxis.DataTransformation), new SpacingOptions());
+            yaxis.Bands.Add(yticks);
+
+            plot.Axes.Add(yaxis);
+
+            var areas = new AreaSeries()
+            {
+            };
+
+            for (var x = 1.0; x <= 5.0; x += 0.01)
+            {
+                areas.Points.Add(new DataPoint(x, Math.Exp(Math.Exp(x))));
+                areas.Points2.Add(new DataPoint(x, Math.Exp(x)));
+            }
+
+            plot.Series.Add(areas);
+
+            return plot;
+        }
+
         [Example("ScatterSeries")]
         public static PlotModel ScatterSeries()
         {

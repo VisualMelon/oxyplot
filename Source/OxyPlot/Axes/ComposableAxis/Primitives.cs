@@ -440,6 +440,65 @@ namespace OxyPlot.Axes.ComposableAxis
     }
 
     /// <summary>
+    /// A super-dodgy interaction space tick locator.
+    /// </summary>
+    public class InteractionSpaceTickLocator<TData, TDataProvider, TDataTransformation> : ITickLocator<TData>
+        where TDataProvider : IDataProvider<TData>
+        where TDataTransformation : IDataTransformation<TData, TDataProvider>
+    {
+        /// <summary>
+        /// Initialises an instance of the <see cref="InteractionSpaceTickLocator{TData, TDataProvider, TDataTransformation}"/> class.
+        /// </summary>
+        /// <param name="dataTransformation"></param>
+        public InteractionSpaceTickLocator(TDataTransformation dataTransformation)
+        {
+            this.DataTransformation = dataTransformation;
+        }
+
+        /// <summary>
+        /// Gets or sets the Data Transformation.
+        /// </summary>
+        public TDataTransformation DataTransformation { get; }
+
+        /// <summary>
+        /// Gets or sets the Formatter.
+        /// </summary>
+        public Func<TData, string> Formatter { get; set; }
+
+        /// <summary>
+        /// Formats a tick value.
+        /// </summary>
+        /// <param name="value">The tick value to format.</param>
+        /// <returns></returns>
+        public string Format(TData value)
+        {
+            if (Formatter != null)
+                return Formatter(value);
+            else
+                return value.ToString();
+        }
+
+        /// <inheritdoc/>
+        public void GetTicks(TData minimum, TData maximum, double availableWidth, SpacingOptions spacingOptions, IList<Tick<TData>> majorTicks, IList<Tick<TData>> minorTicks)
+        {
+            var imin = this.DataTransformation.Transform(minimum).Value;
+            var imax = this.DataTransformation.Transform(maximum).Value;
+
+            var majorInterval = AxisUtilities.CalculateActualIntervalLinear(availableWidth, spacingOptions.MaximumIntervalSize, imax - imin);
+            var minorInterval = AxisUtilities.CalculateMinorInterval(majorInterval);
+
+            var majorTickValues = AxisUtilities.CreateTickValues(imin, imax, majorInterval, spacingOptions.MaximumTickCount);
+            var minorTickValues = AxisUtilities.CreateTickValues(imin, imax, minorInterval, spacingOptions.MaximumTickCount);
+            minorTickValues = AxisUtilities.FilterRedundantMinorTicks(majorTickValues, minorTickValues);
+
+            foreach (var t in majorTickValues)
+                majorTicks.Add(new Tick<TData>(this.DataTransformation.InverseTransform(new InteractionReal(t)), Format(this.DataTransformation.InverseTransform(new InteractionReal(t)))));
+            foreach (var t in minorTickValues)
+                minorTicks.Add(new Tick<TData>(this.DataTransformation.InverseTransform(new InteractionReal(t))));
+        }
+    }
+
+    /// <summary>
     /// A basic Linear tick locator for doubles.
     /// </summary>
     public class LinearDoubleRangeTickLocator : IRangeTickLocator<double>
