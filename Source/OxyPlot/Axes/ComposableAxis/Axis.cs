@@ -1056,12 +1056,15 @@ namespace OxyPlot.Axes.ComposableAxis
         /// </summary>
         public HorizontalVerticalAxis(TDataTransformation dataTransformation, TDataOptionalProvider optionalProvider, TDataFilter filter)
         {
-            DataTransformation = dataTransformation;
-            OptionalProvider = optionalProvider;
-            Filter = filter;
+            this.DataTransformation = dataTransformation;
+            this.OptionalProvider = optionalProvider;
+            this.Filter = filter;
 
-            Minimum = OptionalProvider.None;
-            Maximum = OptionalProvider.None;
+            this.Minimum = OptionalProvider.None;
+            this.Maximum = OptionalProvider.None;
+
+            this.FilterMinValue = dataTransformation.MinimumValue;
+            this.FilterMaxValue = dataTransformation.MaximumValue;
         }
 
         /// <inheritdoc/>
@@ -1393,12 +1396,17 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public void ConsumeTransformation(IAxisScreenTransformationConsumer<TData> consumer)
         {
-            consumer.Consume<TDataProvider, AxisScreenTransformation<TData, TDataProvider, TDataTransformation, TDataFilter>>(GetTransformation());
+            consumer.Consume<TDataProvider, AxisScreenTransformation<TData, TDataProvider, TDataTransformation, AndFilter<TData, MinMaxFilter<TData, TDataProvider>, TDataFilter>>>(GetTransformation());
         }
 
-        private AxisScreenTransformation<TData, TDataProvider, TDataTransformation, TDataFilter> GetTransformation()
+        private AxisScreenTransformation<TData, TDataProvider, TDataTransformation, AndFilter<TData, MinMaxFilter<TData, TDataProvider>, TDataFilter>> GetTransformation()
         {
-            return new AxisScreenTransformation<TData, TDataProvider, TDataTransformation, TDataFilter>(DataTransformation, Filter, ViewInfo, ClipMinimum, ClipMaximum);
+            return new AxisScreenTransformation<TData, TDataProvider, TDataTransformation, AndFilter<TData, MinMaxFilter<TData, TDataProvider>, TDataFilter>>(DataTransformation, GetFilter(), ViewInfo, ClipMinimum, ClipMaximum);
+        }
+
+        private AndFilter<TData, MinMaxFilter<TData, TDataProvider>, TDataFilter> GetFilter()
+        {
+            return new AndFilter<TData, MinMaxFilter<TData, TDataProvider>, TDataFilter>(new MinMaxFilter<TData, TDataProvider>(DataProvider, this.FilterMinValue, this.FilterMaxValue), Filter);
         }
 
         IAxisScreenTransformation<TData> IAxis<TData>.GetTransformation()
@@ -1912,7 +1920,7 @@ namespace OxyPlot.Axes.ComposableAxis
 
         bool IAxis<TData>.IsValidValue(TData value)
         {
-            return DataProvider.Includes(this.FilterMinValue, this.FilterMaxValue, value);
+            return DataProvider.Includes(this.FilterMinValue, this.FilterMaxValue, value) && Filter.Filter(value);
         }
 
         object IAxis<TData>.GetValue(double x)

@@ -32,7 +32,7 @@ namespace ExampleLibrary
         {
             var plot = new PlotModel();
 
-            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Bottom,
                 Minimum = 0,
@@ -48,7 +48,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Left,
                 Minimum = -1,
@@ -69,7 +69,7 @@ namespace ExampleLibrary
         {
             var plot = new PlotModel();
 
-            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Bottom,
                 Title = "X Axis",
@@ -81,7 +81,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Left,
                 Title = "Y Axis",
@@ -101,7 +101,7 @@ namespace ExampleLibrary
         {
             var plot = new PlotModel();
 
-            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Bottom,
                 Minimum = 1,
@@ -115,7 +115,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Logarithmic10, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Logarithmic10, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Left,
                 Minimum = 1,
@@ -138,7 +138,7 @@ namespace ExampleLibrary
             var plot = new PlotModel() { Title = "Mindless formatting" };
 
             // x
-            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Bottom,
                 Title = "X Axis",
@@ -158,7 +158,7 @@ namespace ExampleLibrary
             plot.Axes.Add(xaxis);
 
             // x2
-            var x2axis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var x2axis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Bottom,
                 PositionTier = 1,
@@ -185,7 +185,7 @@ namespace ExampleLibrary
             plot.Axes.Add(x2axis);
 
             // y
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Left,
                 Title = "Y Axis",
@@ -212,7 +212,7 @@ namespace ExampleLibrary
             plot.Axes.Add(yaxis);
 
             // y2
-            var yaxis2 = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var yaxis2 = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Right,
                 Title = "Y2 Axis",
@@ -259,14 +259,14 @@ namespace ExampleLibrary
         }
 
         [Example("LineSeries on immitation default Axes")]
-        public static PlotModel LineOnimmitationDefaultAxis()
+        public static PlotModel LineOnImmitationDefaultAxis()
         {
             var plot = new PlotModel()
             {
                 Subtitle = "The axes are immitations of the default axes",
             };
 
-            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Bottom,
             };
@@ -276,7 +276,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Left,
             };
@@ -367,6 +367,28 @@ namespace ExampleLibrary
             for (var x = 1.0; x <= 10; x += 0.01)
             {
                 lines.Samples.Add(new DataPoint(x, x * x));
+            }
+
+            plot.Series.Add(lines);
+
+            plot.Legends.Add(new Legend());
+
+            return plot;
+        }
+
+        [Example("Untyped LineSeries on Logarithmic XY")]
+        public static PlotModel UntypedLineOnLogarithmicXY()
+        {
+            var plot = LogarithmicXY();
+
+            var lines = new LineSeries()
+            {
+                Title = "y = x^2",
+            };
+
+            for (var x = 1.0; x <= 10; x += 0.01)
+            {
+                lines.Points.Add(new DataPoint(x, x * x));
             }
 
             plot.Series.Add(lines);
@@ -498,7 +520,7 @@ namespace ExampleLibrary
         {
             var plot = new PlotModel { Title = "LineSeries, 1M points" };
 
-            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Bottom,
                 Title = "X",
@@ -508,7 +530,7 @@ namespace ExampleLibrary
             xaxis.Bands.Add(xticks);
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Left,
                 Title = "Y",
@@ -532,20 +554,22 @@ namespace ExampleLibrary
         {
             var plot = new PlotModel { Title = "LineSeries, 1M points" };
 
-            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, 0, double.MaxValue))
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Bottom,
                 Title = "X",
+                FilterMinValue = 0,
             };
 
             var xticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
             xaxis.Bands.Add(xticks);
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, 0, double.MaxValue))
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Left,
                 Title = "Y",
+                FilterMinValue = 0,
             };
 
             var yticks = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
@@ -579,7 +603,7 @@ namespace ExampleLibrary
                 Subtitle = "ClipMinimum/Maximum are Blue\nActualMinimum/Maximum are Red\nDataMinimum/Maximum are Green"
             };
 
-            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var xaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Bottom,
                 MinimumPadding = 0.1,
@@ -595,7 +619,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Left,
                 MinimumPadding = 0.2,
@@ -697,7 +721,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Left,
                 Minimum = 0,
@@ -758,7 +782,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Left,
                 Title = "Price",
@@ -816,7 +840,7 @@ namespace ExampleLibrary
 
             plot.Axes.Add(xaxis);
 
-            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>, double, DoubleAsNaNOptional>(default, default, new MinMaxFilter<double, DoubleProvider>(default, double.MinValue, double.MaxValue))
+            var yaxis = new HorizontalVerticalAxis<double, DoubleProvider, Linear, AcceptAllFilter<double>, double, DoubleAsNaNOptional>(default, default, default)
             {
                 Position = AxisPosition.Left,
                 Title = "Price",
@@ -949,6 +973,10 @@ namespace ExampleLibrary
         /// How many hours everything is open
         /// </summary>
         private double SubDayWidth => CloseSubDay - OpenSubDay;
+
+        public DateTime MinimumValue => DateTime.MinValue;
+
+        public DateTime MaximumValue => DateTime.MaxValue;
 
         private int GetWeek(DateTime dt)
         {

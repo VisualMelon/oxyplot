@@ -231,6 +231,16 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="b"></param>
         /// <returns><c>true</c> if there is a discontenuity between the two values.</returns>
         bool IsDiscontinuous(TData a, TData b);
+
+        /// <summary>
+        /// Gets the minimum value.
+        /// </summary>
+        TData MinimumValue { get; }
+
+        /// <summary>
+        /// Gets the maximum value.
+        /// </summary>
+        TData MaximumValue { get; }
     }
 
     /// <summary>

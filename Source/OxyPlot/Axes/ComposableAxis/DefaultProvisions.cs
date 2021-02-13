@@ -90,6 +90,12 @@ namespace OxyPlot.Axes.ComposableAxis
         public IDataProvider<double> DataProvider => Provider;
 
         /// <inheritdoc/>
+        public double MinimumValue => double.MinValue;
+
+        /// <inheritdoc/>
+        public double MaximumValue => double.MaxValue;
+
+        /// <inheritdoc/>
         public double InverseTransform(InteractionReal x)
         {
             return x.Value;
@@ -161,6 +167,12 @@ namespace OxyPlot.Axes.ComposableAxis
         public double Base => _Base;
 
         /// <inheritdoc/>
+        public double MinimumValue => double.MinValue;
+
+        /// <inheritdoc/>
+        public double MaximumValue => double.MaxValue;
+
+        /// <inheritdoc/>
         public double InverseTransform(InteractionReal x)
         {
             return Math.Pow(_Base, x.Value);
@@ -207,6 +219,12 @@ namespace OxyPlot.Axes.ComposableAxis
         public IDataProvider<double> DataProvider => Provider;
 
         /// <inheritdoc/>
+        public double MinimumValue => double.MinValue;
+
+        /// <inheritdoc/>
+        public double MaximumValue => double.MaxValue;
+
+        /// <inheritdoc/>
         public double InverseTransform(InteractionReal x)
         {
             return Math.Exp(x.Value);
@@ -251,6 +269,12 @@ namespace OxyPlot.Axes.ComposableAxis
 
         /// <inheritdoc/>
         public IDataProvider<double> DataProvider => Provider;
+
+        /// <inheritdoc/>
+        public double MinimumValue => double.MinValue;
+
+        /// <inheritdoc/>
+        public double MaximumValue => double.MaxValue;
 
         /// <inheritdoc/>
         public double InverseTransform(InteractionReal x)
@@ -336,6 +360,12 @@ namespace OxyPlot.Axes.ComposableAxis
 
         /// <inheritdoc/>
         public IDataProvider<DateTime> DataProvider => Provider;
+
+        /// <inheritdoc/>
+        public DateTime MinimumValue => DateTime.MinValue;
+
+        /// <inheritdoc/>
+        public DateTime MaximumValue => DateTime.MaxValue;
 
         /// <inheritdoc/>
         public DateTime InverseTransform(InteractionReal x)
@@ -1681,6 +1711,37 @@ namespace OxyPlot.Axes.ComposableAxis
         public bool Filter(TData value)
         {
             return Provider.Includes(Min, Max, value);
+        }
+    }
+
+    /// <summary>
+    /// The composition of two filters, both of which must pass for a value to be accepted.
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    /// <typeparam name="TFilter1"></typeparam>
+    /// <typeparam name="TFilter2"></typeparam>
+    public readonly struct AndFilter<TData, TFilter1, TFilter2> : IFilter<TData>
+        where TFilter1 : IFilter<TData>
+        where TFilter2 : IFilter<TData>
+    {
+        private readonly TFilter1 Filter1;
+        private readonly TFilter2 Filter2;
+
+        /// <summary>
+        /// Initialises a <see cref="AndFilter{TData, TFilter1, TFilter2}"/>.
+        /// </summary>
+        /// <param name="filter1">The first filter to apply.</param>
+        /// <param name="filter2">The second filter to apply.</param>
+        public AndFilter(TFilter1 filter1, TFilter2 filter2)
+        {
+            Filter1 = filter1;
+            Filter2 = filter2;
+        }
+
+        /// <inheritdoc/>
+        public bool Filter(TData value)
+        {
+            return Filter1.Filter(value) && Filter2.Filter(value);
         }
     }
 

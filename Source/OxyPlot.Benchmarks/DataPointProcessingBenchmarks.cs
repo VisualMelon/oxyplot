@@ -67,7 +67,10 @@ namespace OxyPlot.Benchmarks
 
             Broken.Clear();
             Continuous.Clear();
-            xyRenderHelper.ExtractNextContinuousLineSegment<DataPoint, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>, AcceptAllFilter<ScreenPoint>>(default, default, default, Points.AsReadOnlyList(), ref startIndex, endIndex, ref psp, ref pci, Broken, Continuous);
+
+            var clipRect = new OxyRect(-100, -100, PointCount * 2, 200);
+
+            xyRenderHelper.ExtractNextContinuousLineSegment<DataPoint, DataPointXYSampleProvider, AcceptAllFilter<DataPoint>, RectangleClipFilter>(default, default, new RectangleClipFilter(clipRect), Points.AsReadOnlyList(), ref startIndex, endIndex, ref psp, ref pci, Broken, Continuous);
 
             if (Continuous.Count != Points.Count)
                 throw new Exception("xyRenderHelper.ExtractNextContinuousLineSegment doesn't work.");

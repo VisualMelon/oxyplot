@@ -9,6 +9,7 @@
 
 namespace OxyPlot.Series
 {
+    using OxyPlot.Axes.ComposableAxis;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -457,7 +458,7 @@ namespace OxyPlot.Series
 				startIdx = this.WindowStartIndex;
 			}
 
-			for (int i = startIdx; i < points.Count; i++)
+            for (int i = startIdx; i < points.Count; i++)
 	        {
 				if (!this.ExtractNextContiguousLineSegment(points, ref i, ref lastValidPoint, xmax, broken, this.contiguousScreenPointsBuffer))
 		        {
