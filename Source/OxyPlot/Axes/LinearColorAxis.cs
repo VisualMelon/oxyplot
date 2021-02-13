@@ -307,5 +307,20 @@ namespace OxyPlot.Axes
 
             return OxyImage.Create(buffer, ImageFormat.Png);
         }
+
+        void IColorAxis<double>.ConsumeTransformation(IAxisColorTransformationConsumer<double> consumer)
+        {
+            consumer.Consume<DoubleProvider, LinearAxisColorTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>>(this.GetColorTransformation());
+        }
+
+        private LinearAxisColorTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>> GetColorTransformation()
+        {
+            return new LinearAxisColorTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>(this.Palette, default, new MinMaxFilter<double, DoubleProvider>(default, this.FilterMinValue, this.FilterMaxValue), this.LowColor, this.HighColor, this.ClipInteractionMinimum, this.ClipInteractionMaximum);
+        }
+
+        IAxisColorTransformation<double> IColorAxis<double>.GetColorTransformation()
+        {
+            return this.GetColorTransformation();
+        }
     }
 }

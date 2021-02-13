@@ -38,6 +38,12 @@ namespace OxyPlot.Axes
         /// <value>The palette.</value>
         public OxyPalette Palette { get; set; }
 
+        /// <inheritdoc/>
+        public OxyColor LowColor => OxyColors.Transparent;
+
+        /// <inheritdoc/>
+        public OxyColor HighColor => OxyColors.Transparent;
+
         /// <summary>
         /// Gets the color of the specified index in the color palette.
         /// </summary>
@@ -152,6 +158,21 @@ namespace OxyPlot.Axes
             this.GetTickValues(out majorLabelValues, out majorTickValues, out minorTickValues);
             var highValue = this.GetHighValue(paletteIndex, majorLabelValues);
             return highValue;
+        }
+
+        void IColorAxis<double>.ConsumeTransformation(IAxisColorTransformationConsumer<double> consumer)
+        {
+            consumer.Consume<DoubleProvider, LinearAxisColorTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>>(this.GetColorTransformation());
+        }
+
+        private LinearAxisColorTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>> GetColorTransformation()
+        {
+            return new LinearAxisColorTransformation<double, DoubleProvider, Linear, MinMaxFilter<double, DoubleProvider>>(this.Palette, default, new MinMaxFilter<double, DoubleProvider>(default, this.FilterMinValue, this.FilterMaxValue), this.LowColor, this.HighColor, this.ClipInteractionMinimum, this.ClipInteractionMaximum);
+        }
+
+        IAxisColorTransformation<double> IColorAxis<double>.GetColorTransformation()
+        {
+            return this.GetColorTransformation();
         }
 
         /// <summary>

@@ -331,6 +331,13 @@ namespace OxyPlot.Axes.ComposableAxis
         OxyColor Transform(TData data);
 
         /// <summary>
+        /// Transforms a value to an index in the palette.
+        /// </summary>
+        /// <param name="data">The value.</param>
+        /// <returns>A <see cref="OxyColor"/>.</returns>
+        int GetIndex(TData data);
+
+        /// <summary>
         /// Determines whether the given value should be presented on the axis.
         /// </summary>
         /// <param name="data">The value to test</param>

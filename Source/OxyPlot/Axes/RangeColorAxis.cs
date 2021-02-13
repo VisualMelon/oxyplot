@@ -12,6 +12,7 @@ namespace OxyPlot.Axes
     using OxyPlot.Axes.ComposableAxis;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     /// Represents a color axis that contains colors for specified ranges.
@@ -246,6 +247,21 @@ namespace OxyPlot.Axes
 
             var r = new HorizontalAndVerticalAxisRenderer(rc, this.PlotModel);
             r.Render(this, pass);
+        }
+
+        void IColorAxis<double>.ConsumeTransformation(IAxisColorTransformationConsumer<double> consumer)
+        {
+            consumer.Consume<DoubleProvider, RangeAxisColorTransformation<double, DoubleProvider>>(this.GetColorTransformation());
+        }
+
+        private RangeAxisColorTransformation<double, DoubleProvider> GetColorTransformation()
+        {
+            return new RangeAxisColorTransformation<double, DoubleProvider>(default, ranges.Select(r => new ColorRange<double>(r.LowerBound, r.UpperBound, r.Color)).ToArray().AsReadOnlyList());
+        }
+
+        IAxisColorTransformation<double> IColorAxis<double>.GetColorTransformation()
+        {
+            return this.GetColorTransformation();
         }
 
         /// <summary>

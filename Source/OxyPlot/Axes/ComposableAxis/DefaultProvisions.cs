@@ -533,13 +533,13 @@ namespace OxyPlot.Axes.ComposableAxis
 
     /// <summary>
     /// Axis color transformation.
-    /// Maps interaction space to 
+    /// Maps interaction space to colors.
     /// </summary>
     /// <typeparam name="TData"></typeparam>
     /// <typeparam name="TDataProvider"></typeparam>
     /// <typeparam name="TDataTransformation"></typeparam>
     /// <typeparam name="TDataFilter"></typeparam>
-    public readonly struct AxisColorTransformation<TData, TDataProvider, TDataTransformation, TDataFilter> : IAxisColorTransformation<TData, TDataProvider>
+    public readonly struct LinearAxisColorTransformation<TData, TDataProvider, TDataTransformation, TDataFilter> : IAxisColorTransformation<TData, TDataProvider>
         where TDataProvider : IDataProvider<TData>
         where TDataTransformation : IDataTransformation<TData, TDataProvider>
         where TDataFilter : IFilter<TData>
@@ -553,7 +553,7 @@ namespace OxyPlot.Axes.ComposableAxis
         private readonly InteractionReal InteractionMax;
 
         /// <summary>
-        /// Initialises an <see cref="AxisColorTransformation{TData, TDataProvider, TDataTransformation, TDataFilter}"/>.
+        /// Initialises an <see cref="LinearAxisColorTransformation{TData, TDataProvider, TDataTransformation, TDataFilter}"/>.
         /// </summary>
         /// <param name="palette"></param>
         /// <param name="transformation"></param>
@@ -562,7 +562,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="highColor"></param>
         /// <param name="interactionMin"></param>
         /// <param name="interactionMax"></param>
-        public AxisColorTransformation(OxyPalette palette, TDataTransformation transformation, TDataFilter filter, OxyColor lowColor, OxyColor highColor, InteractionReal interactionMin, InteractionReal interactionMax)
+        public LinearAxisColorTransformation(OxyPalette palette, TDataTransformation transformation, TDataFilter filter, OxyColor lowColor, OxyColor highColor, InteractionReal interactionMin, InteractionReal interactionMax)
         {
             Palette = palette ?? throw new ArgumentNullException(nameof(palette));
             _Transformation = transformation;
@@ -600,7 +600,8 @@ namespace OxyPlot.Axes.ComposableAxis
             return Palette.Colors[idx];
         }
 
-        private int GetIndex(TData data)
+        /// <inheritdoc/>
+        public int GetIndex(TData data)
         {
             var i = _Transformation.Transform(data);
             var c = (i - InteractionMin).Value / (InteractionMax - InteractionMin).Value;
@@ -672,6 +673,102 @@ namespace OxyPlot.Axes.ComposableAxis
                 }
 
                 ticks.Add(r);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Color
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    public readonly struct ColorRange<TData>
+    {
+        /// <summary>
+        /// Why why why.
+        /// </summary>
+        /// <param name="minimum"></param>
+        /// <param name="maximum"></param>
+        /// <param name="color"></param>
+        public ColorRange(TData minimum, TData maximum, OxyColor color)
+        {
+            Minimum = minimum;
+            Maximum = maximum;
+            Color = color;
+        }
+
+        /// <summary>
+        /// The minimum.
+        /// </summary>
+        public TData Minimum { get; }
+
+        /// <summary>
+        /// The maximum.
+        /// </summary>
+        public TData Maximum { get; }
+
+        /// <summary>
+        /// The color.
+        /// </summary>
+        public OxyColor Color { get; }
+    }
+
+    /// <summary>
+    /// Axis color transformation.
+    /// Maps interaction space to 
+    /// </summary>
+    public readonly struct RangeAxisColorTransformation<TData, TDataProvider> : IAxisColorTransformation<TData, TDataProvider>
+        where TDataProvider : IDataProvider<TData>
+    {
+        /// <summary>
+        /// Initialises an <see cref="RangeAxisColorTransformation{TData, TDataProvider}"/>.
+        /// </summary>
+        /// <param name="provider"></param>
+        /// <param name="ranges"></param>
+        public RangeAxisColorTransformation(TDataProvider provider, IReadOnlyList<ColorRange<TData>> ranges)
+        {
+            _Provider = provider;
+            _Ranges = ranges;
+        }
+
+        private readonly TDataProvider _Provider;
+        private readonly IReadOnlyList<ColorRange<TData>> _Ranges;
+
+        TDataProvider IAxisColorTransformation<TData, TDataProvider>.Provider => _Provider;
+
+        /// <inheritdoc/>
+        public bool Filter(TData data)
+        {
+            return true; // not sure what to do here.
+        }
+
+        /// <inheritdoc/>
+        public OxyColor Transform(TData data)
+        {
+            var idx = GetIndex(data);
+            return _Ranges[idx].Color;
+        }
+
+        /// <inheritdoc/>
+        public int GetIndex(TData data)
+        {
+            // TODO: make less inefficient
+            for (int i = 0; i < _Ranges.Count; i++)
+            {
+                if (_Provider.Includes(_Ranges[i].Minimum, _Ranges[i].Maximum, data))
+                    return i;
+            }
+
+            return -1; // TODO: not sure
+        }
+
+        /// <inheritdoc/>
+        public void GetColorRanges(TData minimum, TData maximum, IList<ColorRangeTick<TData>> ticks)
+        {
+            for (int i = 0; i < _Ranges.Count; i++)
+            {
+                if (_Provider.Includes(minimum, maximum, _Ranges[i].Minimum)
+                    || _Provider.Includes(minimum, maximum, _Ranges[i].Maximum))
+                    ticks.Add(new ColorRangeTick<TData>(_Ranges[i].Minimum, _Ranges[i].Maximum, _Ranges[i].Color));
             }
         }
     }

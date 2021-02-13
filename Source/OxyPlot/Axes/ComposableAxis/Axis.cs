@@ -917,12 +917,27 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// Gets or setse the low color.
         /// </summary>
-        OxyColor LowColor { get; set; }
+        OxyColor LowColor { get; }
 
         /// <summary>
         /// Gets or setse the high color.
         /// </summary>
-        OxyColor HighColor { get; set; }
+        OxyColor HighColor { get; }
+
+        /// <summary>
+        /// Gets the color of the specified index in the color palette.
+        /// </summary>
+        /// <param name="paletteIndex">The color map index (less than NumberOfEntries).</param>
+        /// <returns>The color.</returns>
+        OxyColor GetColor(int paletteIndex);
+
+        /// <summary>
+        /// Gets the palette index of the specified value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns>The palette index.</returns>
+        /// <remarks>If the value is less than minimum, 0 is returned. If the value is greater than maximum, Palette.Colors.Count+1 is returned.</remarks>
+        int GetPaletteIndex(VData value);
     }
 
     /// <summary>
@@ -1975,18 +1990,28 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public virtual void ConsumeTransformation(IAxisColorTransformationConsumer<TData> consumer)
         {
-            consumer.Consume<TDataProvider, AxisColorTransformation<TData, TDataProvider, TDataTransformation, TDataFilter>>(GetTypedColorTransformation());
+            consumer.Consume<TDataProvider, LinearAxisColorTransformation<TData, TDataProvider, TDataTransformation, TDataFilter>>(GetTypedColorTransformation());
         }
 
-        private AxisColorTransformation<TData, TDataProvider, TDataTransformation, TDataFilter> GetTypedColorTransformation()
+        private LinearAxisColorTransformation<TData, TDataProvider, TDataTransformation, TDataFilter> GetTypedColorTransformation()
         {
-            return new AxisColorTransformation<TData, TDataProvider, TDataTransformation, TDataFilter>(Palette, DataTransformation, Filter, LowColor, HighColor, ClipInteractionMinimum, ClipInteractionMaximum);
+            return new LinearAxisColorTransformation<TData, TDataProvider, TDataTransformation, TDataFilter>(Palette, DataTransformation, Filter, LowColor, HighColor, ClipInteractionMinimum, ClipInteractionMaximum);
         }
 
         /// <inheritdoc/>
         public IAxisColorTransformation<TData> GetColorTransformation()
         {
             return GetTypedColorTransformation();
+        }
+
+        OxyColor IColorAxis<TData>.GetColor(int paletteIndex)
+        {
+            return this.Palette.Colors[paletteIndex];
+        }
+
+        int IColorAxis<TData>.GetPaletteIndex(TData value)
+        {
+            return this.GetColorTransformation().GetIndex(value);
         }
     }
 }

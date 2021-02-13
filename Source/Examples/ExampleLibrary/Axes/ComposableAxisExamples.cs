@@ -442,7 +442,7 @@ namespace ExampleLibrary
             return plot;
         }
 
-        [Example("ScatterSeries")]
+        [Example("ScatterSeries on Linear Color Axis")]
         public static PlotModel ScatterSeries()
         {
             var plot = SimpleLinearXY();
@@ -461,6 +461,45 @@ namespace ExampleLibrary
             caxis.Bands.Add(ccolorrangetickband); // CRT first, so we can see the ticks themselves
             var ctickband = new TickBand<double>(new LinearDoubleTickLocator(), new SpacingOptions());
             caxis.Bands.Add(ctickband);
+
+            plot.Axes.Add(caxis);
+
+            var scatter = new OxyPlot.Axes.ComposableAxis.SeriesExamples.ScatterSeries<DataPoint, double, double, double, DataPointXYSampleProvider, DelegateValueProvider<DataPoint, double>, ConstantProvider<DataPoint, double>, AcceptAllFilter<DataPoint>>(default, new DelegateValueProvider<DataPoint, double>(dp => Math.Sin(dp.X + dp.Y)), new ConstantProvider<DataPoint, double>(5), default)
+            {
+                Title = "Scatter",
+                XAxisKey = "X",
+                YAxisKey = "Y",
+                VAxisKey = "C",
+            };
+
+            var rnd = new Random();
+            for (int i = 0; i < 10000; i++)
+            {
+                scatter.Samples.Add(new DataPoint(rnd.NextDouble(), rnd.NextDouble()));
+            }
+
+            plot.Series.Add(scatter);
+
+            plot.Legends.Add(new Legend());
+
+            return plot;
+        }
+
+        [Example("ScatterSeries on Range Color Axis")]
+        public static PlotModel ScatterSeriesOnRangeColorAxis()
+        {
+            var plot = SimpleLinearXY();
+
+            var caxis = new RangeColorAxis()
+            {
+                Title = "Color Axis",
+                Key = "C",
+                Position = AxisPosition.Right,
+            };
+
+            caxis.AddRange(0, 0.5, OxyColors.Blue);
+            caxis.AddRange(0.5, 0.8, OxyColors.Turquoise);
+            caxis.AddRange(0.8, 1.0, OxyColors.Green);
 
             plot.Axes.Add(caxis);
 
