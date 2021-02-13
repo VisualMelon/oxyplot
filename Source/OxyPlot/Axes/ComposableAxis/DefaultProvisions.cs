@@ -633,8 +633,8 @@ namespace OxyPlot.Axes.ComposableAxis
             _DataTransformation = dataTransformation;
             _Filter = filter;
             _ViewInfo = viewInfo;
-            ClipMinimum = clipMinimum;
-            ClipMaximum = clipMaximum;
+            _ClipMinimum = clipMinimum;
+            _ClipMaximum = clipMaximum;
         }
 
         /// <summary>
@@ -659,10 +659,14 @@ namespace OxyPlot.Axes.ComposableAxis
         public ViewInfo ViewInfo => _ViewInfo;
 
         /// <inheritdoc/>
-        public TData ClipMinimum { get; }
+        private readonly TData _ClipMinimum;
+        private readonly TData _ClipMaximum;
 
         /// <inheritdoc/>
-        public TData ClipMaximum { get; }
+        public TData ClipMinimum => _ClipMinimum;
+
+        /// <inheritdoc/>
+        public TData ClipMaximum => _ClipMaximum;
 
         /// <inheritdoc/>
         public bool WithinClipBounds(TData v)
@@ -1064,6 +1068,11 @@ namespace OxyPlot.Axes.ComposableAxis
         /// Gets the underlying YTransformation.
         /// </summary>
         IAxisScreenTransformation<YData> YTransformation { get; }
+
+        /// <summary>
+        /// Gets the underlying XYTransformation.
+        /// </summary>
+        IXYAxisTransformation<XData, YData> XYTransformation { get; }
     }
 
     /// <summary>
@@ -1449,7 +1458,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="YDataProvider"></typeparam>
     /// <typeparam name="XAxisTransformation"></typeparam>
     /// <typeparam name="YAxisTransformation"></typeparam>
-    public readonly struct HorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
+    public struct HorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
         where XDataProvider : IDataProvider<XData>
         where YDataProvider : IDataProvider<YData>
         where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
@@ -1462,6 +1471,8 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="yTransformation"></param>
         public HorizontalVertialXYTransformation(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
         {
+            // NOTE: these fields are left mutable to avoid performance-ruining defensive copies.
+            // I believe this should not be necessary, but the JIT refuses to elide the copies, and the class is fairly simple.
             _XTransformation = xTransformation;
             _YTransformation = yTransformation;
         }
@@ -1469,7 +1480,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// The x transformation.
         /// </summary>
-        private readonly XAxisTransformation _XTransformation;
+        private XAxisTransformation _XTransformation;
 
         /// <summary>
         /// Gets the x transformation.
@@ -1479,7 +1490,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// The x transformation.
         /// </summary>
-        private readonly YAxisTransformation _YTransformation;
+        private YAxisTransformation _YTransformation;
 
         /// <summary>
         /// Gets the x transformation.
@@ -1522,7 +1533,7 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="YDataProvider"></typeparam>
     /// <typeparam name="XAxisTransformation"></typeparam>
     /// <typeparam name="YAxisTransformation"></typeparam>
-    public readonly struct TransposedHorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
+    public struct TransposedHorizontalVertialXYTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
         where XDataProvider : IDataProvider<XData>
         where YDataProvider : IDataProvider<YData>
         where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
@@ -1535,6 +1546,8 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="yTransformation"></param>
         public TransposedHorizontalVertialXYTransformation(XAxisTransformation xTransformation, YAxisTransformation yTransformation)
         {
+            // NOTE: these fields are left mutable to avoid performance-ruining defensive copies.
+            // I believe this should not be necessary, but the JIT refuses to elide the copies, and the class is fairly simple.
             _XTransformation = xTransformation;
             _YTransformation = yTransformation;
         }
@@ -1542,7 +1555,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// The x transformation.
         /// </summary>
-        private readonly XAxisTransformation _XTransformation;
+        private XAxisTransformation _XTransformation;
 
         /// <summary>
         /// Gets the x transformation.
@@ -1552,7 +1565,7 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <summary>
         /// The x transformation.
         /// </summary>
-        private readonly YAxisTransformation _YTransformation;
+        private YAxisTransformation _YTransformation;
 
         /// <summary>
         /// Gets the x transformation.
@@ -1891,6 +1904,9 @@ namespace OxyPlot.Axes.ComposableAxis
         IAxisScreenTransformation<YData> IXYRenderHelper<XData, YData>.YTransformation => _XYTransformation.YTransformation;
 
         /// <inheritdoc/>
+        IXYAxisTransformation<XData, YData> IXYRenderHelper<XData, YData>.XYTransformation => _XYTransformation;
+
+        /// <inheritdoc/>
         public bool ExtractNextContinuousLineSegment<TSample, TSampleProvider, TSampleFilter, ClipFilter>(TSampleProvider sampleProvider, TSampleFilter sampleFilter, ClipFilter clipFilter, IReadOnlyList<TSample> samples, ref int sampleIdx, int endIdx, ref ScreenPoint? previousContiguousLineSegmentEndPoint, ref XYClipInfo previousContiguousLineSegmentEndPointClipInfo, List<ScreenPoint> broken, List<ScreenPoint> continuous)
             where TSampleProvider : IXYSampleProvider<TSample, XData, YData>
             where TSampleFilter : IFilter<TSample>
@@ -1921,13 +1937,13 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <inheritdoc/>
         public ScreenPoint TransformSample(DataSample<XData, YData> sample)
         {
-            return XYTransformation.ArrangeTransform(sample);
+            return _XYTransformation.ArrangeTransform(sample);
         }
 
         /// <inheritdoc/>
         public DataSample<XData, YData> InverseTransform(ScreenPoint screenPoint)
         {
-            return XYTransformation.InverseArrangeTransform(screenPoint);
+            return _XYTransformation.InverseArrangeTransform(screenPoint);
         }
     }
 

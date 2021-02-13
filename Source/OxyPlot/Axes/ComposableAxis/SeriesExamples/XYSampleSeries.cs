@@ -13,7 +13,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
     /// <typeparam name="XData"></typeparam>
     /// <typeparam name="YData"></typeparam>
     /// <typeparam name="TSampleFilter"></typeparam>
-    public abstract class XYSeries<TSample, XData, YData, TSampleFilter> : Series.Series
+    public abstract class XYSeries<TSample, XData, YData, TSampleFilter> : Series.Series, ITransposablePlotElement
         where TSampleFilter : IFilter<TSample>
     {
         /// <summary>
@@ -104,6 +104,10 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         /// Gets or sets a value indiciating whether the min/max X/Y and monotonicity properties are meaningful.
         /// </summary>
         public bool HasMeaningfulDataRange { get; protected set; }
+
+        IPrettyAxis IXyAxisPlotElement.XAxis => this.XAxis;
+
+        IPrettyAxis IXyAxisPlotElement.YAxis => this.YAxis;
 
         /// <summary>
         /// Resolves axes from the axis keys.

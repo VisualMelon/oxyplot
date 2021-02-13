@@ -145,6 +145,12 @@ namespace OxyPlot.Annotations
         }
 
         /// <inheritdoc/>
+        public virtual ScreenPoint Transform(double x, double y)
+        {
+            return this.XAxis.Transform(new DataSample<double, double>(x, y), this.YAxis);
+        }
+
+        /// <inheritdoc/>
         public virtual DataPoint InverseTransform(ScreenPoint p)
         {
             var s = this.XAxis.InverseTransform(p, this.YAxis);

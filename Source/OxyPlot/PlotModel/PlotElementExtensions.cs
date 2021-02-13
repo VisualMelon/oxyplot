@@ -12,18 +12,6 @@ namespace OxyPlot
     public static class PlotElementExtensions
     {
         /// <summary>
-        /// Transforms from a screen point to a data point by the axes of this series.
-        /// </summary>
-        /// <param name="element">The <see cref="ITransposablePlotElement" />.</param>
-        /// <param name="x">The x coordinate of the screen point.</param>
-        /// <param name="y">The y coordinate of the screen point.</param>
-        /// <returns>A data point.</returns>
-        public static DataPoint InverseTransform(this IXyAxisPlotElement element, double x, double y)
-        {
-            return element.InverseTransform(new ScreenPoint(x, y));
-        }
-
-        /// <summary>
         /// Checks if the series is transposed.
         /// </summary>
         /// <returns>True if the series is transposed, False otherwise.</returns>
@@ -82,18 +70,6 @@ namespace OxyPlot
                 va = (VerticalAlignment)(-(int)ha);
                 ha = orientatedHa;
             }
-        }
-
-        /// <summary>
-        /// Transforms the specified data point to a screen point by the axes of this series.
-        /// </summary>
-        /// <param name="element">The <see cref="ITransposablePlotElement" />.</param>
-        /// <param name="x">The x coordinate of the data point.</param>
-        /// <param name="y">The y coordinate of the data point.</param>
-        /// <returns>A screen point.</returns>
-        public static ScreenPoint Transform(this IXyAxisPlotElement element, double x, double y)
-        {
-            return element.Transform(new DataPoint(x, y));
         }
     }
 }

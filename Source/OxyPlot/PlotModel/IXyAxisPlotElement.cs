@@ -23,19 +23,5 @@ namespace OxyPlot
         /// Gets the Y axis.
         /// </summary>
         IPrettyAxis YAxis { get; }
-
-        /// <summary>
-        /// Transforms the specified data point to a screen point by the axes of the plot element.
-        /// </summary>
-        /// <param name="p">The data point.</param>
-        /// <returns>A screen point.</returns>
-        ScreenPoint Transform(DataPoint p);
-
-        /// <summary>
-        /// Transforms from a screen point to a data point by the axes of this series.
-        /// </summary>
-        /// <param name="p">The screen point.</param>
-        /// <returns>A data point.</returns>
-        DataPoint InverseTransform(ScreenPoint p);
     }
 }

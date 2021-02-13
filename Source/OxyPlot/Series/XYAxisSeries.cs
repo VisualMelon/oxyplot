@@ -136,7 +136,15 @@ namespace OxyPlot.Series
         /// <inheritdoc/>
         public ScreenPoint Transform(DataPoint p)
         {
-            return this.RenderHelper.TransformSample(new DataSample<double, double>(p.X, p.Y));
+            //return this.RenderHelper.TransformSample(new DataSample<double, double>(p.X, p.Y));
+            return this.Transformation.ArrangeTransform(new DataSample<double, double>(p.X, p.Y));
+        }
+
+        /// <inheritdoc/>
+        public ScreenPoint Transform(double x, double y)
+        {
+            //return this.RenderHelper.TransformSample(new DataSample<double, double>(p.X, p.Y));
+            return this.Transformation.ArrangeTransform(new DataSample<double, double>(x, y));
         }
 
         /// <summary>
@@ -730,6 +738,11 @@ namespace OxyPlot.Series
         /// </summary>
         protected IXYRenderHelper<double, double> RenderHelper { get; set; }
 
+        /// <summary>
+        /// Gets or sets the transformation for this series.
+        /// </summary>
+        protected IXYAxisTransformation<double, double> Transformation { get; set; }
+
         IPrettyAxis IXyAxisPlotElement.XAxis => this.XAxis;
 
         IPrettyAxis IXyAxisPlotElement.YAxis => this.YAxis;
@@ -749,7 +762,8 @@ namespace OxyPlot.Series
                 throw new InvalidOperationException("YAxis not defined.");
             }
 
-            RenderHelper = this.XAxis.GetHelper(this.YAxis);
+            this.RenderHelper = this.XAxis.GetHelper(this.YAxis);
+            this.Transformation = this.RenderHelper.XYTransformation;
         }
 
         /// <summary>
