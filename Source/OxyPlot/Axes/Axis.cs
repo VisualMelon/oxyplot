@@ -735,10 +735,10 @@ namespace OxyPlot.Axes
         }
 
         /// <inheritdoc/>
-        public IXYRenderHelper<double, YData> GetHelper<YData>(IAxis<YData> yaxis)
+        public virtual IXYRenderHelper<double, YData> GetHelper<YData>(IAxis<YData> yaxis)
         {
             // assume YAxis is Horizontal/Vertical
-            return XYRenderHelperPreparer<double, YData>.PrepareHorizontalVertial(XYCollator<double, YData>.Prepare(this, yaxis), this.IsVertical());
+            return XYRenderHelperPreparer<double, YData>.PrepareHorizontalVertical(XYCollator<double, YData>.Prepare(this, yaxis), this.IsVertical());
         }
 
         /// <summary>

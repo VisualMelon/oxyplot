@@ -1514,9 +1514,9 @@ namespace OxyPlot.Axes.ComposableAxis
     /// <typeparam name="YData"></typeparam>
     public class XYRenderHelperPreparer<XData, YData>
     {
-        private class Generator : IXYAxisScreenTransformationConsumer<XData, YData>
+        private class HVGenerator : IXYAxisScreenTransformationConsumer<XData, YData>
         {
-            public Generator(bool transpose)
+            public HVGenerator(bool transpose)
             {
                 Transpose = transpose;
             }
@@ -1550,9 +1550,47 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="collator"></param>
         /// <param name="transpose"></param>
         /// <returns></returns>
-        public static IXYRenderHelper<XData, YData> PrepareHorizontalVertial(XYCollator<XData, YData> collator, bool transpose)
+        public static IXYRenderHelper<XData, YData> PrepareHorizontalVertical(XYCollator<XData, YData> collator, bool transpose)
         {
-            var generator = new Generator(transpose);
+            var generator = new HVGenerator(transpose);
+            collator.Consume(generator);
+            return generator.Result;
+        }
+
+        private class PolarGenerator : IXYAxisScreenTransformationConsumer<XData, YData>
+        {
+            public PolarGenerator(ScreenPoint midPoint, double angle)
+            {
+                MidPoint = midPoint;
+                Angle = angle;
+            }
+
+            public ScreenPoint MidPoint { get; }
+            public double Angle { get; } // this seems to be handled by the angle axis... not sure about it
+
+            public void Consume<XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(XAxisScreenTransformation x, YAxisScreenTransformation y)
+                where XDataProvider : IDataProvider<XData>
+                where YDataProvider : IDataProvider<YData>
+                where XAxisScreenTransformation : IAxisScreenTransformation<XData, XDataProvider>
+                where YAxisScreenTransformation : IAxisScreenTransformation<YData, YDataProvider>
+            {
+                var xyTransformation = new PolarScreenTransformation<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>(x, y, MidPoint, Angle);
+                Result = new XYRenderHelper<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation, PolarScreenTransformation<XData, YData, XDataProvider, YDataProvider, XAxisScreenTransformation, YAxisScreenTransformation>>(xyTransformation);
+            }
+
+            public IXYRenderHelper<XData, YData> Result { get; private set; }
+        }
+
+        /// <summary>
+        /// Prepares an <see cref="IXYHelper{XData, YData}"/> from the given collator.
+        /// </summary>
+        /// <param name="collator"></param>
+        /// <param name="midPoint"></param>
+        /// <param name="angle"></param>
+        /// <returns></returns>
+        public static IXYRenderHelper<XData, YData> PreparePolar(XYCollator<XData, YData> collator, ScreenPoint midPoint, double angle)
+        {
+            var generator = new PolarGenerator(midPoint, angle);
             collator.Consume(generator);
             return generator.Result;
         }
@@ -1761,6 +1799,103 @@ namespace OxyPlot.Axes.ComposableAxis
         public ScreenPoint Arrange(ScreenReal x, ScreenReal y)
         {
             return new ScreenPoint(y.Value, x.Value);
+        }
+    }
+
+    /// <summary>
+    /// Provides an implemention of <see cref="IXYAxisTransformation{XData, YData}"/> for a horizontal X axis, and a vertical Y axis.
+    /// </summary>
+    /// <typeparam name="XData"></typeparam>
+    /// <typeparam name="YData"></typeparam>
+    /// <typeparam name="XDataProvider"></typeparam>
+    /// <typeparam name="YDataProvider"></typeparam>
+    /// <typeparam name="XAxisTransformation"></typeparam>
+    /// <typeparam name="YAxisTransformation"></typeparam>
+    public struct PolarScreenTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation> : IXYAxisTransformation<XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation>
+        where XDataProvider : IDataProvider<XData>
+        where YDataProvider : IDataProvider<YData>
+        where XAxisTransformation : IAxisScreenTransformation<XData, XDataProvider>
+        where YAxisTransformation : IAxisScreenTransformation<YData, YDataProvider>
+    {
+        /// <summary>
+        /// Initialises and instance of the <see cref="HorizontalVertialXYTransformation{XData, YData, XDataProvider, YDataProvider, XAxisTransformation, YAxisTransformation}"/> struct.
+        /// </summary>
+        /// <param name="xTransformation"></param>
+        /// <param name="yTransformation"></param>
+        /// <param name="midPoint"></param>
+        /// <param name="angle"></param>
+        public PolarScreenTransformation(XAxisTransformation xTransformation, YAxisTransformation yTransformation, ScreenPoint midPoint, double angle)
+        {
+            // NOTE: these fields are left mutable to avoid performance-ruining defensive copies.
+            // I believe this should not be necessary, but the JIT refuses to elide the copies, and the class is fairly simple.
+            _XTransformation = xTransformation;
+            _YTransformation = yTransformation;
+            _MidPoint = midPoint;
+            _Angle = angle;
+        }
+
+        /// <summary>
+        /// The x transformation.
+        /// </summary>
+        private XAxisTransformation _XTransformation;
+
+        /// <summary>
+        /// Gets the x transformation.
+        /// </summary>
+        public XAxisTransformation XTransformation => _XTransformation;
+
+        /// <summary>
+        /// The x transformation.
+        /// </summary>
+        private YAxisTransformation _YTransformation;
+
+        /// <summary>
+        /// Gets the x transformation.
+        /// </summary>
+        public YAxisTransformation YTransformation => _YTransformation;
+
+        /// <summary>
+        /// The mid-point
+        /// </summary>
+        private ScreenPoint _MidPoint;
+
+        /// <summary>
+        /// The angle.
+        /// </summary>
+        private double _Angle;
+
+        /// <inheritdoc/>
+        public DataSample<XData, YData> InverseArrangeTransform(ScreenPoint screenPoint)
+        {
+            InverseArrange(screenPoint, out var x, out var y);
+            return new DataSample<XData, YData>(_XTransformation.InverseTransform(x), _YTransformation.InverseTransform(y));
+        }
+
+        /// <inheritdoc/>
+        public ScreenPoint ArrangeTransform(DataSample<XData, YData> sample)
+        {
+            return Arrange(_XTransformation.Transform(sample.X), _YTransformation.Transform(sample.Y));
+        }
+
+        /// <inheritdoc/>
+        public void InverseArrange(ScreenPoint point, out ScreenReal ox, out ScreenReal oy)
+        {
+            var x = point.x - this._MidPoint.x;
+            var y = point.y -= this._MidPoint.y;
+            y *= -1;
+            double theta = Math.Atan2(y, x);
+            double r = Math.Sqrt((x * x) + (y * y));
+            ox = new ScreenReal(r);
+            oy = new ScreenReal(theta);
+        }
+
+        /// <inheritdoc/>
+        public ScreenPoint Arrange(ScreenReal x, ScreenReal y)
+        {
+            var r = x.Value;
+            var theta = y.Value;
+
+            return new ScreenPoint(this._MidPoint.x + (r * Math.Cos(theta / 180 * Math.PI)), this._MidPoint.y - (r * Math.Sin(theta / 180 * Math.PI)));
         }
     }
 

@@ -155,7 +155,7 @@ namespace OxyPlot.Axes.ComposableAxis.SeriesExamples
         protected virtual IXYRenderHelper<XData, YData> GetRenderHelper()
         {
             var transpose = XAxis.Position == AxisPosition.Left || XAxis.Position == AxisPosition.Right;
-            return XYRenderHelperPreparer<XData, YData>.PrepareHorizontalVertial(Collator, transpose);
+            return XYRenderHelperPreparer<XData, YData>.PrepareHorizontalVertical(Collator, transpose);
         }
 
         /// <inheritdoc/>

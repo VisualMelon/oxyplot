@@ -1930,7 +1930,7 @@ namespace OxyPlot.Axes.ComposableAxis
         public IXYRenderHelper<TData, YData> GetHelper<YData>(IAxis<YData> yaxis)
         {
             // assume YAxis is Horizontal/Vertical
-            return XYRenderHelperPreparer<TData, YData>.PrepareHorizontalVertial(XYCollator<TData, YData>.Prepare(this, yaxis), this.IsVertical());
+            return XYRenderHelperPreparer<TData, YData>.PrepareHorizontalVertical(XYCollator<TData, YData>.Prepare(this, yaxis), this.IsVertical());
         }
 
         bool IAxis<TData>.IsValidValue(TData value)

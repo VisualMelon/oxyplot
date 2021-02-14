@@ -199,5 +199,12 @@ namespace OxyPlot.Axes
 
             this.ActualMaximumAndMinimumChangedOverride();
         }
+
+        /// <inheritdoc/>
+        public override IXYRenderHelper<double, YData> GetHelper<YData>(IAxis<YData> yaxis)
+        {
+            // assume YAxis is Horizontal/Vertical
+            return XYRenderHelperPreparer<double, YData>.PreparePolar(XYCollator<double, YData>.Prepare(this, yaxis), this.MidPoint, 0.0);
+        }
     }
 }
