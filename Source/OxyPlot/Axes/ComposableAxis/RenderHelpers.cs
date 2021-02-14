@@ -784,7 +784,7 @@ namespace OxyPlot.Axes.ComposableAxis
                     }
                 }
 
-                if (haveLast && lastSampleClipInfo.IsOutsideBounds && lastSampleClipInfo.ShouldReject(currentSampleClipInfo))
+                if (haveLast && currentSampleClipInfo.IsOutsideBounds && lastSampleClipInfo.ShouldReject(currentSampleClipInfo))
                 {
                     // two in a row out of bounds: cycle until we are not, and then break
                     do
@@ -809,6 +809,8 @@ namespace OxyPlot.Axes.ComposableAxis
                         currentSampleClipInfo = clipFilter.Compare(currentPoint);
                     }
                     while (lastSampleClipInfo.ShouldReject(currentSampleClipInfo));
+
+                    sampleIdx--;
 
                     break;
                 }

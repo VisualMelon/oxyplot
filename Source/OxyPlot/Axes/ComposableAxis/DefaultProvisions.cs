@@ -1925,19 +1925,19 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <param name="yComparison"></param>
         public XYClipInfo(int xComparison, int yComparison)
         {
-            XComparison = xComparison;
-            YComparison = yComparison;
+            this.XComparison = xComparison;
+            this.YComparison = yComparison;
         }
 
         /// <summary>
         /// The comparison in the X dimension.
         /// </summary>
-        public readonly int XComparison { get; }
+        public int XComparison { get; }
 
         /// <summary>
         /// The comparison in the Y dimension.
         /// </summary>
-        public readonly int YComparison { get; }
+        public int YComparison { get; }
 
         /// <summary>
         /// Determine whether the given next value should be filtered.
@@ -1946,7 +1946,8 @@ namespace OxyPlot.Axes.ComposableAxis
         /// <returns></returns>
         public bool ShouldReject(XYClipInfo next)
         {
-            return (this.XComparison != 0 && next.XComparison == this.XComparison) || (this.YComparison != 0 && next.YComparison == this.YComparison);
+            return (this.XComparison != 0 && next.XComparison == this.XComparison)
+                || (this.YComparison != 0 && next.YComparison == this.YComparison);
         }
 
         /// <summary>
