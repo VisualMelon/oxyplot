@@ -357,6 +357,8 @@ namespace OxyPlot.Series
         /// <inheritdoc/>
         public override void Render(IRenderContext rc)
         {
+            this.VerifyAxes();
+
             this.ActualBarRectangles = new List<OxyRect>();
 
             if (this.ValidItems.Count == 0)
