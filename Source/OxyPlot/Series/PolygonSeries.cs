@@ -40,6 +40,7 @@
             this.LabelFormatString = "0.00";
             this.LabelFontSize = 0;
             this.Stroke = OxyColors.Undefined;
+            this.Fill = OxyColors.Undefined;
             this.StrokeThickness = 2;
         }
 
@@ -100,6 +101,12 @@
         /// </summary>
         /// <value>The stroke.</value>
         public OxyColor Stroke { get; set; }
+
+        /// <summary>
+        /// Gets or sets the fill color of the polygon.
+        /// </summary>
+        /// <value>The fill color.</value>
+        public OxyColor Fill { get; set; }
 
         /// <summary>
         /// Gets or sets the stroke thickness. The default is <c>2</c>.
@@ -214,7 +221,11 @@
 
             foreach (var item in items)
             {
-                var polyColor = this.ColorAxis.GetColor(item.Value);
+                var polyColor = this.Fill.IsUndefined() ?
+                    this.ColorAxis?.GetColor(item.Value) ?? this.PlotModel.GetDefaultColor() :
+                    this.Fill.IsAutomatic() ?
+                        this.PlotModel.GetDefaultColor() :
+                        this.Fill;
 
                 foreach (var outline in item.Outlines)
                 {

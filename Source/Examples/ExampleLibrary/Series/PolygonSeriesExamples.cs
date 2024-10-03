@@ -80,5 +80,26 @@ namespace ExampleLibrary.Series
 
             return res;
         }
+
+        [Example("WithoutColorAxis")]
+        [DocumentationExample("Series/PolygonSeries")]
+        public static PlotModel WithoutColorAxis()
+        {
+            var model = new PlotModel { Title = "Without ColorAxis", PlotType = PlotType.Cartesian };
+
+            model.Axes.Add(new LinearAxis());
+
+            var ps = new PolygonSeries();
+            var outlines = new List<DataPoint[]>();
+            for (int i = 0; i < 5; i++)
+            {
+                ps.Items.Add(new PolygonItem(RegularPolygon(new DataPoint(i * 5, 0), 2, 3 + i), i));
+                outlines.Add(RegularPolygon(new DataPoint(i * 5, 5), 2, 3 + i));
+            }
+            ps.Items.Add(new PolygonItem(outlines, 10));
+            model.Series.Add(ps);
+
+            return model;
+        }
     }
 }
